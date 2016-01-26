@@ -25,7 +25,7 @@ import com.vaadin.integration.eclipse.util.WidgetsetUtil;
 
 /**
  * Handler for Compile Widgetset action.
- * 
+ *
  * @see org.eclipse.core.commands.IHandler
  * @see org.eclipse.core.commands.AbstractHandler
  */
@@ -49,72 +49,55 @@ public class CompileWidgetsetHandler extends AbstractVaadinCompileHandler {
                 try {
                     monitor.beginTask("Compiling widgetset", 1);
 
+                    // 1. Selected gwt.xml file
+                    IFile file = getSelectedFile(currentSelection);
                     boolean compiled = false;
-                    if (currentSelection instanceof IStructuredSelection
-                            && ((IStructuredSelection) currentSelection).size() == 1) {
-                        IStructuredSelection ssel = (IStructuredSelection) currentSelection;
-                        Object obj = ssel.getFirstElement();
-                        if (obj instanceof IFile) {
-                            IFile file = (IFile) obj;
-                            IProject project = file.getProject();
-                            VaadinFacetUtils.fixFacetVersion(project);
-                            if (WidgetsetUtil
-                                    .isWidgetsetManagedByPlugin(project)) {
-                                WidgetsetUtil.ensureWidgetsetNature(project);
-                                compiled = compileFile(monitor, file);
-                            }
-                        }
-                        if (!compiled) {
-                            IProject project = ProjectUtil
-                                    .getProject(currentSelection);
-                            if (project == null) {
-                                IFile file = getFileForEditor(activeEditor);
-                                if (file != null && file.exists()) {
-                                    VaadinFacetUtils.fixFacetVersion(file
-                                            .getProject());
-                                    if (WidgetsetUtil
-                                            .isWidgetsetManagedByPlugin(file
-                                                    .getProject())) {
-                                        WidgetsetUtil
-                                                .ensureWidgetsetNature(file
-                                                        .getProject());
-                                    }
-                                }
-                                if (WidgetsetUtil
-                                        .isWidgetsetManagedByPlugin(file
-                                                .getProject())) {
-                                    compiled = compileFile(monitor, file);
-                                }
-                            } else if (VaadinFacetUtils
-                                    .isVaadinProject(project)) {
-                                VaadinFacetUtils.fixFacetVersion(project);
-                                if (WidgetsetUtil
-                                        .isWidgetsetManagedByPlugin(project)) {
-                                    WidgetsetUtil
-                                            .ensureWidgetsetNature(project);
-                                    IJavaProject jproject = JavaCore
-                                            .create(project);
-                                    WidgetsetBuildManager.compileWidgetsets(
-                                            jproject, monitor);
-                                    compiled = true;
-                                }
-                            }
-                        }
-                    } else {
-                        IFile file = getFileForEditor(activeEditor);
-                        if (file != null
-                                && WidgetsetUtil
-                                        .isWidgetsetManagedByPlugin(file
-                                                .getProject())) {
+                    if (file != null) {
+                        IProject project = file.getProject();
+                        VaadinFacetUtils.fixFacetVersion(project);
+                        if (WidgetsetUtil.isWidgetsetManagedByPlugin(project)) {
+                            WidgetsetUtil.ensureWidgetsetNature(project);
                             compiled = compileFile(monitor, file);
                         }
                     }
 
+                    // 2. The only gwt.xml found in the selected project
+                    if (!compiled) {
+                        IProject project = ProjectUtil
+                                .getProject(currentSelection);
+                        if (VaadinFacetUtils.isVaadinProject(project)) {
+                            VaadinFacetUtils.fixFacetVersion(project);
+                            if (WidgetsetUtil
+                                    .isWidgetsetManagedByPlugin(project)) {
+                                WidgetsetUtil.ensureWidgetsetNature(project);
+                                IJavaProject jproject = JavaCore
+                                        .create(project);
+                                WidgetsetBuildManager.compileWidgetsets(
+                                        jproject, monitor);
+                                compiled = true;
+                            }
+                        }
+                    }
+
+                    // 3. The only gwt.xml found in the project defined by the
+                    // open editor
+                    if (!compiled) {
+                        file = getFileForEditor(activeEditor);
+                        if (file != null
+                                && WidgetsetUtil
+                                .isWidgetsetManagedByPlugin(file
+                                        .getProject())) {
+                            VaadinFacetUtils.fixFacetVersion(file.getProject());
+                            compiled = compileFile(monitor, file);
+                        }
+                    }
+
+                    // No widget set found
                     if (!compiled) {
                         ErrorUtil
-                                .displayErrorFromBackgroundThread(
-                                        "Select widgetset",
-                                        "Select a widgetset file (..widgetset.gwt.xml) or a Vaadin project to compile.");
+                        .displayErrorFromBackgroundThread(
+                                "Select widgetset",
+                                "Select a widgetset file (..widgetset.gwt.xml) or a Vaadin project to compile.");
                     }
                 } catch (OperationCanceledException e) {
                     // Do nothing if user cancels compilation
@@ -136,6 +119,19 @@ public class CompileWidgetsetHandler extends AbstractVaadinCompileHandler {
         }
         job.setUser(false);
         job.schedule();
+    }
+
+    private static IFile getSelectedFile(ISelection currentSelection) {
+        if (currentSelection instanceof IStructuredSelection
+                && ((IStructuredSelection) currentSelection).size() == 1) {
+            IStructuredSelection ssel = (IStructuredSelection) currentSelection;
+            Object obj = ssel.getFirstElement();
+            if (obj instanceof IFile) {
+                return (IFile) obj;
+            }
+        }
+
+        return null;
     }
 
     // try to compile a file as a GWT widgetset, or if not one, try to
