@@ -15,7 +15,6 @@ import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.jobs.ISchedulingRule;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IEditorPart;
 
 import com.vaadin.integration.eclipse.VaadinFacetUtils;
@@ -25,7 +24,7 @@ import com.vaadin.integration.eclipse.util.ProjectUtil;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
- * 
+ *
  * @see org.eclipse.core.commands.IHandler
  * @see org.eclipse.core.commands.AbstractHandler
  */
@@ -48,45 +47,17 @@ public class CompileThemeHandler extends AbstractVaadinCompileHandler {
                 try {
                     monitor.beginTask("Compiling theme", 1);
 
-                    // find and compile theme(s)
+                    IProject selectedProject = getSelectedProject(
+                            currentSelection, activeEditor);
                     boolean compiled = false;
-                    if (currentSelection instanceof IStructuredSelection
-                            && ((IStructuredSelection) currentSelection).size() == 1) {
-                        IStructuredSelection ssel = (IStructuredSelection) currentSelection;
-                        Object obj = ssel.getFirstElement();
-                        if (obj instanceof IFile) {
-                            IFile file = (IFile) obj;
-                            IProject project = file.getProject();
-                            if (null != project) {
-                                compiled = compileFile(monitor, file);
-                            }
-                        }
-                        if (!compiled) {
-                            IProject project = ProjectUtil
-                                    .getProject(currentSelection);
-                            if (project == null) {
-                                IFile file = getFileForEditor(activeEditor);
-                                if (file != null && file.exists()
-                                        && null != file.getProject()) {
-                                    compiled = compileFile(monitor, file);
-                                }
-                            } else if (null != project) {
-                                compileAllThemes(monitor, project);
-                                compiled = true;
-                            }
-                        }
-                    } else {
-                        IFile file = getFileForEditor(activeEditor);
-                        if (file != null && null != file.getProject()) {
-                            compiled = compileFile(monitor, file);
-                        }
-                    }
+                    compiled = handleIvyProject(currentSelection,
+                            selectedProject, activeEditor, monitor);
 
                     if (!compiled) {
                         ErrorUtil
-                                .displayErrorFromBackgroundThread(
-                                        "Select theme",
-                                        "Select a theme file (.scss) or a Vaadin project to compile.");
+                        .displayErrorFromBackgroundThread(
+                                "Select theme",
+                                "Select a theme file (.scss) or a Vaadin project to compile.");
                     }
                 } catch (OperationCanceledException e) {
                     // Do nothing if user cancels compilation
@@ -99,6 +70,40 @@ public class CompileThemeHandler extends AbstractVaadinCompileHandler {
                     monitor.done();
                 }
                 return Status.OK_STATUS;
+            }
+
+            private boolean handleIvyProject(ISelection currentSelection,
+                    IProject selectedProject, IEditorPart activeEditor,
+                    IProgressMonitor monitor) throws CoreException,
+                    IOException, InterruptedException {
+                // find and compile theme(s)
+                boolean compiled = false;
+
+                // 1. Selected theme file
+                IFile file = getSelectedFile(currentSelection);
+                if (file != null) {
+                    compiled = compileFile(monitor, file);
+                }
+
+                // 2. All themes in the selected project
+                if (!compiled) {
+                    IProject project = ProjectUtil.getProject(currentSelection);
+                    if (VaadinFacetUtils.isVaadinProject(project)) {
+                        compileAllThemes(monitor, project);
+                        compiled = true;
+                    }
+                }
+
+                // 3. The file open in the editor
+                if (!compiled) {
+                    file = getFileForEditor(activeEditor);
+                    if (file != null && file.exists()
+                            && file.getProject() != null) {
+                        compiled = compileFile(monitor, file);
+                    }
+                }
+
+                return compiled;
             }
 
         };

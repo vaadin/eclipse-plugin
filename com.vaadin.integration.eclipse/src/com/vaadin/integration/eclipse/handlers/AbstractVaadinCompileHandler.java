@@ -87,4 +87,35 @@ public abstract class AbstractVaadinCompileHandler extends AbstractHandler {
         }
         return null;
     }
+
+    protected static IFile getSelectedFile(ISelection currentSelection) {
+
+        if (currentSelection instanceof IStructuredSelection
+                && ((IStructuredSelection) currentSelection).size() == 1) {
+            IStructuredSelection ssel = (IStructuredSelection) currentSelection;
+            Object obj = ssel.getFirstElement();
+            if (obj instanceof IFile) {
+                return (IFile) obj;
+            }
+
+        }
+
+        return null;
+    }
+
+    protected static IProject getSelectedProject(ISelection currentSelection,
+            IEditorPart activeEditor) {
+        IProject project = ProjectUtil.getAnyProject(currentSelection);
+        if (project != null) {
+            return project;
+        }
+
+        IFile file = getFileForEditor(activeEditor);
+        if (file != null) {
+            return file.getProject();
+        }
+
+        return null;
+    }
+
 }

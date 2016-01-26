@@ -15,6 +15,7 @@ import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jdt.core.IClasspathContainer;
@@ -39,6 +40,32 @@ import com.vaadin.integration.eclipse.util.files.LocalFileManager;
 
 public class ProjectUtil {
     private static final String DEFAULT_GWT_VERSION = "2.0.4";
+
+    public static IProject getAnyProject(ISelection selection) {
+        IResource resource = extractSelection(selection);
+        if (resource != null) {
+            return resource.getProject();
+        }
+
+        return null;
+    }
+
+    private static IResource extractSelection(ISelection sel) {
+        if (!(sel instanceof IStructuredSelection)) {
+            return null;
+        }
+        IStructuredSelection ss = (IStructuredSelection) sel;
+        Object element = ss.getFirstElement();
+        if (element instanceof IResource) {
+            return (IResource) element;
+        }
+        if (!(element instanceof IAdaptable)) {
+            return null;
+        }
+        IAdaptable adaptable = (IAdaptable) element;
+        Object adapter = adaptable.getAdapter(IResource.class);
+        return (IResource) adapter;
+    }
 
     /**
      * Find a project that has the Vaadin project facet based on a selection.
