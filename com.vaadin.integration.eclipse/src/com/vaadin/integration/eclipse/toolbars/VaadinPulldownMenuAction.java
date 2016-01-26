@@ -189,6 +189,8 @@ public class VaadinPulldownMenuAction implements
 
             String lastAction = PreferenceUtil.get(project)
                     .getPreviousCompileAction();
+            // TODO should use a single job that looks for projects together and
+            // runs both - possibly as a single Maven command
             if (VaadinPlugin.COMPILE_ACTION_THEME.equals(lastAction)
                     || VaadinPlugin.COMPILE_ACTION_BOTH.equals(lastAction)) {
                 CompileThemeHandler.startCompileThemeJob(currentSelection,

@@ -19,6 +19,7 @@ import org.eclipse.ui.IEditorPart;
 
 import com.vaadin.integration.eclipse.VaadinFacetUtils;
 import com.vaadin.integration.eclipse.builder.ThemeCompiler;
+import com.vaadin.integration.eclipse.maven.MavenUtil;
 import com.vaadin.integration.eclipse.util.ErrorUtil;
 import com.vaadin.integration.eclipse.util.ProjectUtil;
 
@@ -50,8 +51,12 @@ public class CompileThemeHandler extends AbstractVaadinCompileHandler {
                     IProject selectedProject = getSelectedProject(
                             currentSelection, activeEditor);
                     boolean compiled = false;
-                    compiled = handleIvyProject(currentSelection,
-                            selectedProject, activeEditor, monitor);
+                    if (MavenUtil.isMavenProject(selectedProject)) {
+                        compiled = MavenUtil.compileTheme(currentSelection);
+                    } else {
+                        compiled = handleIvyProject(currentSelection,
+                                selectedProject, activeEditor, monitor);
+                    }
 
                     if (!compiled) {
                         ErrorUtil

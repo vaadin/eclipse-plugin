@@ -18,6 +18,7 @@ import org.eclipse.ui.IEditorPart;
 
 import com.vaadin.integration.eclipse.VaadinFacetUtils;
 import com.vaadin.integration.eclipse.builder.WidgetsetBuildManager;
+import com.vaadin.integration.eclipse.maven.MavenUtil;
 import com.vaadin.integration.eclipse.util.ErrorUtil;
 import com.vaadin.integration.eclipse.util.ProjectUtil;
 import com.vaadin.integration.eclipse.util.WidgetsetUtil;
@@ -51,8 +52,12 @@ public class CompileWidgetsetHandler extends AbstractVaadinCompileHandler {
                     IProject selectedProject = getSelectedProject(
                             currentSelection, activeEditor);
                     boolean compiled = false;
-                    compiled = handleIvyProject(currentSelection,
-                            selectedProject, activeEditor, monitor);
+                    if (MavenUtil.isMavenProject(selectedProject)) {
+                        compiled = MavenUtil.compileWidgetSet(currentSelection);
+                    } else {
+                        compiled = handleIvyProject(currentSelection,
+                                selectedProject, activeEditor, monitor);
+                    }
 
                     // No widget set found
                     if (!compiled) {
