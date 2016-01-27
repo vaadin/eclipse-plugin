@@ -70,13 +70,13 @@
          </delegate>
       </action>
       <template id="template.vaadin6">
-         <label>Vaadin 6 Project</label>
+         <label>Vaadin 6 Project (deprecated)</label>
          <fixed facet="jst.java"/>
          <fixed facet="jst.web"/>
          <fixed facet="com.vaadin.integration.eclipse.core"/>
       </template>
       <template id="template.vaadin7">
-         <label>Vaadin 7 Project</label>
+         <label>Vaadin 7 Project (deprecated)</label>
          <fixed facet="jst.java"/>
          <fixed facet="jst.web"/>
          <fixed facet="com.vaadin.integration.eclipse.core"/>
@@ -117,7 +117,7 @@
             id="com.vaadin">
       </category>
       <wizard
-            name="Vaadin 6 Project"
+            name="Vaadin 6 Project (deprecated)"
             icon="icons/new-project-16.png"
             category="com.vaadin"
             project="true"
@@ -134,7 +134,7 @@
                class="org.eclipse.core.resources.IResource" />
       </wizard>
       <wizard
-            name="Vaadin 7 Project"
+            name="Vaadin 7 Ivy Project (deprecated)"
             icon="icons/new-project-16.png"
             category="com.vaadin"
             project="true"
