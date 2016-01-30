@@ -1,5 +1,6 @@
 package com.vaadin.integration.eclipse.wizards;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -28,6 +29,10 @@ import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.INewWizard;
 
+import com.vaadin.integration.eclipse.util.ErrorUtil;
+import com.vaadin.integration.eclipse.util.data.MavenVaadinVersion;
+import com.vaadin.integration.eclipse.util.network.MavenVersionManager;
+
 @SuppressWarnings("restriction")
 public class Vaadin7MavenProjectWizard extends AbstractMavenProjectWizard
 implements INewWizard {
@@ -35,7 +40,7 @@ implements INewWizard {
     /** The wizard page for gathering archetype project information. */
     protected MavenProjectWizardArchetypeParametersPage parametersPage;
 
-    private VaadinArchetype vaadinArchetypes[] = new VaadinArchetype[7];
+    private List<VaadinArchetype> vaadinArchetypes = new ArrayList<VaadinArchetype>();
     private VaadinArchetype selectedArchetype = null;
 
     private Vaadin7MavenProjectArchetypeSelectionPage vaadinArchetypeSelectionPage;
@@ -51,44 +56,78 @@ implements INewWizard {
         setDefaultPageImageDescriptor(MavenImages.WIZ_NEW_PROJECT);
         setNeedsProgressMonitor(true);
 
-        // TODO: should be populated automatically
-        vaadinArchetypes[0] = new VaadinArchetype();
-        vaadinArchetypes[0].setTitle("Clean Application");
-        vaadinArchetypes[0]
-                .setDescription("A clean, single module Vaadin application project. \n\nThis is suitable for small applications");
-        vaadinArchetypes[0].setArchtype("vaadin-archetype-application",
-                "com.vaadin", "7.4.2");
+        // TODO: the list should be populated automatically, possibly from
+        // metadata on the server including descriptions from POMs etc.
 
-        // TODO: other archetypes need to be filled
-        vaadinArchetypes[1] = new VaadinArchetype();
-        vaadinArchetypes[1].setTitle("Clean Application, Multi Module");
-        vaadinArchetypes[1]
-                .setDescription("A clean, multi module Vaadin application project. \n\nThis is suitable for more complex applications");
+        // fallback
+        String vaadinVersion = "7.6.1";
+        try {
+            List<MavenVaadinVersion> versions = MavenVersionManager
+                    .getAvailableVersions(true);
+            if (!versions.isEmpty()) {
+                vaadinVersion = versions.get(0).getVersionNumber();
+            }
+        } catch (CoreException e) {
+            // fetching of version list failed - using the default above
+            ErrorUtil.handleBackgroundException(e);
+        }
 
-        vaadinArchetypes[2] = new VaadinArchetype();
-        vaadinArchetypes[2].setTitle("CRUD Example");
-        vaadinArchetypes[2]
-                .setDescription("A multi module example CRUD (create/read/update/delete) Vaadin application containing a login screen, basic access control examples and more\n\nProvides a good example on how you can structure a Vaadin application");
+        vaadinArchetypes
+                .add(new VaadinArchetype(
+                        "Clean Application, Multi Module",
+                        "vaadin-archetype-application-multimodule",
+                        "com.vaadin",
+                        vaadinVersion,
+                        "A clean, multi module Vaadin application project. \n\nThis is suitable for more most applications."));
 
-        vaadinArchetypes[3] = new VaadinArchetype();
-        vaadinArchetypes[3].setTitle("JavaEE CRUD Example");
-        vaadinArchetypes[3]
-                .setDescription("A JavaEE (CDI, EJB, JPA) based multi module example CRUD (create/read/update/delete) Vaadin application containing a login screen, basic access control examples and more.\n\nProvides a good example on how you can structure a Vaadin JavaEE application");
+        vaadinArchetypes
+                .add(new VaadinArchetype(
+                        "Clean Application",
+                        "vaadin-archetype-application",
+                        "com.vaadin",
+                        vaadinVersion,
+                        "A clean, single module Vaadin application project. \n\nThis is suitable for small applications."));
 
-        vaadinArchetypes[4] = new VaadinArchetype();
-        vaadinArchetypes[4].setTitle("Spring CRUD Example");
-        vaadinArchetypes[4]
-                .setDescription("A Spring based multi module example CRUD (create/read/update/delete) Vaadin application containing a login screen, basic access control examples and more.\n\nProvides a good example on how you can structure a Vaadin Spring application");
+        vaadinArchetypes
+                .add(new VaadinArchetype(
+                        "CRUD Example",
+                        "vaadin-archetype-application-example",
+                        "com.vaadin",
+                        vaadinVersion,
+                        "A multi module example CRUD (create/read/update/delete) Vaadin application containing a login screen, basic access control examples and more\n\nProvides a good example on how you can structure a Vaadin application."));
 
-        vaadinArchetypes[5] = new VaadinArchetype();
-        vaadinArchetypes[5].setTitle("Liferay 6 Portlet");
-        vaadinArchetypes[5]
-                .setDescription("Creates a clean Liferay 6 portlet\n\nRequires separate installation of the Liferay Maven Plugin(?)");
+        vaadinArchetypes
+                .add(new VaadinArchetype(
+                        "Add-on widget",
+                        "vaadin-archetype-widget",
+                        "com.vaadin",
+                        vaadinVersion,
+                        "A multi module widget add-on project which provides a good starting point for creating a re-usable Vaadin component including a demo application.\n\nPackages the add-on in a format ready to be deployed to Vaadin Directory"));
 
-        vaadinArchetypes[6] = new VaadinArchetype();
-        vaadinArchetypes[6].setTitle("Add-on widget");
-        vaadinArchetypes[6]
-                .setDescription("A multi module widget add-on project which provides a good starting point for creating a re-usable Vaadin component including a demo application.\n\nPackages the add-on in a format ready to be deployed to Vaadin Directory");
+        // TODO: other archetypes need to be filled in
+        // vaadinArchetypes
+        // .add(new VaadinArchetype(
+        // "JavaEE CRUD Example",
+        // "",
+        // "com.vaadin",
+        // vaadinVersion,
+        // "A JavaEE (CDI, EJB, JPA) based multi module example CRUD (create/read/update/delete) Vaadin application containing a login screen, basic access control examples and more.\n\nProvides a good example on how you can structure a Vaadin JavaEE application."));
+        //
+        // vaadinArchetypes
+        // .add(new VaadinArchetype(
+        // "Spring CRUD Example",
+        // "",
+        // "com.vaadin",
+        // vaadinVersion,
+        // "A Spring based multi module example CRUD (create/read/update/delete) Vaadin application containing a login screen, basic access control examples and more.\n\nProvides a good example on how you can structure a Vaadin Spring application.\nFor Spring Boot projects, alternatively use Spring Initializr at http://start.spring.io ."));
+        //
+        // vaadinArchetypes
+        // .add(new VaadinArchetype(
+        // "Liferay 6 Portlet",
+        // "",
+        // "com.vaadin",
+        // vaadinVersion,
+        // "Creates a clean Liferay 6 portlet\n\nRequires separate installation of the Liferay Maven Plugin(?)"));
     }
 
     @Override
@@ -128,6 +167,8 @@ implements INewWizard {
      * To perform the actual project creation, an operation is created and run
      * using this wizard as execution context. That way, messages about the
      * progress of the project creation are displayed inside the wizard.
+     * 
+     * This method is adapted from MavenProjectWizard.
      */
     @Override
     public boolean performFinish() {
@@ -221,42 +262,39 @@ implements INewWizard {
         getContainer().updateButtons();
     }
 
-    public class VaadinArchetype {
+    public static class VaadinArchetype {
 
         private String title;
         private String description;
-        private Archetype archtype;
+        private Archetype archetype;
+
+        public VaadinArchetype(String title, Archetype archetype,
+                String description) {
+            this.title = title;
+            this.archetype = archetype;
+            this.description = description;
+        }
+
+        public VaadinArchetype(String title, String artifactId, String groupId,
+                String version, String description) {
+            this.title = title;
+            archetype = new Archetype();
+            archetype.setArtifactId(artifactId);
+            archetype.setGroupId(groupId);
+            archetype.setVersion(version);
+            this.description = description;
+        }
 
         public String getTitle() {
             return title;
-        }
-
-        public void setTitle(String title) {
-            this.title = title;
         }
 
         public String getDescription() {
             return description;
         }
 
-        public void setDescription(String description) {
-            this.description = description;
-        }
-
         public Archetype getArchetype() {
-            return archtype;
-        }
-
-        public void setArchtype(Archetype archtype) {
-            this.archtype = archtype;
-        }
-
-        public void setArchtype(String artifactId, String groupId,
-                String version) {
-            archtype = new Archetype();
-            archtype.setArtifactId(artifactId);
-            archtype.setGroupId(groupId);
-            archtype.setVersion(version);
+            return archetype;
         }
     }
 }

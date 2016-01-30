@@ -1,5 +1,7 @@
 package com.vaadin.integration.eclipse.wizards;
 
+import java.util.List;
+
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
@@ -9,11 +11,11 @@ import com.vaadin.integration.eclipse.wizards.Vaadin7MavenProjectWizard.VaadinAr
 public class Vaadin7MavenProjectArchetypeSelectionPage extends WizardPage {
 
     private Vaadin7MavenProjectWizard vaadin7MavenProjectWizard;
-    private VaadinArchetype[] vaadinArchetypes;
+    private List<VaadinArchetype> vaadinArchetypes;
 
     protected Vaadin7MavenProjectArchetypeSelectionPage(
             Vaadin7MavenProjectWizard vaadin7MavenProjectWizard,
-            VaadinArchetype[] vaadinArchetypes) {
+            List<VaadinArchetype> vaadinArchetypes) {
         super("Select Project Type");
 
         this.vaadin7MavenProjectWizard = vaadin7MavenProjectWizard;

@@ -1,10 +1,12 @@
 package com.vaadin.integration.eclipse.wizards;
 
+import java.util.List;
+
 import org.eclipse.jface.wizard.IWizardContainer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -15,7 +17,7 @@ import com.vaadin.integration.eclipse.wizards.Vaadin7MavenProjectWizard.VaadinAr
 public class Vaadin7MavenProjectArchetypeSelectionView extends Composite {
 
     private Vaadin7MavenProjectArchetypeSelectionPage hostPage;
-    private VaadinArchetype[] vaadinArchetypes;
+    private List<VaadinArchetype> vaadinArchetypes;
 
     /**
      * Create the composite.
@@ -26,7 +28,7 @@ public class Vaadin7MavenProjectArchetypeSelectionView extends Composite {
      */
     public Vaadin7MavenProjectArchetypeSelectionView(
             Vaadin7MavenProjectArchetypeSelectionPage hostPage,
-            VaadinArchetype[] vaadinArchetypes, Composite parent, int style) {
+            List<VaadinArchetype> vaadinArchetypes, Composite parent, int style) {
         super(parent, SWT.NONE);
 
         this.hostPage = hostPage;
@@ -37,6 +39,8 @@ public class Vaadin7MavenProjectArchetypeSelectionView extends Composite {
 
     private void createContents(Composite parent) {
         setLayout(new GridLayout(1, false));
+
+        // TODO there should be more standard ways to do selection in Eclipse
 
         ScrolledComposite scrolledComposite = new ScrolledComposite(this,
                 SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
@@ -87,7 +91,7 @@ public class Vaadin7MavenProjectArchetypeSelectionView extends Composite {
     }
 
     private void selectVaadinArchetype(int index) {
-        hostPage.setVaadinArchetype(vaadinArchetypes[index]);
+        hostPage.setVaadinArchetype(vaadinArchetypes.get(index));
     }
 
     @Override
@@ -95,8 +99,7 @@ public class Vaadin7MavenProjectArchetypeSelectionView extends Composite {
         // Disable the check that prevents subclassing of SWT components
     }
 
-    // TODO: Should be replaced with MouseAdapter?
-    private static class MouseClickHandler implements MouseListener {
+    private static class MouseClickHandler extends MouseAdapter {
 
         private static int downItem = -1;
 
@@ -109,18 +112,14 @@ public class Vaadin7MavenProjectArchetypeSelectionView extends Composite {
             this.currentItem = currentItem;
         }
 
-        public void mouseDoubleClick(MouseEvent e) {
-            // Not used.
-        }
-
+        @Override
         public void mouseDown(MouseEvent e) {
             downItem = currentItem;
         }
 
+        @Override
         public void mouseUp(MouseEvent e) {
             if (downItem == currentItem && currentItem > -1) {
-                System.out.println("********** Decision to select item #"
-                        + currentItem);
                 view.selectVaadinArchetype(currentItem);
                 IWizardContainer wizardContainer = view.hostPage.getWizard()
                         .getContainer();
