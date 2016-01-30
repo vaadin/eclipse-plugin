@@ -23,6 +23,7 @@ public class MavenUtil {
         }
     }
 
+    // TODO currently, only project level selection is accepted
     public static void runMavenGoal(final ISelection selection,
             final String goal) {
         Display display = PlatformUI.getWorkbench().getDisplay();
@@ -51,4 +52,8 @@ public class MavenUtil {
         return true;
     }
 
+    public static boolean compileThemeAndWidgetset(ISelection currentSelection) {
+        runMavenGoal(currentSelection, "vaadin:compile-theme vaadin:compile");
+        return true;
+    }
 }

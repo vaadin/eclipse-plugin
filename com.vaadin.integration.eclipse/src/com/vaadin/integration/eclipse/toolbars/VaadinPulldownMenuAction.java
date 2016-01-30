@@ -21,6 +21,7 @@ import org.eclipse.ui.IWorkbenchWindowPulldownDelegate;
 import org.eclipse.ui.PlatformUI;
 
 import com.vaadin.integration.eclipse.VaadinPlugin;
+import com.vaadin.integration.eclipse.handlers.CompileThemeAndWidgetsetHandler;
 import com.vaadin.integration.eclipse.handlers.CompileThemeHandler;
 import com.vaadin.integration.eclipse.handlers.CompileWidgetsetHandler;
 import com.vaadin.integration.eclipse.util.ErrorUtil;
@@ -132,9 +133,8 @@ public class VaadinPulldownMenuAction implements
                         persistCompileAction(project,
                                 VaadinPlugin.COMPILE_ACTION_BOTH);
 
-                        CompileThemeHandler.startCompileThemeJob(
-                                currentSelection, activeEditor, project);
-                        CompileWidgetsetHandler.startCompileWidgetsetJob(
+                        CompileThemeAndWidgetsetHandler
+                                .startCompileThemeAndWidgetsetJob(
                                 currentSelection, activeEditor, project);
                     }
                 }
@@ -189,17 +189,16 @@ public class VaadinPulldownMenuAction implements
 
             String lastAction = PreferenceUtil.get(project)
                     .getPreviousCompileAction();
-            // TODO should use a single job that looks for projects together and
-            // runs both - possibly as a single Maven command
-            if (VaadinPlugin.COMPILE_ACTION_THEME.equals(lastAction)
-                    || VaadinPlugin.COMPILE_ACTION_BOTH.equals(lastAction)) {
+            if (VaadinPlugin.COMPILE_ACTION_THEME.equals(lastAction)) {
                 CompileThemeHandler.startCompileThemeJob(currentSelection,
                         activeEditor, project);
-            }
-            if (VaadinPlugin.COMPILE_ACTION_WIDGETSET.equals(lastAction)
-                    || VaadinPlugin.COMPILE_ACTION_BOTH.equals(lastAction)) {
+            } else if (VaadinPlugin.COMPILE_ACTION_WIDGETSET.equals(lastAction)) {
                 CompileWidgetsetHandler.startCompileWidgetsetJob(
                         currentSelection, activeEditor, project);
+            } else if (VaadinPlugin.COMPILE_ACTION_BOTH.equals(lastAction)) {
+                CompileThemeAndWidgetsetHandler
+                        .startCompileThemeAndWidgetsetJob(currentSelection,
+                                activeEditor, project);
             }
         }
     }
