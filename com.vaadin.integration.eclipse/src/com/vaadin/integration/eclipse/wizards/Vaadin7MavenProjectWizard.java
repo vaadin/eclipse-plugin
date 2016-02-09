@@ -78,7 +78,7 @@ implements INewWizard {
                         "vaadin-archetype-application-multimodule",
                         "com.vaadin",
                         vaadinVersion,
-                        "A clean, multi module Vaadin application project. \n\nThis is suitable for more most applications."));
+                        "A clean, multi module Vaadin application project. \n\nThis is suitable for most applications."));
 
         vaadinArchetypes
                 .add(new VaadinArchetype(
