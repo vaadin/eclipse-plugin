@@ -2,7 +2,6 @@ package com.vaadin.integration.eclipse.handlers;
 
 import java.io.IOException;
 
-import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -74,30 +73,6 @@ public class CompileThemeAndWidgetsetHandler extends AbstractVaadinCompileHandle
                 // Also log the exception
                 ErrorUtil.handleBackgroundException(IStatus.ERROR,
                         "Theme or widgetset compilation failed", e);
-            }
-
-            @Override
-            protected boolean compileSelectedFile(IProgressMonitor monitor,
-                    IFile file) throws CoreException, IOException,
-                    InterruptedException {
-                // unused - see handleIvyProject()
-                return false;
-            }
-
-            @Override
-            protected boolean compileProject(IProgressMonitor monitor,
-                    IProject project) throws CoreException, IOException,
-                    InterruptedException {
-                // unused - see handleIvyProject()
-                return false;
-            }
-
-            @Override
-            protected boolean compileEditorOpenFile(IProgressMonitor monitor,
-                    IFile file) throws CoreException, IOException,
-                    InterruptedException {
-                // unused - see handleIvyProject()
-                return false;
             }
 
         };

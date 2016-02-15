@@ -157,6 +157,9 @@ public abstract class AbstractCompileJob extends Job {
     /**
      * Trigger compilation based on a single file selection.
      * 
+     * This method is typically overridden by subclasses and called by
+     * {@link #handleIvyProject(ISelection, IEditorPart, IProgressMonitor)}.
+     * 
      * @param monitor
      *            progress monitor
      * @param file
@@ -166,11 +169,17 @@ public abstract class AbstractCompileJob extends Job {
      * @throws IOException
      * @throws InterruptedException
      */
-    protected abstract boolean compileSelectedFile(IProgressMonitor monitor,
-            IFile file) throws CoreException, IOException, InterruptedException;
+    protected boolean compileSelectedFile(IProgressMonitor monitor, IFile file)
+            throws CoreException, IOException, InterruptedException {
+        // typically overridden and called by handleIvyProject
+        return false;
+    }
 
     /**
      * Trigger compilation based on a single file selection.
+     * 
+     * This method is typically overridden by subclasses and called by
+     * {@link #handleIvyProject(ISelection, IEditorPart, IProgressMonitor)}.
      * 
      * @param monitor
      *            progress monitor
@@ -182,12 +191,18 @@ public abstract class AbstractCompileJob extends Job {
      * @throws IOException
      * @throws InterruptedException
      */
-    protected abstract boolean compileProject(IProgressMonitor monitor,
+    protected boolean compileProject(IProgressMonitor monitor,
             IProject project) throws CoreException, IOException,
-            InterruptedException;
-
+            InterruptedException {
+        // typically overridden and called by handleIvyProject
+        return false;
+    }
+    
     /**
      * Trigger compilation based on a file that is open in an editor.
+     * 
+     * This method is typically overridden by subclasses and called by
+     * {@link #handleIvyProject(ISelection, IEditorPart, IProgressMonitor)}.
      * 
      * @param monitor
      *            progress monitor
@@ -198,8 +213,11 @@ public abstract class AbstractCompileJob extends Job {
      * @throws IOException
      * @throws InterruptedException
      */
-    protected abstract boolean compileEditorOpenFile(
+    protected boolean compileEditorOpenFile(
             IProgressMonitor monitor, IFile file)
-                    throws CoreException, IOException, InterruptedException;
+            throws CoreException, IOException, InterruptedException {
+        // typically overridden and called by handleIvyProject
+        return false;
+    }
 
 }
