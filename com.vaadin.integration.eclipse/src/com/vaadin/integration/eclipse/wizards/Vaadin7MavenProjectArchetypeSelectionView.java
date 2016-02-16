@@ -15,22 +15,15 @@ import com.vaadin.integration.eclipse.wizards.Vaadin7MavenProjectWizard.VaadinAr
 
 public class Vaadin7MavenProjectArchetypeSelectionView extends Composite {
 
-    private Vaadin7MavenProjectArchetypeSelectionPage hostPage;
-    private List<VaadinArchetype> vaadinArchetypes;
+    private final List<VaadinArchetype> vaadinArchetypes;
+    private final ArchetypeSelectionCallback callback;
 
-    /**
-     * Create the composite.
-     *
-     * @param hostPage
-     * @param parent
-     * @param style
-     */
     public Vaadin7MavenProjectArchetypeSelectionView(
-            Vaadin7MavenProjectArchetypeSelectionPage hostPage,
+            ArchetypeSelectionCallback callback,
             List<VaadinArchetype> vaadinArchetypes, Composite parent, int style) {
         super(parent, SWT.NONE);
 
-        this.hostPage = hostPage;
+        this.callback = callback;
         this.vaadinArchetypes = vaadinArchetypes;
 
         createContents(parent);
@@ -90,7 +83,7 @@ public class Vaadin7MavenProjectArchetypeSelectionView extends Composite {
     }
 
     private void selectVaadinArchetype(int index) {
-        hostPage.setVaadinArchetype(vaadinArchetypes.get(index));
+        callback.onArchetypeSelect(vaadinArchetypes.get(index));
     }
 
     @Override

@@ -8,22 +8,27 @@ import org.eclipse.swt.widgets.Composite;
 
 import com.vaadin.integration.eclipse.wizards.Vaadin7MavenProjectWizard.VaadinArchetype;
 
-public class Vaadin7MavenProjectArchetypeSelectionPage extends WizardPage {
+public class Vaadin7MavenProjectArchetypeSelectionPage extends WizardPage
+        implements ArchetypeSelectionCallback {
 
-    private List<VaadinArchetype> vaadinArchetypes;
+    private final List<VaadinArchetype> vaadinArchetypes;
+    private final ArchetypeSelectionCallback callback;
     private VaadinArchetype selectedArchetype;
 
     protected Vaadin7MavenProjectArchetypeSelectionPage(
+            ArchetypeSelectionCallback callback,
             List<VaadinArchetype> vaadinArchetypes) {
         super("Select Project Type");
 
+        this.callback = callback;
         this.vaadinArchetypes = vaadinArchetypes;
         this.selectedArchetype = vaadinArchetypes.get(0);
     }
 
-    public void setVaadinArchetype(VaadinArchetype vaadinArchetype) {
-        selectedArchetype = vaadinArchetype;
+    public void onArchetypeSelect(VaadinArchetype archetype) {
+        selectedArchetype = archetype;
 
+        callback.onArchetypeSelect(archetype);
         getContainer().showPage(getNextPage());
     }
 
@@ -42,5 +47,4 @@ public class Vaadin7MavenProjectArchetypeSelectionPage extends WizardPage {
     public VaadinArchetype getVaadinArchetype() {
         return selectedArchetype;
     }
-
 }

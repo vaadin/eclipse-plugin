@@ -17,11 +17,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
-import org.eclipse.jface.dialogs.IPageChangeProvider;
-import org.eclipse.jface.dialogs.IPageChangedListener;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.dialogs.PageChangedEvent;
-import org.eclipse.jface.wizard.IWizardContainer;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.internal.IMavenConstants;
 import org.eclipse.m2e.core.ui.internal.MavenImages;
@@ -39,7 +35,7 @@ import com.vaadin.integration.eclipse.util.network.MavenVersionManager;
 
 @SuppressWarnings("restriction")
 public class Vaadin7MavenProjectWizard extends AbstractMavenProjectWizard
-        implements INewWizard {
+        implements INewWizard, ArchetypeSelectionCallback {
 
     /** The wizard page for gathering archetype project information. */
     protected MavenProjectWizardArchetypeParametersPage parametersPage;
@@ -134,27 +130,12 @@ public class Vaadin7MavenProjectWizard extends AbstractMavenProjectWizard
     }
 
     @Override
-    public void setContainer(IWizardContainer container) {
-        super.setContainer(container);
-
-        if (container instanceof IPageChangeProvider) {
-            ((IPageChangeProvider) container)
-                    .addPageChangedListener(new IPageChangedListener() {
-
-                        public void pageChanged(PageChangedEvent arg0) {
-                            setVaadinArchetype();
-                        }
-                    });
-        }
-    }
-
-    @Override
     public void addPages() {
         /*
          * Vaadin Archetype selection page.
          */
         vaadinArchetypeSelectionPage = new Vaadin7MavenProjectArchetypeSelectionPage(
-                vaadinArchetypes);
+                this, vaadinArchetypes);
 
         /*
          * Archetype parameters page. The only needed page for Vaadin Archetype.
@@ -273,9 +254,8 @@ public class Vaadin7MavenProjectWizard extends AbstractMavenProjectWizard
         return true;
     }
 
-    private void setVaadinArchetype() {
-        parametersPage.setArchetype(vaadinArchetypeSelectionPage
-                .getVaadinArchetype().getArchetype());
+    public void onArchetypeSelect(VaadinArchetype archetype) {
+        parametersPage.setArchetype(archetype.getArchetype());
         parametersPage.setUsed(true);
         parametersPage.updatePropertyEditors();
 
