@@ -10,20 +10,21 @@ import com.vaadin.integration.eclipse.wizards.Vaadin7MavenProjectWizard.VaadinAr
 
 public class Vaadin7MavenProjectArchetypeSelectionPage extends WizardPage {
 
-    private Vaadin7MavenProjectWizard vaadin7MavenProjectWizard;
     private List<VaadinArchetype> vaadinArchetypes;
+    private VaadinArchetype selectedArchetype;
 
     protected Vaadin7MavenProjectArchetypeSelectionPage(
-            Vaadin7MavenProjectWizard vaadin7MavenProjectWizard,
             List<VaadinArchetype> vaadinArchetypes) {
         super("Select Project Type");
 
-        this.vaadin7MavenProjectWizard = vaadin7MavenProjectWizard;
         this.vaadinArchetypes = vaadinArchetypes;
+        this.selectedArchetype = vaadinArchetypes.get(0);
     }
 
     public void setVaadinArchetype(VaadinArchetype vaadinArchetype) {
-        vaadin7MavenProjectWizard.setVaadinArchetype(vaadinArchetype);
+        selectedArchetype = vaadinArchetype;
+
+        getContainer().showPage(getNextPage());
     }
 
     public void createControl(Composite parent) {
@@ -32,4 +33,14 @@ public class Vaadin7MavenProjectArchetypeSelectionPage extends WizardPage {
         setControl(new Vaadin7MavenProjectArchetypeSelectionView(this,
                 vaadinArchetypes, parent, SWT.NONE));
     }
+
+    @Override
+    public boolean isPageComplete() {
+        return selectedArchetype != null && super.isPageComplete();
+    }
+
+    public VaadinArchetype getVaadinArchetype() {
+        return selectedArchetype;
+    }
+
 }

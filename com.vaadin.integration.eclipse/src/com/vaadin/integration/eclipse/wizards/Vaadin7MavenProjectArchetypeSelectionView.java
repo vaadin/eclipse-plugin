@@ -2,7 +2,6 @@ package com.vaadin.integration.eclipse.wizards;
 
 import java.util.List;
 
-import org.eclipse.jface.wizard.IWizardContainer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.MouseAdapter;
@@ -121,11 +120,6 @@ public class Vaadin7MavenProjectArchetypeSelectionView extends Composite {
         public void mouseUp(MouseEvent e) {
             if (downItem == currentItem && currentItem > -1) {
                 view.selectVaadinArchetype(currentItem);
-                IWizardContainer wizardContainer = view.hostPage.getWizard()
-                        .getContainer();
-
-                wizardContainer.showPage(wizardContainer.getCurrentPage()
-                        .getNextPage());
             } else {
                 downItem = -1;
             }
