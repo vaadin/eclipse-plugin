@@ -76,7 +76,7 @@
          <fixed facet="com.vaadin.integration.eclipse.core"/>
       </template>
       <template id="template.vaadin7">
-         <label>Vaadin 7 Project (deprecated)</label>
+         <label>Vaadin 7 Ivy Project (deprecated)</label>
          <fixed facet="jst.java"/>
          <fixed facet="jst.web"/>
          <fixed facet="com.vaadin.integration.eclipse.core"/>

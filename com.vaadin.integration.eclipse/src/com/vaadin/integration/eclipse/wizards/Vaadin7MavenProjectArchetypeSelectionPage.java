@@ -2,6 +2,8 @@ package com.vaadin.integration.eclipse.wizards;
 
 import java.util.List;
 
+import org.eclipse.jface.wizard.IWizardContainer;
+import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
@@ -29,7 +31,14 @@ public class Vaadin7MavenProjectArchetypeSelectionPage extends WizardPage
         selectedArchetype = archetype;
 
         callback.onArchetypeSelect(archetype);
-        getContainer().showPage(getNextPage());
+
+        // TODO: This should be removed once selected archetype highlighting is
+        // implemented
+        IWizardContainer container = getContainer();
+        IWizardPage nextPage = getNextPage();
+        if (container != null && nextPage != null) {
+            container.showPage(nextPage);
+        }
     }
 
     public void createControl(Composite parent) {

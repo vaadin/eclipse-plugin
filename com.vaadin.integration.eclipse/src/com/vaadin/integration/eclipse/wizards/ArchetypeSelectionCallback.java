@@ -5,14 +5,12 @@ import com.vaadin.integration.eclipse.wizards.Vaadin7MavenProjectWizard.VaadinAr
 /**
  * Simple callback interface for receiving information about selected
  * {@link VaadinArchetype}.
- * 
- * @since
  */
 public interface ArchetypeSelectionCallback {
 
     /**
      * Called when {@link VaadinArchetype} has been selected.
-     * 
+     *
      * @param archetype
      *            selected vaadin archetype
      */

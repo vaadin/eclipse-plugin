@@ -147,16 +147,6 @@ public class Vaadin7MavenProjectWizard extends AbstractMavenProjectWizard
         addPage(parametersPage);
     }
 
-    // Replaced by setVaadinArchetype()
-    // @Override
-    // public void createPageControls(Composite pageContainer) {
-    // super.createPageControls(pageContainer);
-    // parametersPage.setUsed(true);
-    // parametersPage.setArchetype(getArchetype());
-    //
-    // getContainer().updateButtons();
-    // }
-
     /** Returns the model. */
     public Model getModel() {
         return parametersPage.getModel();
