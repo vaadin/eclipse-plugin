@@ -168,7 +168,7 @@ public class Vaadin7MavenProjectWizard extends AbstractMavenProjectWizard
                 // overriding this class.
 
                 // If package is not customized before setting visible, we
-                // should restrore it to not being customized.
+                // should restore it to not being customized.
                 boolean shouldRestore = !packageCustomized;
 
                 super.setVisible(visible);
@@ -177,10 +177,8 @@ public class Vaadin7MavenProjectWizard extends AbstractMavenProjectWizard
                 String artifact = artifactIdCombo.getText();
 
                 // Only restore if groupId and artifactId match the defaults.
-                if (shouldRestore
-                        && (group != null && group.equals(DEFAULT_GROUP_ID))
-                        && (artifact != null && artifact
-                                .equals(DEFAULT_ARTIFACT_ID))) {
+                if (shouldRestore && (DEFAULT_GROUP_ID.equals(group))
+                        && (DEFAULT_ARTIFACT_ID.equals(artifact))) {
                     packageCustomized = false;
                 }
             }
