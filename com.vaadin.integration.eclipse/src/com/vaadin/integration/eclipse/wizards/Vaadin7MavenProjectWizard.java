@@ -143,20 +143,46 @@ public class Vaadin7MavenProjectWizard extends AbstractMavenProjectWizard
         parametersPage = new MavenProjectWizardArchetypeParametersPage(
                 importConfiguration) {
 
+            private static final String DEFAULT_GROUP_ID = "com.example";
+            private static final String DEFAULT_ARTIFACT_ID = "myapplication";
+
             @Override
             public void createControl(Composite parent) {
                 super.createControl(parent);
 
                 // Input some default values.
                 if (groupIdCombo.getText().isEmpty()) {
-                    groupIdCombo.setText("com.example");
+                    groupIdCombo.setText(DEFAULT_GROUP_ID);
                 }
 
                 if (artifactIdCombo.getText().isEmpty()) {
-                    artifactIdCombo.setText("myapplication");
+                    artifactIdCombo.setText(DEFAULT_ARTIFACT_ID);
                 }
+            }
 
-                updateJavaPackage();
+            @Override
+            public void setVisible(boolean visible) {
+                // This is a workaround for setVisible setting package as
+                // customized, even though the user never actually customized
+                // it. The customization from wizards point of view was done by
+                // overriding this class.
+
+                // If package is not customized before setting visible, we
+                // should restrore it to not being customized.
+                boolean shouldRestore = !packageCustomized;
+
+                super.setVisible(visible);
+
+                String group = groupIdCombo.getText();
+                String artifact = artifactIdCombo.getText();
+
+                // Only restore if groupId and artifactId match the defaults.
+                if (shouldRestore
+                        && (group != null && group.equals(DEFAULT_GROUP_ID))
+                        && (artifact != null && artifact
+                                .equals(DEFAULT_ARTIFACT_ID))) {
+                    packageCustomized = false;
+                }
             }
         };
 
