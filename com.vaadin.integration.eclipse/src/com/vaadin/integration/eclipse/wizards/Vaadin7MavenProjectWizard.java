@@ -25,6 +25,7 @@ import org.eclipse.m2e.core.ui.internal.Messages;
 import org.eclipse.m2e.core.ui.internal.wizards.AbstractMavenProjectWizard;
 import org.eclipse.m2e.core.ui.internal.wizards.MavenProjectWizardArchetypeParametersPage;
 import org.eclipse.osgi.util.NLS;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.INewWizard;
 
@@ -140,7 +141,24 @@ public class Vaadin7MavenProjectWizard extends AbstractMavenProjectWizard
          * Archetype parameters page. The only needed page for Vaadin Archetype.
          */
         parametersPage = new MavenProjectWizardArchetypeParametersPage(
-                importConfiguration);
+                importConfiguration) {
+
+            @Override
+            public void createControl(Composite parent) {
+                super.createControl(parent);
+
+                // Input some default values.
+                if (groupIdCombo.getText().isEmpty()) {
+                    groupIdCombo.setText("com.example");
+                }
+
+                if (artifactIdCombo.getText().isEmpty()) {
+                    artifactIdCombo.setText("myapplication");
+                }
+
+                updateJavaPackage();
+            }
+        };
 
         addPage(vaadinArchetypeSelectionPage);
         addPage(parametersPage);
