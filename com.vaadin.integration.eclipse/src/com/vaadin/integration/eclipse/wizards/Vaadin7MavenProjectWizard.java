@@ -77,7 +77,7 @@ public class Vaadin7MavenProjectWizard extends AbstractMavenProjectWizard
                         "vaadin-archetype-application",
                         "com.vaadin",
                         vaadinVersion,
-                        "Creates a simple Vaadin application.\n\nPuts everything in one module."));
+                        "A template for a simple Vaadin application.\n\nPuts everything in one module."));
 
         vaadinArchetypes
                 .add(new VaadinArchetype(
@@ -85,7 +85,7 @@ public class Vaadin7MavenProjectWizard extends AbstractMavenProjectWizard
                         "vaadin-archetype-application-multimodule",
                         "com.vaadin",
                         vaadinVersion,
-                        "Creates a more complex Vaadin project.\n\nSeparates deployment, UI and widgetset into separate Maven modules."));
+                        "A template for a more complex Vaadin project.\n\nSeparates deployment, UI and widgetset into separate Maven modules."));
 
         vaadinArchetypes
                 .add(new VaadinArchetype(
