@@ -73,19 +73,27 @@ public class Vaadin7MavenProjectWizard extends AbstractMavenProjectWizard
 
         vaadinArchetypes
                 .add(new VaadinArchetype(
-                        "Clean Application, Multi Module",
-                        "vaadin-archetype-application-multimodule",
-                        "com.vaadin",
-                        vaadinVersion,
-                        "A clean, multi module Vaadin application project. \n\nThis is suitable for most applications."));
-
-        vaadinArchetypes
-                .add(new VaadinArchetype(
-                        "Clean Application",
+                        "Single-module Application Project",
                         "vaadin-archetype-application",
                         "com.vaadin",
                         vaadinVersion,
-                        "A clean, single module Vaadin application project. \n\nThis is suitable for small applications."));
+                        "A template for a simple Vaadin application.\n\nPuts everything in one module."));
+
+        vaadinArchetypes
+                .add(new VaadinArchetype(
+                        "Multi-module Application Project",
+                        "vaadin-archetype-application-multimodule",
+                        "com.vaadin",
+                        vaadinVersion,
+                        "A template for a more complex Vaadin project.\n\nSeparates deployment, UI and widgetset into separate Maven modules."));
+
+        vaadinArchetypes
+                .add(new VaadinArchetype(
+                        "Add-on Project",
+                        "vaadin-archetype-widget",
+                        "com.vaadin",
+                        vaadinVersion,
+                        "A multi-module widget add-on project for creating a re-usable Vaadin component, including a demo application.\n\nPackages the add-on in a format ready to be deployed to Vaadin Directory."));
 
         vaadinArchetypes
                 .add(new VaadinArchetype(
@@ -93,15 +101,8 @@ public class Vaadin7MavenProjectWizard extends AbstractMavenProjectWizard
                         "vaadin-archetype-application-example",
                         "com.vaadin",
                         vaadinVersion,
-                        "A multi module example CRUD (create/read/update/delete) Vaadin application containing a login screen, basic access control examples and more\n\nProvides a good example on how you can structure a Vaadin application."));
-
-        vaadinArchetypes
-                .add(new VaadinArchetype(
-                        "Add-on widget",
-                        "vaadin-archetype-widget",
-                        "com.vaadin",
-                        vaadinVersion,
-                        "A multi module widget add-on project which provides a good starting point for creating a re-usable Vaadin component including a demo application.\n\nPackages the add-on in a format ready to be deployed to Vaadin Directory"));
+                        "A multi-module example CRUD (create/read/update/delete) application containing a login screen, basic access control examples and more.\n\nProvides a good example on how you can structure a Vaadin application."
+));
 
         // TODO: other archetypes need to be filled in
         // vaadinArchetypes
