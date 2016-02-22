@@ -6,9 +6,11 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 
 import com.vaadin.integration.eclipse.wizards.Vaadin7MavenProjectWizard.VaadinArchetype;
@@ -16,20 +18,23 @@ import com.vaadin.integration.eclipse.wizards.Vaadin7MavenProjectWizard.VaadinAr
 public class Vaadin7MavenProjectArchetypeSelectionView extends Composite {
 
     private final List<VaadinArchetype> vaadinArchetypes;
-    private final ArchetypeSelectionCallback callback;
+    private final Composite archetypesComposite;
+
+    private VaadinArchetype selectedArchetype;
 
     public Vaadin7MavenProjectArchetypeSelectionView(
-            ArchetypeSelectionCallback callback,
             List<VaadinArchetype> vaadinArchetypes, Composite parent, int style) {
         super(parent, SWT.NONE);
 
-        this.callback = callback;
         this.vaadinArchetypes = vaadinArchetypes;
 
-        createContents(parent);
+        archetypesComposite = createContents(parent);
+
+        // this default selection should be done by the wizard
+        selectVaadinArchetype(vaadinArchetypes.get(0));
     }
 
-    private void createContents(Composite parent) {
+    private Composite createContents(Composite parent) {
         setLayout(new GridLayout(1, false));
 
         // TODO there should be more standard ways to do selection in Eclipse
@@ -47,18 +52,16 @@ public class Vaadin7MavenProjectArchetypeSelectionView extends Composite {
         scrolledComposite.setExpandVertical(true);
         scrolledComposite.setContent(main);
 
-        addMouseListener(new MouseClickHandler(this, -1));
+        addMouseListener(new MouseClickHandler(this, null));
 
-        int i = 0;
         for (VaadinArchetype vaadinArch : vaadinArchetypes) {
             MouseClickHandler mouseClickHandler = new MouseClickHandler(this,
-                    i++);
+                    vaadinArch);
 
             Composite composite = new Composite(main, SWT.NONE);
+            composite.setData(vaadinArch);
             composite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true,
                     false, 1, 1));
-            composite.setBackground(parent.getDisplay().getSystemColor(
-                    SWT.COLOR_WHITE));
             GridLayout glComposite = new GridLayout(1, false);
             glComposite.marginLeft = 32;
             composite.setLayout(glComposite);
@@ -66,10 +69,6 @@ public class Vaadin7MavenProjectArchetypeSelectionView extends Composite {
 
             Label lblTitle = new Label(composite, SWT.NONE);
             lblTitle.setText(vaadinArch.getTitle());
-            // TODO use default font for now - otherwise, need to update the
-            // code below and handle disposal of font
-            // lblTitle.setFont(SWTResourceManager.getFont(
-            // ".Helvetica Neue DeskInterface", 16, SWT.BOLD));
             lblTitle.addMouseListener(mouseClickHandler);
 
             Label lblDescription = new Label(composite, SWT.WRAP);
@@ -80,10 +79,51 @@ public class Vaadin7MavenProjectArchetypeSelectionView extends Composite {
             lblDescription.setText(vaadinArch.getDescription());
             lblDescription.addMouseListener(mouseClickHandler);
         }
+
+        return main;
     }
 
-    private void selectVaadinArchetype(int index) {
-        callback.onArchetypeSelect(vaadinArchetypes.get(index));
+    public VaadinArchetype getVaadinArchetype() {
+        return selectedArchetype;
+    }
+
+    public void selectVaadinArchetype(VaadinArchetype archetype) {
+        selectedArchetype = archetype;
+
+        updateHighlight(archetype);
+    }
+
+    private void updateHighlight(VaadinArchetype archetype) {
+        Color unselectedBackgroundColor = archetypesComposite.getDisplay()
+                .getSystemColor(SWT.COLOR_LIST_BACKGROUND);
+        Color selectedBackgroundColor = archetypesComposite.getDisplay()
+                .getSystemColor(SWT.COLOR_LIST_SELECTION);
+        Color unselectedTextColor = archetypesComposite.getDisplay()
+                .getSystemColor(SWT.COLOR_LIST_FOREGROUND);
+        Color selectedTextColor = archetypesComposite.getDisplay()
+                .getSystemColor(SWT.COLOR_LIST_SELECTION_TEXT);
+
+        // update highlight
+        for (Control archetypeComposite : archetypesComposite.getChildren()) {
+            if (archetypeComposite instanceof Composite
+                    && archetypeComposite.getData() == archetype) {
+                updateColors((Composite) archetypeComposite,
+                        selectedBackgroundColor,
+                        selectedTextColor);
+            } else {
+                updateColors((Composite) archetypeComposite,
+                        unselectedBackgroundColor,
+                        unselectedTextColor);
+            }
+        }
+    }
+
+    private void updateColors(Composite archetypeComposite,
+            Color backgroundColor, Color textColor) {
+        archetypeComposite.setBackground(backgroundColor);
+        for (Control child : archetypeComposite.getChildren()) {
+            child.setForeground(textColor);
+        }
     }
 
     @Override
@@ -93,13 +133,14 @@ public class Vaadin7MavenProjectArchetypeSelectionView extends Composite {
 
     private static class MouseClickHandler extends MouseAdapter {
 
-        private static int downItem = -1;
+        private static VaadinArchetype downItem = null;
 
         private Vaadin7MavenProjectArchetypeSelectionView view;
-        private int currentItem;
+        private VaadinArchetype currentItem;
 
         public MouseClickHandler(
-                Vaadin7MavenProjectArchetypeSelectionView view, int currentItem) {
+                Vaadin7MavenProjectArchetypeSelectionView view,
+                VaadinArchetype currentItem) {
             this.view = view;
             this.currentItem = currentItem;
         }
@@ -111,10 +152,10 @@ public class Vaadin7MavenProjectArchetypeSelectionView extends Composite {
 
         @Override
         public void mouseUp(MouseEvent e) {
-            if (downItem == currentItem && currentItem > -1) {
+            if (downItem == currentItem && currentItem != null) {
                 view.selectVaadinArchetype(currentItem);
             } else {
-                downItem = -1;
+                downItem = null;
             }
         }
     }
