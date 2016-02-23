@@ -7,15 +7,15 @@
       plugin="com.vaadin.integration.eclipse">
 
    <description url="http://vaadin.com/">
-      Vaadin Plug-in for Eclipse helps you to create and maintain Vaadin projects, widgetsets, widgets and more.
+      Contains the Vaadin WYSISYG editor which is no longer supported. It can still be used to maintain existing designs.
    </description>
 
    <copyright>
-      Copyright 2010-2015 Vaadin Ltd.
+      Copyright 2010-2016 Vaadin Ltd.
    </copyright>
 
    <license url="http://www.apache.org/licenses/LICENSE-2.0">
-      Copyright 2010-2015 Vaadin Ltd.
+      Copyright 2010-2016 Vaadin Ltd.
 Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0

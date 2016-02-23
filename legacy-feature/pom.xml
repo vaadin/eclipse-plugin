@@ -7,9 +7,7 @@
     <artifactId>integration-root</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
-  <!-- We have two identical artifactIds for historical reasons.
-       To distinguish between them, a different groupID is necessary.  -->
   <groupId>com.vaadin.eclipse.feature</groupId>
-  <artifactId>com.vaadin.integration.eclipse.legacy</artifactId>  
+  <artifactId>com.vaadin.integration.eclipse.legacy</artifactId>
   <packaging>eclipse-feature</packaging>
 </project>
