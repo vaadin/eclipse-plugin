@@ -5,4 +5,8 @@
   <feature url="features/com.vaadin.integration.eclipse_0.1.0-SNAPSHOT.jar" id="com.vaadin.integration.eclipse" version="0.1.0.qualifier">
     <category name="vaadin"/>
   </feature>
+
+  <feature url="features/com.vaadin.integration.eclipse.legacy_0.1.0-SNAPSHOT.jar" id="com.vaadin.integration.eclipse.legacy" version="0.1.0.qualifier">
+    <category name="vaadin-legacy"/>
+  </feature>
 </site>

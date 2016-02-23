@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="com.vaadin.integration.eclipse"
+      id="com.vaadin.integration.eclipse.legacy"
       label="Vaadin Plug-in for Eclipse"
       version="0.1.0.qualifier"
       provider-name="Vaadin Ltd"
@@ -61,6 +61,6 @@ permissions and limitations under the License.
          download-size="0"
          install-size="0"
          version="0.0.0"
-         unpack="false"/> 
+         unpack="false"/>
 
 </feature>
