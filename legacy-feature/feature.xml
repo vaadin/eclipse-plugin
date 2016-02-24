@@ -7,7 +7,7 @@
       plugin="com.vaadin.integration.eclipse">
 
    <description url="http://vaadin.com/">
-      Contains the Vaadin WYSISYG editor which is no longer supported. It can still be used to maintain existing designs.
+      Contains the deprecated Vaadin WYSISYG editor, which has been superceded by the Vaadin Designer that provides the same functionality and more. The old WYSIWYG editor can still be used to maintain existing designs. 
    </description>
 
    <copyright>
