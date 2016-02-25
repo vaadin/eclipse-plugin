@@ -21,7 +21,7 @@ public class Vaadin7MavenProjectArchetypeSelectionPage extends WizardPage {
     }
 
     public void createControl(Composite parent) {
-        // set by the qizard for all pages
+        // set by the wizard for all pages
         // setTitle(Vaadin7MavenProjectWizard.WIZARD_PAGE_TITLE);
 
         setDescription("Select a Maven archetype");
