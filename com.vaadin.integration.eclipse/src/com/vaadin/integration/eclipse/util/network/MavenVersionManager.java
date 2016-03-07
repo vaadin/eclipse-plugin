@@ -23,7 +23,7 @@ import com.vaadin.integration.eclipse.util.ErrorUtil;
 import com.vaadin.integration.eclipse.util.data.MavenVaadinVersion;
 import com.vaadin.integration.eclipse.util.files.LocalFileManager;
 import com.vaadin.integration.eclipse.util.files.LocalFileManager.FileType;
-import com.vaadin.integration.eclipse.wizards.Vaadin7MavenProjectWizard.VaadinArchetype;
+import com.vaadin.integration.eclipse.wizards.VaadinArchetype;
 
 public class MavenVersionManager {
 
@@ -54,30 +54,27 @@ public class MavenVersionManager {
     public static synchronized List<VaadinArchetype> getAvailableArtifacts() {
         if (availableArchetypes == null) {
             try {
-                downloadArchetypes();
+                loadAndCacheResource(AVAILABLE_VAADIN_ARTIFACTS_URL,
+                        ARCHETYPES_FILE_NAME);
             } catch (IOException e) {
                 ErrorUtil
                         .handleBackgroundException(
                                 "Failed to retrieve Vaadin archetypes list from server",
                                 e);
             }
-        }
-        if (availableArchetypes == null) {
             try {
                 availableArchetypes = loadCachedArchetypes();
             } catch (CoreException e) {
                 ErrorUtil.handleBackgroundException(
                         "Failed to load cached Vaadin archetypes", e);
             }
+            if (availableArchetypes == null){
+                availableArchetypes = loadDefaultArchetypes();
+            }
         }
-        if (availableArchetypes == null)
-            availableArchetypes = loadDefaultArchetypes();
         return availableArchetypes;
     }
 
-    private static void downloadArchetypes() throws IOException {
-        loadAndCacheResource(AVAILABLE_VAADIN_ARTIFACTS_URL, ARCHETYPES_FILE_NAME);
-    }
 
     private static List<VaadinArchetype> loadCachedArchetypes()
             throws CoreException {
