@@ -11,6 +11,8 @@ import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.VerifyEvent;
+import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Combo;
@@ -174,6 +176,11 @@ public class NewThemeWizardPage extends WizardPage {
         }
         String themeName = getThemeName();
 
+        if(!themeName.matches("^[-_a-zA-Z0-9]+$")) {
+            updateStatus("Wrong theme name");
+            return;
+        }
+
         if (container == null
                 || (container.getType() & (IResource.PROJECT | IResource.FOLDER)) == 0) {
             updateStatus("No suitable project found");
@@ -200,7 +207,7 @@ public class NewThemeWizardPage extends WizardPage {
     }
 
     public String getThemeName() {
-        return themeName.getText();
+        return themeName.getText().trim();
     }
 
     public IProject getProject() {
