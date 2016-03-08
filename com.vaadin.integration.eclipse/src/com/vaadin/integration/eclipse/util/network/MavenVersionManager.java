@@ -95,7 +95,7 @@ public class MavenVersionManager {
     }
 
     private static List<VaadinArchetype> loadDefaultArchetypes() {
-        InputStream is = MavenVersionManager.class.getResourceAsStream("default-maven-archetypes.xml");
+        InputStream is = MavenVersionManager.class.getResourceAsStream("/resources/default-maven-archetypes.xml");
         try 
         {
             return parseArchetypesStream(is);
