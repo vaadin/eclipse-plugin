@@ -137,7 +137,7 @@
       </activation>
       <modules>
         <module>com.vaadin.integration.eclipse</module>
-         <module>feature</module>
+        <module>feature</module>
       </modules>
     </profile>
     <profile>
