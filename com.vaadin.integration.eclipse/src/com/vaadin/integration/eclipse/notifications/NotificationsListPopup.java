@@ -46,7 +46,7 @@ class NotificationsListPopup extends AbstractPopup {
     private NotificationsListComposite notificationsList;
 
     private final UpdateManagerImpl updateManager = new UpdateManagerImpl();
-    private ActiveControlListener mouseListener = new ActiveControlListener();
+    private ActiveControlListener closeListener = new ActiveControlListener();
 
     private StackLayout mainLayout;
 
@@ -89,15 +89,15 @@ class NotificationsListPopup extends AbstractPopup {
 
         super.create();
 
-        mouseListener = new ActiveControlListener();
+        closeListener = new ActiveControlListener();
         PlatformUI.getWorkbench().getDisplay()
-                .addFilter(SWT.MouseDown, mouseListener);
+                .addFilter(SWT.MouseDown, closeListener);
         PlatformUI.getWorkbench().getDisplay()
-                .addFilter(SWT.FocusOut, mouseListener);
+                .addFilter(SWT.FocusOut, closeListener);
         PlatformUI.getWorkbench().getDisplay()
-                .addFilter(SWT.KeyDown, mouseListener);
+                .addFilter(SWT.KeyDown, closeListener);
         PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell()
-                .addListener(SWT.Resize, mouseListener);
+                .addListener(SWT.Resize, closeListener);
 
         switch (ContributionService.getInstance().getViewMode()) {
         case SIGN_IN:
@@ -124,10 +124,11 @@ class NotificationsListPopup extends AbstractPopup {
             return true;
         }
         window.getShell().getDisplay()
-                .removeFilter(SWT.MouseDown, mouseListener);
-        window.getShell().removeListener(SWT.Resize, mouseListener);
+                .removeFilter(SWT.MouseDown, closeListener);
+        window.getShell().removeListener(SWT.Resize, closeListener);
+        window.getShell().getDisplay().removeFilter(SWT.KeyDown, closeListener);
         PlatformUI.getWorkbench().getDisplay()
-                .removeFilter(SWT.FocusOut, mouseListener);
+                .removeFilter(SWT.FocusOut, closeListener);
         nullComposite.getShell().dispose();
         nullComposite.dispose();
         return super.close();
@@ -315,12 +316,15 @@ class NotificationsListPopup extends AbstractPopup {
             updateTitle();
 
             Composite main = mainLayout.topControl.getParent();
-            mainLayout.topControl = new SignInComposite(main, updateManager);
+            SignInComposite signIn = new SignInComposite(main, updateManager);
+            mainLayout.topControl = signIn;
             main.layout();
 
             clearAll.setVisible(false);
             ContributionService.getInstance()
                     .setViewMode(PopupViewMode.SIGN_IN);
+
+            signIn.focus();
         }
 
         public void showNotification(Notification notification) {
@@ -333,6 +337,8 @@ class NotificationsListPopup extends AbstractPopup {
             clearAll.setVisible(false);
             ContributionService.getInstance().setViewMode(
                     PopupViewMode.NOTIFICATION);
+
+            mainLayout.topControl.forceFocus();
         }
 
         public void close() {
@@ -342,9 +348,13 @@ class NotificationsListPopup extends AbstractPopup {
         public void showTokenInput() {
             updateTitle();
             Composite main = mainLayout.topControl.getParent();
-            mainLayout.topControl = new TokenInputComposite(main, updateManager);
+            TokenInputComposite tokenInput = new TokenInputComposite(main,
+                    updateManager);
+            mainLayout.topControl = tokenInput;
             main.layout();
             ContributionService.getInstance().setViewMode(PopupViewMode.TOKEN);
+
+            tokenInput.focus();
         }
 
         public void showNotificationsList() {
@@ -473,7 +483,7 @@ class NotificationsListPopup extends AbstractPopup {
             }
             if (isCloseEvent(event)) {
                 getShell().getDisplay().removeFilter(SWT.MouseDown,
-                        mouseListener);
+                        closeListener);
                 // There can be "deadlock like" situation: if close() is
                 // scheduled via async call while main window is resizing then
                 // UI freezes.
