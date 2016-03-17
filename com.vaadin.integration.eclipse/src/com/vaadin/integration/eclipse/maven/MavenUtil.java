@@ -5,6 +5,8 @@ import org.apache.maven.model.PluginExecution;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
@@ -104,7 +106,8 @@ public class MavenUtil {
         return projectFacade;
     }
 
-    private static void runMavenGoals(IProject project, String pluginGroupId,
+    private static boolean runMavenGoals(IProject project,
+            String pluginGroupId,
             String pluginArtifactId, String prefix, String... goals)
             throws CoreException {
         IMavenProjectFacade facade = getMavenProjectFacade(project);
@@ -123,22 +126,37 @@ public class MavenUtil {
         }
         if (!enabledGoals.isEmpty()) {
             runMavenGoal(project, enabledGoals);
+            return true;
+        } else if (!facade.getMavenProjectModules().isEmpty()) {
+            // iterate over subprojects and do the same
+            boolean executed = false;
+            IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace()
+                    .getRoot();
+            // find sub-projects
+            IProject[] projects = workspaceRoot.getProjects();
+            for (IProject p : projects) {
+                if (project.isOpen() && isMavenProject(p)) {
+                    if (project.getLocation().isPrefixOf(p.getLocation())
+                            && !p.equals(project)) {
+                        executed = runMavenGoals(p, pluginGroupId,
+                                pluginArtifactId, prefix, goals) || executed;
+                    }
+                }
+            }
+            return executed;
         } else {
-            // TODO iterate over subprojects and do the same
-
-            // final fallback: just execute all goals on the originally selected
-            // project
-            runMavenGoal(project, allGoals);
+            return false;
         }
-
     }
 
     public static boolean compileWidgetSet(IProject project) {
         try {
-            runMavenGoals(project, VAADIN_MAVEN_PLUGIN_GROUP_ID,
+            if (!runMavenGoals(project, VAADIN_MAVEN_PLUGIN_GROUP_ID,
                     VAADIN_MAVEN_PLUGIN_ARTIFACT_ID,
-                    VAADIN_MAVEN_PLUGIN_PREFIX, "update-widgetset",
-                    "compile");
+                    VAADIN_MAVEN_PLUGIN_PREFIX, "update-widgetset", "compile")) {
+                // fallback: run in the selected project and hope it works
+                runMavenGoal(project, "vaadin:update-widgetset vaadin:compile");
+            }
             return true;
         } catch (CoreException e) {
             return false;
@@ -147,10 +165,13 @@ public class MavenUtil {
 
     public static boolean compileTheme(IProject project) {
         try {
-            runMavenGoals(project, VAADIN_MAVEN_PLUGIN_GROUP_ID,
+            if (!runMavenGoals(project, VAADIN_MAVEN_PLUGIN_GROUP_ID,
                     VAADIN_MAVEN_PLUGIN_ARTIFACT_ID,
-                    VAADIN_MAVEN_PLUGIN_PREFIX, "update-theme",
-                    "compile-theme");
+                    VAADIN_MAVEN_PLUGIN_PREFIX, "update-theme", "compile-theme")) {
+                // fallback: run in the selected project and hope it works
+                runMavenGoal(project,
+                        "vaadin:update-theme vaadin:compile-theme");
+            }
             return true;
         } catch (CoreException e) {
             return false;
@@ -159,10 +180,15 @@ public class MavenUtil {
 
     public static boolean compileThemeAndWidgetset(IProject project) {
         try {
-            runMavenGoals(project, VAADIN_MAVEN_PLUGIN_GROUP_ID,
+            if (!runMavenGoals(project, VAADIN_MAVEN_PLUGIN_GROUP_ID,
                     VAADIN_MAVEN_PLUGIN_ARTIFACT_ID,
                     VAADIN_MAVEN_PLUGIN_PREFIX, "update-theme",
-                    "update-widgetset", "compile-theme", "compile");
+                    "update-widgetset", "compile-theme", "compile")) {
+                // fallback: run in the selected project and hope it works
+                runMavenGoal(
+                        project,
+                        "vaadin:update-theme vaadin:update-widgetset vaadin:compile-theme vaadin:compile");
+            }
             return true;
         } catch (CoreException e) {
             return false;
