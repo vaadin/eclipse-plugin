@@ -10,10 +10,6 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.debug.core.ILaunchManager;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.m2e.actions.ExecutePomAction;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.internal.IMavenConstants;
 import org.eclipse.m2e.core.project.IMavenProjectFacade;
@@ -39,25 +35,16 @@ public class MavenUtil {
         }
     }
 
-    public static void runMavenGoal(IProject project,
+    public static void runMavenGoal(final IProject project,
             final String goal) {
-        // Convert selection if necessary as runMavenGoal only
-        // understands certain kinds of selection.
-        // We only need to know the project, as it is only used to find
-        // the base directory.
-        final IStructuredSelection selection = new StructuredSelection(project);
-
         Display display = PlatformUI.getWorkbench().getDisplay();
         if (!display.isDisposed()) {
             // this needs to be done in the UI thread and will trigger a
             // background job
             display.asyncExec(new Runnable() {
                 public void run() {
-                    // TODO using internal package of m2e - can this be avoided
-                    // without excessive duplication of code?
-                    ExecutePomAction exec = new ExecutePomAction();
-                    exec.setInitializationData(null, "", goal);
-                    exec.launch(selection, ILaunchManager.RUN_MODE);
+                    ExecuteVaadinPomAction exec = new ExecuteVaadinPomAction();
+                    exec.launch(project, goal);
                 }
             });
         }
