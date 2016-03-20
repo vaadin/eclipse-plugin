@@ -17,6 +17,18 @@ import org.eclipse.m2e.core.embedder.IMaven;
 import org.eclipse.m2e.core.project.configurator.MojoExecutionBuildParticipant;
 import org.sonatype.plexus.build.incremental.BuildContext;
 
+/**
+ * An m2e build participant that automatically triggers the execution of
+ * appropriate vaadin-maven-plugin goals on resource changes (Eclipse builds)
+ * and refreshes possibly changed resources after each mojo execution.
+ * 
+ * This class is called once for every Vaadin mojo execution in a build.
+ * 
+ * The POM file in the project can override the use of the configurator that
+ * triggers this build participant either by omitting an execution entry to
+ * disable this or by explicitly defining another action for one or more of the
+ * goals in the m2e configuration in the pluginManagement section.
+ */
 public class VaadinMojoExecutionBuildParticipant
     extends MojoExecutionBuildParticipant
 {
