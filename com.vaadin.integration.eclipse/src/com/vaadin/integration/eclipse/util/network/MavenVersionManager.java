@@ -45,8 +45,9 @@ public class MavenVersionManager {
 
 
     private static List<MavenVaadinVersion> availableVersions;
-    
-    private static List<VaadinArchetype> availableArchetypes;
+
+    private static List<VaadinArchetype> releaseArchetypes;
+    private static List<VaadinArchetype> prereleaseArchetypes;
 
     /**
      * Returns a list of available Vaadin archetypes. It is not guaranteed that
@@ -59,7 +60,7 @@ public class MavenVersionManager {
      */
     public static synchronized List<VaadinArchetype> getAvailableArchetypes(
             boolean includePrereleases) {
-        if (availableArchetypes == null) {
+        if (releaseArchetypes == null) {
             try {
                 loadAndCacheResource(AVAILABLE_VAADIN_ARCHETYPES_URL,
                         ARCHETYPES_FILE_NAME);
@@ -70,24 +71,25 @@ public class MavenVersionManager {
                                 e);
             }
             try {
-                availableArchetypes = loadCachedArchetypes(ARCHETYPES_FILE_NAME);
+                releaseArchetypes = loadCachedArchetypes(ARCHETYPES_FILE_NAME);
             } catch (CoreException e) {
                 ErrorUtil.handleBackgroundException(
                         "Failed to load cached Vaadin archetypes", e);
             }
 
             if (includePrereleases) {
-                // if this fails, just ignore it
+                // if anything here fails, just ignore all pre-releases
                 try {
                     loadAndCacheResource(
                             AVAILABLE_VAADIN_PRERELEASE_ARCHETYPES_URL,
                             PRERELEASE_ARCHETYPES_FILE_NAME);
-                    List<VaadinArchetype> prereleaseArchetypes = loadCachedArchetypes(PRERELEASE_ARCHETYPES_FILE_NAME);
-                    for (VaadinArchetype prereleaseArchetype : prereleaseArchetypes) {
-                        prereleaseArchetype.getArchetype().setRepository(
-                                PRERELEASE_REPOSITORY_URL);
+                    prereleaseArchetypes = loadCachedArchetypes(PRERELEASE_ARCHETYPES_FILE_NAME);
+                    if (prereleaseArchetypes != null) {
+                        for (VaadinArchetype prereleaseArchetype : prereleaseArchetypes) {
+                            prereleaseArchetype.getArchetype().setRepository(
+                                    PRERELEASE_REPOSITORY_URL);
+                        }
                     }
-                    availableArchetypes.addAll(prereleaseArchetypes);
                 } catch (Exception e) {
                     ErrorUtil
                             .handleBackgroundException(
@@ -96,10 +98,17 @@ public class MavenVersionManager {
                 }
             }
 
-            if (availableArchetypes == null){
-                availableArchetypes = loadDefaultArchetypes();
+            if (releaseArchetypes == null) {
+                releaseArchetypes = loadDefaultArchetypes();
             }
         }
+
+        List<VaadinArchetype> availableArchetypes = new ArrayList<VaadinArchetype>(
+                releaseArchetypes);
+        if (includePrereleases && prereleaseArchetypes != null) {
+            availableArchetypes.addAll(prereleaseArchetypes);
+        }
+
         return availableArchetypes;
     }
 
