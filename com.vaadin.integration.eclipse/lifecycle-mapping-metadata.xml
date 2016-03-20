@@ -7,8 +7,8 @@
         <artifactId>vaadin-maven-plugin</artifactId>
         <versionRange>[7.6.0,)</versionRange>
         <goals>
-<!--
           <goal>update-widgetset</goal>
+<!--
           <goal>compile</goal>
 -->
           <goal>update-theme</goal>

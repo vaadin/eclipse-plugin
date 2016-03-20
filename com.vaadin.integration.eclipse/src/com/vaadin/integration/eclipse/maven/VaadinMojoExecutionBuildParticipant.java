@@ -20,6 +20,13 @@ import org.sonatype.plexus.build.incremental.BuildContext;
 public class VaadinMojoExecutionBuildParticipant
     extends MojoExecutionBuildParticipant
 {
+    private static final String UPDATE_THEME_GOAL = "update-theme";
+    private static final String COMPILE_THEME_GOAL = "compile-theme";
+    private static final String UPDATE_WIDGETSET_GOAL = "update-widgetset";
+
+    private static final String RELATIVE_THEME_DIRECTORY = "VAADIN/themes";
+    private static final String GENERATED_WIDGETSET_DIRECTORY_PARAMETER = "generatedWidgetsetDirectory";
+
     private static final IMaven maven = MavenPlugin.getMaven();
 
     public VaadinMojoExecutionBuildParticipant( MojoExecution execution )
@@ -34,7 +41,7 @@ public class VaadinMojoExecutionBuildParticipant
         BuildContext buildContext = getBuildContext();
 
         // skip executing the goal if no relevant files have changed
-        if (!appliesToGoal(buildContext, monitor)) {
+        if (!appliesToGoal(kind, buildContext, monitor)) {
             return null;
         }
 
@@ -47,11 +54,32 @@ public class VaadinMojoExecutionBuildParticipant
         return result;
     }
 
-    private boolean appliesToGoal(BuildContext buildContext,
+    private boolean appliesToGoal(int kind, BuildContext buildContext,
             IProgressMonitor monitor) throws CoreException {
-        if (isGoal("update-theme") || isGoal("compile-theme")) {
+        if (isGoal(UPDATE_THEME_GOAL) || isGoal(COMPILE_THEME_GOAL)) {
             for (File themeDir : getThemeDirectories(monitor)) {
-                if (themeDir.exists() && scanDirectory(buildContext, themeDir)) {
+                if (themeDir.exists()
+                        && scanDirectory(buildContext, themeDir, null)) {
+                    return true;
+                }
+            }
+            return false;
+        } else if (isGoal(UPDATE_WIDGETSET_GOAL)) {
+            // a full build may have dependency changes
+            if (kind == FULL_BUILD || kind == PRECONFIGURE_BUILD) {
+                return true;
+            }
+            // trigger if dependencies change - other cases below
+            if (kind == AUTO_BUILD) {
+                if (buildContext.hasDelta("pom.xml")) {
+                    return true;
+                }
+            }
+            // otherwise, only scan for changes in .gwt.xml files
+            for (File resourceDir : getUpdateWidgetsetTriggerDirectories(monitor)) {
+                if (resourceDir.exists()
+                        && scanDirectory(buildContext, resourceDir,
+                                "**/*.gwt.xml")) {
                     return true;
                 }
             }
@@ -62,9 +90,13 @@ public class VaadinMojoExecutionBuildParticipant
         return false;
     }
 
-    private boolean scanDirectory(BuildContext buildContext, File source) {
+    private boolean scanDirectory(BuildContext buildContext, File source,
+            String filter) {
         // scan the source directory for applicable files
         Scanner ds = buildContext.newScanner(source); // delta or full
+        if (filter != null) {
+            ds.setIncludes(new String[] { filter });
+        }
         ds.scan();
         String[] includedFiles = ds.getIncludedFiles();
         if (includedFiles == null || includedFiles.length <= 0) {
@@ -80,10 +112,18 @@ public class VaadinMojoExecutionBuildParticipant
     private void refreshTarget(BuildContext buildContext,
             IProgressMonitor monitor)
             throws CoreException {
-        if (isGoal("update-theme") || isGoal("compile-theme")) {
+        if (isGoal(UPDATE_THEME_GOAL) || isGoal(COMPILE_THEME_GOAL)) {
             for (File themeDir : getThemeDirectories(monitor)) {
                 if (themeDir.exists()) {
                     buildContext.refresh(themeDir);
+                }
+            }
+        } else if (isGoal(UPDATE_WIDGETSET_GOAL)) {
+            // refresh locations where the updated widgetset might have been
+            // written
+            for (File refreshable : getUpdateWidgetsetRefreshables(monitor)) {
+                if (refreshable.exists()) {
+                    buildContext.refresh(refreshable);
                 }
             }
         }
@@ -97,11 +137,39 @@ public class VaadinMojoExecutionBuildParticipant
         File basedir = project.getBasedir();
         Build build = project.getBuild();
 
-        result.add(new File(basedir, "src/main/webapp/VAADIN/themes"));
+        result.add(new File(basedir, "src/main/webapp/"
+                + RELATIVE_THEME_DIRECTORY));
         for (Resource resource : build.getResources()) {
-            result.add(new File(resource.getDirectory(), "VAADIN/themes"));
+            result.add(new File(resource.getDirectory(),
+                    RELATIVE_THEME_DIRECTORY));
         }
-        result.add(new File(build.getSourceDirectory(), "VAADIN/themes"));
+        result.add(new File(build.getSourceDirectory(),
+                RELATIVE_THEME_DIRECTORY));
+
+        return result;
+    }
+
+    private Collection<File> getUpdateWidgetsetTriggerDirectories(
+            IProgressMonitor monitor) throws CoreException {
+        ArrayList<File> result = new ArrayList<File>();
+
+        MavenProject project = getMavenProject(monitor);
+        Build build = project.getBuild();
+
+        result.add(new File(build.getSourceDirectory()));
+        for (Resource resource : build.getResources()) {
+            result.add(new File(resource.getDirectory(), ""));
+        }
+
+        return result;
+    }
+
+    private Collection<File> getUpdateWidgetsetRefreshables(
+            IProgressMonitor monitor) throws CoreException {
+        Collection<File> result = getUpdateWidgetsetTriggerDirectories(monitor);
+
+        result.add(getMojoParameterValue(
+                GENERATED_WIDGETSET_DIRECTORY_PARAMETER, File.class, monitor));
 
         return result;
     }
@@ -109,5 +177,11 @@ public class VaadinMojoExecutionBuildParticipant
     private MavenProject getMavenProject(IProgressMonitor monitor)
             throws CoreException {
         return getMavenProjectFacade().getMavenProject( monitor );
+    }
+
+    private <T> T getMojoParameterValue(String name, Class<T> type,
+            IProgressMonitor monitor) throws CoreException {
+        return maven.getMojoParameterValue(getMavenProject(monitor),
+                getMojoExecution(), name, type, monitor);
     }
 }
