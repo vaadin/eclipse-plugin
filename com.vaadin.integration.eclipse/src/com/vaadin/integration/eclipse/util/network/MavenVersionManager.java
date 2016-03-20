@@ -27,15 +27,22 @@ import com.vaadin.integration.eclipse.wizards.VaadinArchetype;
 
 public class MavenVersionManager {
 
+    private static final String PRERELEASE_REPOSITORY_URL = "http://maven.vaadin.com/vaadin-prereleases/";
+
     private static final String VERSIONS_FILE_NAME = "VERSIONS_7";
 
     private static final String ARCHETYPES_FILE_NAME = "maven-archetypes.xml";
+    private static final String PRERELEASE_ARCHETYPES_FILE_NAME = "maven-archetypes-prerelease.xml";
 
     private static final String AVAILABLE_VAADIN_VERSIONS_7_URL = DownloadManager.VAADIN_DOWNLOAD_BASE_URL
             + VERSIONS_FILE_NAME;
 
     private static final String AVAILABLE_VAADIN_ARCHETYPES_URL = DownloadManager.VAADIN_DOWNLOAD_BASE_URL
             + ARCHETYPES_FILE_NAME;
+
+    private static final String AVAILABLE_VAADIN_PRERELEASE_ARCHETYPES_URL = DownloadManager.VAADIN_DOWNLOAD_BASE_URL
+            + PRERELEASE_ARCHETYPES_FILE_NAME;
+
 
     private static List<MavenVaadinVersion> availableVersions;
     
@@ -45,10 +52,13 @@ public class MavenVersionManager {
      * Returns a list of available Vaadin archetypes. It is not guaranteed that
      * the list is fetched from the site every time this is called.
      * 
+     * @param includePrereleases
+     *            true to also return pre-release versions of archetypes
      * @return A sorted list of available Vaadin archetypes
      * @throws CoreException
      */
-    public static synchronized List<VaadinArchetype> getAvailableArchetypes() {
+    public static synchronized List<VaadinArchetype> getAvailableArchetypes(
+            boolean includePrereleases) {
         if (availableArchetypes == null) {
             try {
                 loadAndCacheResource(AVAILABLE_VAADIN_ARCHETYPES_URL,
@@ -60,11 +70,32 @@ public class MavenVersionManager {
                                 e);
             }
             try {
-                availableArchetypes = loadCachedArchetypes();
+                availableArchetypes = loadCachedArchetypes(ARCHETYPES_FILE_NAME);
             } catch (CoreException e) {
                 ErrorUtil.handleBackgroundException(
                         "Failed to load cached Vaadin archetypes", e);
             }
+
+            if (includePrereleases) {
+                // if this fails, just ignore it
+                try {
+                    loadAndCacheResource(
+                            AVAILABLE_VAADIN_PRERELEASE_ARCHETYPES_URL,
+                            PRERELEASE_ARCHETYPES_FILE_NAME);
+                    List<VaadinArchetype> prereleaseArchetypes = loadCachedArchetypes(PRERELEASE_ARCHETYPES_FILE_NAME);
+                    for (VaadinArchetype prereleaseArchetype : prereleaseArchetypes) {
+                        prereleaseArchetype.getArchetype().setRepository(
+                                PRERELEASE_REPOSITORY_URL);
+                    }
+                    availableArchetypes.addAll(prereleaseArchetypes);
+                } catch (Exception e) {
+                    ErrorUtil
+                            .handleBackgroundException(
+                                    "Failed to load the list of pre-release archetypes",
+                                    e);
+                }
+            }
+
             if (availableArchetypes == null){
                 availableArchetypes = loadDefaultArchetypes();
             }
@@ -72,10 +103,9 @@ public class MavenVersionManager {
         return availableArchetypes;
     }
 
-
-    private static List<VaadinArchetype> loadCachedArchetypes()
+    private static List<VaadinArchetype> loadCachedArchetypes(String filename)
             throws CoreException {
-        File file = getCacheFile(ARCHETYPES_FILE_NAME);
+        File file = getCacheFile(filename);
         InputStream is = null;
         try {
             is = new BufferedInputStream(new FileInputStream(file));

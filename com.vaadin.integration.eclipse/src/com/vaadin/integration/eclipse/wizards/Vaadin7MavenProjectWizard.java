@@ -77,7 +77,8 @@ public class Vaadin7MavenProjectWizard extends AbstractMavenProjectWizard
         setHelpAvailable(true);
         setNeedsProgressMonitor(true);
 
-        vaadinArchetypes = MavenVersionManager.getAvailableArchetypes();
+        // TODO use a parameter for the pre-release flag
+        vaadinArchetypes = MavenVersionManager.getAvailableArchetypes(false);
     }
 
     @Override
