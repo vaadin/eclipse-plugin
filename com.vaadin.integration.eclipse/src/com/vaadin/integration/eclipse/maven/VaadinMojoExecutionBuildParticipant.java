@@ -19,6 +19,9 @@ import org.eclipse.m2e.core.embedder.IMaven;
 import org.eclipse.m2e.core.project.configurator.MojoExecutionBuildParticipant;
 import org.sonatype.plexus.build.incremental.BuildContext;
 
+import com.vaadin.integration.eclipse.VaadinPlugin;
+import com.vaadin.integration.eclipse.preferences.PreferenceConstants;
+
 /**
  * An m2e build participant that automatically triggers the execution of
  * appropriate vaadin-maven-plugin goals on resource changes (Eclipse builds)
@@ -108,7 +111,15 @@ public class VaadinMojoExecutionBuildParticipant extends
                 }
             }
         } else if (isGoal(COMPILE_WIDGETSET_GOAL)) {
-            // TODO: check for "Automatic widgetset build" setting.
+            boolean automaticBuildsEnabled = VaadinPlugin
+                    .getInstance()
+                    .getPreferenceStore()
+                    .getBoolean(
+                            PreferenceConstants.MAVEN_WIDGETSET_AUTOMATIC_BUILD_ENABLED);
+
+            if (!automaticBuildsEnabled) {
+                return false;
+            }
 
             if (!(kind == PRECONFIGURE_BUILD || kind == AUTO_BUILD || kind == FULL_BUILD)) {
                 // Skip clean builds and incremental builds
@@ -172,8 +183,11 @@ public class VaadinMojoExecutionBuildParticipant extends
                 }
             }
         } else if (isGoal(COMPILE_WIDGETSET_GOAL)) {
-            buildContext.refresh(getMojoParameterValue("webappDirectory",
-                    File.class, monitor));
+            File webappDirectory = getMojoParameterValue("webappDirectory",
+                    File.class, monitor);
+            if (webappDirectory != null && webappDirectory.exists()) {
+                buildContext.refresh(webappDirectory);
+            }
         }
     }
 
