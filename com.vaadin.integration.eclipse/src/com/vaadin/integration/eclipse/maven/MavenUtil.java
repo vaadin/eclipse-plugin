@@ -35,8 +35,7 @@ public class MavenUtil {
         }
     }
 
-    public static void runMavenGoal(final IProject project,
-            final String goal) {
+    public static void runMavenGoal(final IProject project, final String goal) {
         Display display = PlatformUI.getWorkbench().getDisplay();
         if (!display.isDisposed()) {
             // this needs to be done in the UI thread and will trigger a
@@ -94,21 +93,18 @@ public class MavenUtil {
     }
 
     private static boolean runMavenGoals(IProject project,
-            String pluginGroupId,
-            String pluginArtifactId, String prefix, String... goals)
-            throws CoreException {
+            String pluginGroupId, String pluginArtifactId, String prefix,
+            String... goals) throws CoreException {
         IMavenProjectFacade facade = getMavenProjectFacade(project);
         MavenProject mavenProject = facade
                 .getMavenProject(new NullProgressMonitor());
         String enabledGoals = "";
         String allGoals = "";
-        for (String goal : goals)
-         {
+        for (String goal : goals) {
             allGoals = allGoals + prefix + goal + " ";
             if (definesPluginExecution(mavenProject, pluginGroupId,
                     pluginArtifactId, goal)) {
-                enabledGoals = enabledGoals + prefix + goal
-                        + " ";
+                enabledGoals = enabledGoals + prefix + goal + " ";
             }
         }
         if (!enabledGoals.isEmpty()) {
@@ -169,8 +165,10 @@ public class MavenUtil {
         try {
             if (!runMavenGoals(project, VAADIN_MAVEN_PLUGIN_GROUP_ID,
                     VAADIN_MAVEN_PLUGIN_ARTIFACT_ID,
-                    VAADIN_MAVEN_PLUGIN_PREFIX, "update-theme",
-                    "update-widgetset", "compile-theme", "compile")) {
+                    VAADIN_MAVEN_PLUGIN_PREFIX, /*
+                                                 * "update-theme",
+                                                 * "update-widgetset",
+                                                 */"compile-theme", "compile")) {
                 // fallback: run in the selected project and hope it works
                 runMavenGoal(
                         project,
