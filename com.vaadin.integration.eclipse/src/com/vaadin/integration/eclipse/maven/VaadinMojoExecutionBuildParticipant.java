@@ -33,6 +33,8 @@ import org.sonatype.plexus.build.incremental.BuildContext;
  */
 public class VaadinMojoExecutionBuildParticipant extends
         MojoExecutionBuildParticipant {
+    private static final String COMPILE_WIDGETSET_GOAL = "compile";
+    private static final String WS_UPDATED_FILE = "ws-updated";
     private static final String UPDATE_THEME_GOAL = "update-theme";
     private static final String COMPILE_THEME_GOAL = "compile-theme";
     private static final String UPDATE_WIDGETSET_GOAL = "update-widgetset";
@@ -75,19 +77,23 @@ public class VaadinMojoExecutionBuildParticipant extends
                 }
             }
             return false;
-        } else if (isGoal(UPDATE_WIDGETSET_GOAL)) {
+        } else if (!isGoal(UPDATE_WIDGETSET_GOAL)
+                && !isGoal(COMPILE_WIDGETSET_GOAL)) {
+            return false;
+        }
+
+        if (isGoal(UPDATE_WIDGETSET_GOAL)) {
             // a full build may have dependency changes
             if (kind == FULL_BUILD || kind == PRECONFIGURE_BUILD) {
                 return true;
-            }
-            // trigger if dependencies change - other cases below
-            if (kind == AUTO_BUILD) {
+            } else if (kind == AUTO_BUILD) {
+                // trigger if dependencies change - other cases below
                 if (buildContext.hasDelta("pom.xml")) {
                     return true;
                 } else {
                     File wsUpdateFile = new File(getMavenProjectFacade()
                             .getMavenProject().getBuild().getDirectory(),
-                            "ws-updated");
+                            WS_UPDATED_FILE);
                     if (!wsUpdateFile.exists()) {
                         try {
                             buildContext.newFileOutputStream(wsUpdateFile)
@@ -101,18 +107,32 @@ public class VaadinMojoExecutionBuildParticipant extends
                     }
                 }
             }
-            // otherwise, only scan for changes in .gwt.xml files
-            for (File resourceDir : getUpdateWidgetsetTriggerDirectories(monitor)) {
-                if (resourceDir.exists()
-                        && scanDirectory(buildContext, resourceDir,
-                                "**/*.gwt.xml")) {
-                    return true;
-                }
+        } else if (isGoal(COMPILE_WIDGETSET_GOAL)) {
+            // TODO: check for "Automatic widgetset build" setting.
+
+            if (!(kind == PRECONFIGURE_BUILD || kind == AUTO_BUILD || kind == FULL_BUILD)) {
+                // Skip clean builds and incremental builds
+                return false;
             }
-            return false;
+
+            File wsFolder = getMojoParameterValue("webappDirectory",
+                    File.class, monitor);
+            if (wsFolder != null && !wsFolder.exists()) {
+                return true;
+            } else if (buildContext.hasDelta("pom.xml")) {
+                return true;
+            }
         }
 
-        // no changes that we know should trigger a build => don't trigger one
+        // Applies to update and compile widgetset
+        // otherwise, only scan for changes in .gwt.xml files
+        for (File resourceDir : getUpdateWidgetsetTriggerDirectories(monitor)) {
+            if (resourceDir.exists()
+                    && scanDirectory(buildContext, resourceDir, "**/*.gwt.xml")) {
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -151,6 +171,9 @@ public class VaadinMojoExecutionBuildParticipant extends
                     buildContext.refresh(refreshable);
                 }
             }
+        } else if (isGoal(COMPILE_WIDGETSET_GOAL)) {
+            buildContext.refresh(getMojoParameterValue("webappDirectory",
+                    File.class, monitor));
         }
     }
 
