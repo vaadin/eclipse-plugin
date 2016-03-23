@@ -215,6 +215,9 @@ abstract class NightlyCheckJob extends Job {
                 }
                 String currentVersion = ProjectUtil
                         .getVaadinLibraryVersion(project, true);
+                if (currentVersion == null) {
+                    continue;
+                }
                 List<MavenVaadinVersion> allUpgrades = new ArrayList<MavenVaadinVersion>();
                 MavenVaadinVersion newestUpgradeSameMinor = getLatestUpgrade(
                         currentVersion, availableVersions, true, false);
