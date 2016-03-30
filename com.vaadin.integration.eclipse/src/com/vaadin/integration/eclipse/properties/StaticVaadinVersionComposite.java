@@ -9,7 +9,6 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 
-import com.vaadin.integration.eclipse.util.PreferenceUtil;
 import com.vaadin.integration.eclipse.util.ProjectUtil;
 
 /**
@@ -34,14 +33,6 @@ public class StaticVaadinVersionComposite extends Composite {
                 GridData.BEGINNING, true, false);
         versionLabel.setLayoutData(labelGridData);
 
-        // Add a checkbox for choosing whether to notify the user of Vaadin
-        // version updates.
-        updateNotificationCheckbox = new Button(this, SWT.CHECK);
-        updateNotificationCheckbox.setText("Notify of new Vaadin versions");
-        GridData gridData = new GridData(GridData.FILL, GridData.BEGINNING,
-                true, false);
-        updateNotificationCheckbox.setLayoutData(gridData);
-
         getShell().layout(false);
     }
 
@@ -60,20 +51,10 @@ public class StaticVaadinVersionComposite extends Composite {
         versionLabel.setText("");
     }
 
-    public boolean isUpdateNotificationsEnabled() {
-        return updateNotificationCheckbox.getSelection();
-    }
-
     public void setProject(IProject project) {
         this.project = project;
 
         updateVersionLabel();
-
-        if (project != null) {
-            boolean updateNotifications = PreferenceUtil.get(project)
-                    .isUpdateNotificationEnabled();
-            updateNotificationCheckbox.setSelection(updateNotifications);
-        }
 
         getShell().layout(false);
     }

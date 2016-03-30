@@ -75,21 +75,22 @@ public class VaadinMavenProjectPropertyPage implements IVaadinPropertyPage {
 
         PreferenceUtil preferences = PreferenceUtil.get(project);
 
-        boolean oldUpdateNotificationsEnabled = preferences
-                .isUpdateNotificationEnabled();
-        boolean newUpdateNotificationsEnabled = versionComposite
-                .isUpdateNotificationsEnabled();
-        if (oldUpdateNotificationsEnabled != newUpdateNotificationsEnabled) {
-            preferences
-                    .setUpdateNotificationEnabled(newUpdateNotificationsEnabled);
-            modifiedValues = true;
-        }
+        // boolean oldUpdateNotificationsEnabled = preferences
+        // .isUpdateNotificationEnabled();
+        // boolean newUpdateNotificationsEnabled = versionComposite
+        // .isUpdateNotificationsEnabled();
+        // if (oldUpdateNotificationsEnabled != newUpdateNotificationsEnabled) {
+        // preferences
+        // .setUpdateNotificationEnabled(newUpdateNotificationsEnabled);
+        // modifiedValues = true;
+        // }
 
         // TODO implement
 
         if (modifiedValues) {
             preferences.persist();
         }
+
 
         return modifiedValues;
     }
