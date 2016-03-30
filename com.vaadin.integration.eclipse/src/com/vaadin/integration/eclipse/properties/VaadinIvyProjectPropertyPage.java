@@ -15,7 +15,6 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
-import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.graphics.Image;
@@ -50,7 +49,7 @@ import com.vaadin.integration.eclipse.util.data.MavenVaadinVersion;
  *
  * Vaadin version selection is here, future subpages may contain more settings.
  */
-public class VaadinIvyProjectPropertyPage {
+public class VaadinIvyProjectPropertyPage implements IVaadinPropertyPage {
 
     private final Image ICON_INFORMATION_SMALL;
 
@@ -62,8 +61,6 @@ public class VaadinIvyProjectPropertyPage {
 
     private IProject project;
 
-    private Shell shell;
-
     private Composite composite;
 
     public VaadinIvyProjectPropertyPage() {
@@ -73,7 +70,7 @@ public class VaadinIvyProjectPropertyPage {
                 .getImageData().scaledTo(16, 16));
     }
 
-    protected void performDefaults() {
+    public void performDefaults() {
         // revert to the vaadin version currently in the project
         IProject project = getProject();
         vaadinVersionComposite.setProject(project);
@@ -331,10 +328,7 @@ public class VaadinIvyProjectPropertyPage {
         }
     }
 
-    /**
-     * @see PreferencePage#createContents(Composite)
-     */
-    protected Control createContents(Composite parent) {
+    public Control createContents(Composite parent) {
         composite = new Composite(parent, SWT.NULL);
         GridLayout layout = new GridLayout(1, false);
         composite.setLayout(layout);
@@ -388,7 +382,7 @@ public class VaadinIvyProjectPropertyPage {
         return composite;
     }
 
-    protected void vaadinVersionSelectValueChange() {
+    private void vaadinVersionSelectValueChange() {
         if (isVersionChanged()) {
             modifiedLabel.setVisible(true);
             String willHappen = "Vaadin jar in the project will be ";
@@ -404,7 +398,7 @@ public class VaadinIvyProjectPropertyPage {
 
     }
 
-    public boolean isVersionChanged() {
+    private boolean isVersionChanged() {
         String selectedVersionString = vaadinVersionComposite
                 .getSelectedVersionString();
         if (projectVaadinVersionString == null) {
@@ -428,5 +422,9 @@ public class VaadinIvyProjectPropertyPage {
 
     public void dispose() {
         ICON_INFORMATION_SMALL.dispose();
+    }
+
+    public Control getControl() {
+        return composite;
     }
 }
