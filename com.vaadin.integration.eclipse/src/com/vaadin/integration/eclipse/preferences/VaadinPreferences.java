@@ -62,11 +62,11 @@ public class VaadinPreferences extends PreferencePage
         composite.setLayout(layout);
         composite.setFont(parent.getFont());
 
-        createNotificationsSection(composite);
-
         createMavenSection(composite);
 
         createPrereleaseSection(composite);
+
+        createNotificationsSection(composite);
 
         // checkState();
         return composite;
