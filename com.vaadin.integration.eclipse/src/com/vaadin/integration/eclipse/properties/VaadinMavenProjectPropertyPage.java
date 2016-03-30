@@ -3,18 +3,21 @@ package com.vaadin.integration.eclipse.properties;
 import java.io.IOException;
 
 import org.eclipse.core.resources.IProject;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
+import com.vaadin.integration.eclipse.VaadinPlugin;
+import com.vaadin.integration.eclipse.preferences.PreferenceConstants;
 import com.vaadin.integration.eclipse.util.ErrorUtil;
 import com.vaadin.integration.eclipse.util.PreferenceUtil;
 
@@ -34,6 +37,8 @@ public class VaadinMavenProjectPropertyPage implements IVaadinPropertyPage {
     private Composite composite;
 
     private StaticVaadinVersionComposite versionComposite;
+    private Button overrideButton;
+    private Button autoCompileButton;
 
     public VaadinMavenProjectPropertyPage() {
         super();
@@ -43,10 +48,7 @@ public class VaadinMavenProjectPropertyPage implements IVaadinPropertyPage {
     }
 
     public void performDefaults() {
-        // revert to the vaadin version currently in the project
-        IProject project = getProject();
-
-        // TODO fill this in
+        initializeAutoCompileState(project);
     }
 
     public boolean performOk() {
@@ -55,10 +57,6 @@ public class VaadinMavenProjectPropertyPage implements IVaadinPropertyPage {
             ErrorUtil.logInfo("Store preferences: not a Vaadin project");
             return true;
         }
-
-        IJavaProject jproject = JavaCore.create(project);
-
-        // TODO implement
 
         try {
             updatePreferences(project);
@@ -75,17 +73,19 @@ public class VaadinMavenProjectPropertyPage implements IVaadinPropertyPage {
 
         PreferenceUtil preferences = PreferenceUtil.get(project);
 
-        // boolean oldUpdateNotificationsEnabled = preferences
-        // .isUpdateNotificationEnabled();
-        // boolean newUpdateNotificationsEnabled = versionComposite
-        // .isUpdateNotificationsEnabled();
-        // if (oldUpdateNotificationsEnabled != newUpdateNotificationsEnabled) {
-        // preferences
-        // .setUpdateNotificationEnabled(newUpdateNotificationsEnabled);
-        // modifiedValues = true;
-        // }
-
-        // TODO implement
+        Boolean newAutoCompilePref;
+        Boolean oldAutoCompilePref = PreferenceUtil.get(project)
+                .isMavenAutoCompileWidgetset();
+        if (overrideButton.getSelection()) {
+            newAutoCompilePref = autoCompileButton.getSelection();
+        } else {
+            newAutoCompilePref = null;
+        }
+        if (newAutoCompilePref != oldAutoCompilePref) {
+            modifiedValues = true;
+            PreferenceUtil.get(project).setMavenAutoCompileWidgetset(
+                    newAutoCompilePref);
+        }
 
         if (modifiedValues) {
             preferences.persist();
@@ -107,9 +107,24 @@ public class VaadinMavenProjectPropertyPage implements IVaadinPropertyPage {
         composite.setLayoutData(data);
 
         versionComposite = new StaticVaadinVersionComposite(composite, SWT.NONE);
-        setProject(project);
 
-        performDefaults();
+        overrideButton = new Button(composite, SWT.CHECK);
+        overrideButton.setText("Enable project specific settings");
+
+        autoCompileButton = new Button(composite, SWT.CHECK);
+        autoCompileButton.setText("Enable automatic widgetset compilation");
+
+        overrideButton.addSelectionListener(new SelectionListener() {
+            public void widgetSelected(SelectionEvent e) {
+                autoCompileButton.setEnabled(overrideButton.getSelection());
+            }
+
+            public void widgetDefaultSelected(SelectionEvent e) {
+                autoCompileButton.setEnabled(overrideButton.getSelection());
+            }
+        });
+
+        setProject(project);
 
         return composite;
     }
@@ -117,8 +132,30 @@ public class VaadinMavenProjectPropertyPage implements IVaadinPropertyPage {
     public void setProject(IProject project) {
         this.project = project;
 
+        // if initialized
         if (versionComposite != null) {
             versionComposite.setProject(project);
+
+            initializeAutoCompileState(project);
+        }
+    }
+
+    private void initializeAutoCompileState(IProject project) {
+        Boolean autoCompilePref = PreferenceUtil.get(project)
+                .isMavenAutoCompileWidgetset();
+        if (autoCompilePref == null) {
+            overrideButton.setSelection(false);
+            boolean globalSetting = VaadinPlugin
+                    .getInstance()
+                    .getPreferenceStore()
+                    .getBoolean(
+                            PreferenceConstants.MAVEN_WIDGETSET_AUTOMATIC_BUILD_ENABLED);
+            autoCompileButton.setSelection(globalSetting);
+            autoCompileButton.setEnabled(false);
+        } else {
+            overrideButton.setSelection(true);
+            autoCompileButton.setSelection(autoCompilePref);
+            autoCompileButton.setEnabled(true);
         }
     }
 
