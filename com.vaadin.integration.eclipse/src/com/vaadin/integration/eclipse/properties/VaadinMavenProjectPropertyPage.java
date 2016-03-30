@@ -24,8 +24,6 @@ import com.vaadin.integration.eclipse.util.PreferenceUtil;
  * This page is not used directly as a property page but provides mostly the
  * same API so that {@link VaadinProjectPropertyPage} can forward requests to
  * the appropriate "subpage."
- *
- * Vaadin version selection is here, future subpages may contain more settings.
  */
 public class VaadinMavenProjectPropertyPage implements IVaadinPropertyPage {
 
@@ -34,6 +32,8 @@ public class VaadinMavenProjectPropertyPage implements IVaadinPropertyPage {
     private IProject project;
 
     private Composite composite;
+
+    private StaticVaadinVersionComposite versionComposite;
 
     public VaadinMavenProjectPropertyPage() {
         super();
@@ -60,6 +60,13 @@ public class VaadinMavenProjectPropertyPage implements IVaadinPropertyPage {
 
         // TODO implement
 
+        try {
+            updatePreferences(project);
+        } catch (IOException e) {
+            ErrorUtil.handleBackgroundException(
+                    "Could not save project preferences for " + project, e);
+        }
+
         return true;
     }
 
@@ -67,6 +74,16 @@ public class VaadinMavenProjectPropertyPage implements IVaadinPropertyPage {
         boolean modifiedValues = false;
 
         PreferenceUtil preferences = PreferenceUtil.get(project);
+
+        boolean oldUpdateNotificationsEnabled = preferences
+                .isUpdateNotificationEnabled();
+        boolean newUpdateNotificationsEnabled = versionComposite
+                .isUpdateNotificationsEnabled();
+        if (oldUpdateNotificationsEnabled != newUpdateNotificationsEnabled) {
+            preferences
+                    .setUpdateNotificationEnabled(newUpdateNotificationsEnabled);
+            modifiedValues = true;
+        }
 
         // TODO implement
 
@@ -88,7 +105,8 @@ public class VaadinMavenProjectPropertyPage implements IVaadinPropertyPage {
         GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
         composite.setLayoutData(data);
 
-        // TODO implement
+        versionComposite = new StaticVaadinVersionComposite(composite, SWT.NONE);
+        setProject(project);
 
         performDefaults();
 
@@ -97,6 +115,10 @@ public class VaadinMavenProjectPropertyPage implements IVaadinPropertyPage {
 
     public void setProject(IProject project) {
         this.project = project;
+
+        if (versionComposite != null) {
+            versionComposite.setProject(project);
+        }
     }
 
     public IProject getProject() {
