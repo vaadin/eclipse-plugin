@@ -305,6 +305,11 @@ public class VaadinProjectPropertyPage extends PropertyPage {
         if (preferences.setWidgetsetCompilationExtraParameters(extraParams)) {
             modifiedValues = true;
         }
+        String extraJvmParams = widgetsetComposite.getExtraJvmParameters();
+        if (preferences
+                .setWidgetsetCompilationExtraJvmParameters(extraJvmParams)) {
+            modifiedValues = true;
+        }
 
         if (modifiedValues) {
             preferences.persist();
