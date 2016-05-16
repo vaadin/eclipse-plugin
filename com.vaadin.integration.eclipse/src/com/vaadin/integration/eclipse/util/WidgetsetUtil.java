@@ -166,6 +166,19 @@ public class WidgetsetUtil {
                 args.add("-Dgwt.persistentunitcachedir=" + tempDir);
             }
 
+            String httpProxyHost = System.getProperty("http.proxyHost");
+            String httpProxyPort = System.getProperty("http.proxyPort");
+            String httpsProxyHost = System.getProperty("https.proxyHost");
+            String httpsProxyPort = System.getProperty("https.proxyPort");
+            if (httpProxyHost != null)
+                args.add("-Dhttp.proxyHost="+httpProxyHost);
+            if (httpProxyPort != null)
+                args.add("-Dhttp.proxyPort="+httpProxyPort);
+            if (httpsProxyHost != null)
+                args.add("-Dhttps.proxyHost="+httpsProxyHost);
+            if (httpsProxyPort != null)
+                args.add("-Dhttps.proxyPort="+httpsProxyPort);
+
             // TODO run com.vaadin.terminal.gwt.widgetsetutils.WidgetSetBuilder
             // and com.google.gwt.dev.Compiler separately and directly if Java
             // 6, do not use WidgetsetCompiler in that case
