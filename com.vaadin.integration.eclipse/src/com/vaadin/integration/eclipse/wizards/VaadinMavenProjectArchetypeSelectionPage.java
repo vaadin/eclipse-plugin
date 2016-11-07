@@ -18,6 +18,7 @@ public class VaadinMavenProjectArchetypeSelectionPage extends WizardPage {
         this.vaadinArchetypes = vaadinArchetypes;
     }
 
+    @Override
     public void createControl(Composite parent) {
         setDescription("Select a Maven archetype");
         selectionView = new VaadinMavenProjectArchetypeSelectionView(

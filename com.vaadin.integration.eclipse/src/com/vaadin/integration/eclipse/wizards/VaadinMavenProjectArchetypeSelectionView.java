@@ -94,6 +94,7 @@ public class VaadinMavenProjectArchetypeSelectionView
         main.addListener(SWT.Resize, new Listener() {
             int width = -1;
 
+            @Override
             public void handleEvent(Event e) {
                 int newWidth = main.getSize().x;
                 if (newWidth != width) {
