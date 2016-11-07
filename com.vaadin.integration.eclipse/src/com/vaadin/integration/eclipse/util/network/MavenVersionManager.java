@@ -19,6 +19,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import com.vaadin.integration.eclipse.VaadinPlugin;
+import com.vaadin.integration.eclipse.preferences.PreferenceConstants;
 import com.vaadin.integration.eclipse.util.ErrorUtil;
 import com.vaadin.integration.eclipse.util.data.MavenVaadinVersion;
 import com.vaadin.integration.eclipse.util.files.LocalFileManager;
@@ -27,12 +29,10 @@ import com.vaadin.integration.eclipse.wizards.VaadinArchetype;
 
 public class MavenVersionManager {
 
-    private static final String PRERELEASE_REPOSITORY_URL = "http://maven.vaadin.com/vaadin-prereleases/";
-
     private static final String VERSIONS_FILE_NAME = "VERSIONS_7";
 
-    private static final String ARCHETYPES_FILE_NAME = "maven-archetypes.xml";
-    private static final String PRERELEASE_ARCHETYPES_FILE_NAME = "maven-archetypes-prerelease.xml";
+    private static final String ARCHETYPES_FILE_NAME = "eclipse-maven-archetypes.xml";
+    private static final String PRERELEASE_ARCHETYPES_FILE_NAME = "eclipse-maven-archetypes-prerelease.xml";
 
     private static final String AVAILABLE_VAADIN_VERSIONS_7_URL = DownloadManager.VAADIN_DOWNLOAD_BASE_URL
             + VERSIONS_FILE_NAME;
@@ -43,11 +43,9 @@ public class MavenVersionManager {
     private static final String AVAILABLE_VAADIN_PRERELEASE_ARCHETYPES_URL = DownloadManager.VAADIN_DOWNLOAD_BASE_URL
             + PRERELEASE_ARCHETYPES_FILE_NAME;
 
-
     private static List<MavenVaadinVersion> availableVersions;
 
-    private static List<VaadinArchetype> releaseArchetypes;
-    private static List<VaadinArchetype> prereleaseArchetypes;
+    private static List<VaadinArchetype> allArchetypes;
 
     /**
      * Returns a list of available Vaadin archetypes. It is not guaranteed that
@@ -55,56 +53,47 @@ public class MavenVersionManager {
      * 
      * @param includePrereleases
      *            true to also return pre-release versions of archetypes
+     * @param versionRegex
+     *            regular expression used for matching correct version
+     *            attributes in the archetype
      * @return A sorted list of available Vaadin archetypes
      * @throws CoreException
      */
+    @SuppressWarnings("restriction")
     public static synchronized List<VaadinArchetype> getAvailableArchetypes(
-            boolean includePrereleases) {
-        if (releaseArchetypes == null) {
+            boolean includePrereleases, String versionRegex) {
+        if (allArchetypes == null) {
             try {
                 loadAndCacheResource(AVAILABLE_VAADIN_ARCHETYPES_URL,
                         ARCHETYPES_FILE_NAME);
             } catch (IOException e) {
-                ErrorUtil
-                        .handleBackgroundException(
-                                "Failed to retrieve Vaadin archetype list from server",
-                                e);
+                ErrorUtil.handleBackgroundException(
+                        "Failed to retrieve Vaadin archetype list from server",
+                        e);
             }
             try {
-                releaseArchetypes = loadCachedArchetypes(ARCHETYPES_FILE_NAME);
+                allArchetypes = loadCachedArchetypes(ARCHETYPES_FILE_NAME);
             } catch (CoreException e) {
                 ErrorUtil.handleBackgroundException(
                         "Failed to load cached Vaadin archetypes", e);
             }
         }
 
-        if (includePrereleases && prereleaseArchetypes == null) {
-            // if anything here fails, just ignore all pre-releases
-            try {
-                loadAndCacheResource(
-                        AVAILABLE_VAADIN_PRERELEASE_ARCHETYPES_URL,
-                        PRERELEASE_ARCHETYPES_FILE_NAME);
-                prereleaseArchetypes = loadCachedArchetypes(PRERELEASE_ARCHETYPES_FILE_NAME);
-                if (prereleaseArchetypes != null) {
-                    for (VaadinArchetype prereleaseArchetype : prereleaseArchetypes) {
-                        prereleaseArchetype.getArchetype().setRepository(
-                                PRERELEASE_REPOSITORY_URL);
-                    }
+        if (allArchetypes == null) {
+            allArchetypes = loadDefaultArchetypes();
+        }
+
+        List<VaadinArchetype> availableArchetypes = new ArrayList<VaadinArchetype>();
+        for (VaadinArchetype vaadinArchetype : allArchetypes) {
+            if (vaadinArchetype.getArchetype().getVersion()
+                    .matches(versionRegex)) {
+                if (!vaadinArchetype.isPrerelease()) {
+                    availableArchetypes.add(vaadinArchetype);
+                } else if (vaadinArchetype.isPrerelease()
+                        && includePrereleases) {
+                    availableArchetypes.add(vaadinArchetype);
                 }
-            } catch (Exception e) {
-                ErrorUtil.handleBackgroundException(
-                        "Failed to load the list of pre-release archetypes", e);
             }
-        }
-
-        if (releaseArchetypes == null) {
-            releaseArchetypes = loadDefaultArchetypes();
-        }
-
-        List<VaadinArchetype> availableArchetypes = new ArrayList<VaadinArchetype>(
-                releaseArchetypes);
-        if (includePrereleases && prereleaseArchetypes != null) {
-            availableArchetypes.addAll(prereleaseArchetypes);
         }
 
         return availableArchetypes;
@@ -117,8 +106,8 @@ public class MavenVersionManager {
         try {
             is = new BufferedInputStream(new FileInputStream(file));
             return parseArchetypesStream(is);
-        } catch (IOException ignored) {}
-        finally {
+        } catch (IOException ignored) {
+        } finally {
             try {
                 if (is != null) {
                     is.close();
@@ -130,36 +119,45 @@ public class MavenVersionManager {
     }
 
     private static List<VaadinArchetype> loadDefaultArchetypes() {
-        InputStream is = MavenVersionManager.class.getResourceAsStream("/resources/default-maven-archetypes.xml");
-        try 
-        {
+        InputStream is = MavenVersionManager.class
+                .getResourceAsStream("/resources/default-maven-archetypes.xml");
+        try {
             return parseArchetypesStream(is);
         } finally {
-            try{
+            try {
                 is.close();
             } catch (Exception e) {
-                ErrorUtil.handleBackgroundException("Failed to load cached Vaadin archetypes", e);
+                ErrorUtil.handleBackgroundException(
+                        "Failed to load cached Vaadin archetypes", e);
             }
         }
-        
+
     }
 
     private static List<VaadinArchetype> parseArchetypesStream(InputStream is) {
         List<VaadinArchetype> result = new ArrayList<VaadinArchetype>();
         try {
-            Document parsedArchetypeList = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
-            NodeList nodeList = parsedArchetypeList.getDocumentElement().getElementsByTagName("archetype");
-            for(int i = 0; i < nodeList.getLength(); i++) {
-                Element archetypeNode = (Element)nodeList.item(i);
+            Document parsedArchetypeList = DocumentBuilderFactory.newInstance()
+                    .newDocumentBuilder().parse(is);
+            NodeList nodeList = parsedArchetypeList.getDocumentElement()
+                    .getElementsByTagName("archetype");
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                Element archetypeNode = (Element) nodeList.item(i);
                 String archetypeId = archetypeNode.getAttribute("archetypeId");
                 String groupId = archetypeNode.getAttribute("groupId");
                 String version = archetypeNode.getAttribute("version");
-                String title = archetypeNode.getElementsByTagName("title").item(0).getTextContent();
-                String description = archetypeNode.getElementsByTagName("description").item(0).getTextContent();
-                result.add(new VaadinArchetype(title, archetypeId, groupId, version, description));
+                String title = archetypeNode.getElementsByTagName("title")
+                        .item(0).getTextContent();
+                String description = archetypeNode
+                        .getElementsByTagName("description").item(0)
+                        .getTextContent();
+                boolean prerelease = archetypeNode.hasAttribute("prerelease");
+                result.add(new VaadinArchetype(title, archetypeId, groupId,
+                        version, description, prerelease));
             }
         } catch (Exception e) {
-            ErrorUtil.handleBackgroundException("Failed to parse archetype list", e);
+            ErrorUtil.handleBackgroundException(
+                    "Failed to parse archetype list", e);
         }
         return result.isEmpty() ? null : result;
     }
@@ -185,10 +183,9 @@ public class MavenVersionManager {
             try {
                 availableVersions = downloadAvailableVersionsList();
             } catch (CoreException e) {
-                ErrorUtil
-                        .handleBackgroundException(
-                                "Failed to retrieve available Vaadin 7 version list from server, using cached list",
-                                e);
+                ErrorUtil.handleBackgroundException(
+                        "Failed to retrieve available Vaadin 7 version list from server, using cached list",
+                        e);
                 availableVersions = getCachedAvailableVersionsList();
             }
         }
@@ -221,7 +218,8 @@ public class MavenVersionManager {
     private static List<MavenVaadinVersion> downloadAvailableVersionsList()
             throws CoreException {
         try {
-            String versionData = loadAndCacheResource(AVAILABLE_VAADIN_VERSIONS_7_URL, VERSIONS_FILE_NAME);
+            String versionData = loadAndCacheResource(
+                    AVAILABLE_VAADIN_VERSIONS_7_URL, VERSIONS_FILE_NAME);
             return parseAvailableVersions(versionData);
         } catch (IOException e) {
             throw ErrorUtil.newCoreException(
@@ -229,16 +227,16 @@ public class MavenVersionManager {
         }
     }
 
-    private static String loadAndCacheResource(String url, String cacheFileName) throws IOException {
-        String data = DownloadManager
-                .downloadURL(url);
+    private static String loadAndCacheResource(String url, String cacheFileName)
+            throws IOException {
+        String data = DownloadManager.downloadURL(url);
 
         // store downloaded data to cache
         try {
             File cacheFile = getCacheFile(cacheFileName);
             cacheFile.getParentFile().mkdirs();
-            BufferedWriter writer = new BufferedWriter(new FileWriter(
-                    cacheFile));
+            BufferedWriter writer = new BufferedWriter(
+                    new FileWriter(cacheFile));
             try {
                 writer.write(data);
             } finally {
@@ -277,16 +275,15 @@ public class MavenVersionManager {
 
             return parseAvailableVersions(versionData);
         } catch (IOException e) {
-            throw ErrorUtil
-                    .newCoreException(
-                            "Failed to get cached list of available Vaadin versions",
-                            e);
+            throw ErrorUtil.newCoreException(
+                    "Failed to get cached list of available Vaadin versions",
+                    e);
         }
     }
 
     private static File getCacheFile(String fileName) throws CoreException {
-        IPath path = LocalFileManager.getConfigurationPath().append(
-                IPath.SEPARATOR + fileName);
+        IPath path = LocalFileManager.getConfigurationPath()
+                .append(IPath.SEPARATOR + fileName);
         return path.toFile();
     }
 
