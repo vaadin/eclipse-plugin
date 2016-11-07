@@ -172,6 +172,7 @@ public abstract class VaadinMavenProjectWizard
         if (wizardContainer instanceof WizardDialog) {
             ((WizardDialog) wizardContainer)
                     .addPageChangingListener(new IPageChangingListener() {
+                        @Override
                         public void handlePageChanging(
                                 PageChangingEvent event) {
                             selectArchetype(vaadinArchetypeSelectionPage
@@ -191,7 +192,7 @@ public abstract class VaadinMavenProjectWizard
      * To perform the actual project creation, an operation is created and run
      * using this wizard as execution context. That way, messages about the
      * progress of the project creation are displayed inside the wizard.
-     * 
+     *
      * This method is adapted from MavenProjectWizard.
      */
     @Override
@@ -272,6 +273,7 @@ public abstract class VaadinMavenProjectWizard
                 final IStatus result = event.getResult();
                 if (!result.isOK()) {
                     Display.getDefault().asyncExec(new Runnable() {
+                        @Override
                         public void run() {
                             MessageDialog.openError(getShell(), //
                                     NLS.bind(Messages.wizardProjectJobFailed,

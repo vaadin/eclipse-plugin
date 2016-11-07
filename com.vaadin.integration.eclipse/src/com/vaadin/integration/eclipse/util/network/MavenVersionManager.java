@@ -19,8 +19,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import com.vaadin.integration.eclipse.VaadinPlugin;
-import com.vaadin.integration.eclipse.preferences.PreferenceConstants;
 import com.vaadin.integration.eclipse.util.ErrorUtil;
 import com.vaadin.integration.eclipse.util.data.MavenVaadinVersion;
 import com.vaadin.integration.eclipse.util.files.LocalFileManager;
@@ -50,7 +48,7 @@ public class MavenVersionManager {
     /**
      * Returns a list of available Vaadin archetypes. It is not guaranteed that
      * the list is fetched from the site every time this is called.
-     * 
+     *
      * @param includePrereleases
      *            true to also return pre-release versions of archetypes
      * @param versionRegex
@@ -166,16 +164,16 @@ public class MavenVersionManager {
      * Returns a list of what Vaadin versions are available for dependency
      * management systems. The list contains release version and additionally,
      * if onlyRelease is false, nightly and pre-release versions.
-     * 
+     *
      * It is not guaranteed that the list is fetched from the site every time
      * this is called.
-     * 
+     *
      * @param onlyRelease
      *            True to include only release builds, false to include others
      *            also (nightly, pre-release)
      * @return A sorted list of available Vaadin versions
      * @throws CoreException
-     * 
+     *
      */
     public static synchronized List<MavenVaadinVersion> getAvailableVersions(
             boolean onlyRelease) throws CoreException {
@@ -209,9 +207,9 @@ public class MavenVersionManager {
     /**
      * Download and return the list of available Vaadin versions from vaadin.com
      * .
-     * 
+     *
      * If the download succeeds, also save the list in the cache.
-     * 
+     *
      * @return
      * @throws CoreException
      */
@@ -257,7 +255,7 @@ public class MavenVersionManager {
     /**
      * Return the cached list of available Vaadin versions from last successful
      * request to vaadin.com .
-     * 
+     *
      * @return
      * @throws CoreException
      */
@@ -289,11 +287,11 @@ public class MavenVersionManager {
 
     /**
      * Parses the available versions and URLs from comma separated data.
-     * 
+     *
      * Anything after a comma is ignored, as are comment rows. A row starting
      * with a comma can be used in future file versions for information
      * incompatible with this plug-in version.
-     * 
+     *
      * @param versionData
      * @return
      */
