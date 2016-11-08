@@ -27,7 +27,7 @@ public class Vaadin8MavenProjectWizard extends VaadinMavenProjectWizard {
                 .getPreferenceStore()
                 .getBoolean(PreferenceConstants.PRERELEASE_ARCHETYPES_ENABLED);
         List<VaadinArchetype> vaadinArchetypes = MavenVersionManager
-                .getAvailableArchetypes(includePrereleases, "8.*");
+                .getAvailableArchetypes(includePrereleases, "8\\..*");
         // TODO remove this hack once Vaadin 8 has been released
         if (vaadinArchetypes.isEmpty() && includePrereleases == false) {
             vaadinArchetypes = MavenVersionManager.getAvailableArchetypes(true,

@@ -55,7 +55,7 @@ public abstract class VaadinMavenProjectWizard
     private VaadinTitle vaadinTitle;
 
     /**
-     * Default constructor. Sets the title and image of the wizard.
+     * Default constructor. Sets the image of the wizard.
      */
     public VaadinMavenProjectWizard() {
         super();
@@ -81,10 +81,8 @@ public abstract class VaadinMavenProjectWizard
                 super.createControl(parent);
 
                 // doing this instead of performHelp() of the page explicitly
-                // showing
-                // help because otherwise another (system) help listener
-                // overrides the
-                // help we have shown
+                // showing help because otherwise another (system) help listener
+                // overrides the help we have shown
                 PlatformUI.getWorkbench().getHelpSystem().setHelp(
                         vaadinArchetypeSelectionPage.getControl(), CONTEXT_ID);
             }
