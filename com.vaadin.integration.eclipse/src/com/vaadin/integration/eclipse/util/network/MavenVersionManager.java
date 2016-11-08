@@ -85,10 +85,7 @@ public class MavenVersionManager {
         for (VaadinArchetype vaadinArchetype : allArchetypes) {
             if (vaadinArchetype.getArchetype().getVersion()
                     .matches(versionRegex)) {
-                if (!vaadinArchetype.isPrerelease()) {
-                    availableArchetypes.add(vaadinArchetype);
-                } else if (vaadinArchetype.isPrerelease()
-                        && includePrereleases) {
+                if (includePrereleases || !vaadinArchetype.isPrerelease()) {
                     availableArchetypes.add(vaadinArchetype);
                 }
             }

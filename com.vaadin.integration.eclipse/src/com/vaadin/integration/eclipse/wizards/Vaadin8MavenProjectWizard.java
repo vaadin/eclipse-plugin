@@ -31,7 +31,7 @@ public class Vaadin8MavenProjectWizard extends VaadinMavenProjectWizard {
         // TODO remove this hack once Vaadin 8 has been released
         if (vaadinArchetypes.isEmpty() && includePrereleases == false) {
             vaadinArchetypes = MavenVersionManager.getAvailableArchetypes(true,
-                    "8.*");
+                    "8\\..*");
         }
         return vaadinArchetypes;
     }
