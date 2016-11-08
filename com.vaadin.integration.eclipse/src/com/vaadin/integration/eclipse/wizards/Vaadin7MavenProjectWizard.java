@@ -27,6 +27,6 @@ public class Vaadin7MavenProjectWizard extends VaadinMavenProjectWizard {
                 .getPreferenceStore()
                 .getBoolean(PreferenceConstants.PRERELEASE_ARCHETYPES_ENABLED);
         return MavenVersionManager.getAvailableArchetypes(includePrereleases,
-                "7.*");
+                "7\\..*");
     }
 }
