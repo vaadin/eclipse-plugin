@@ -93,6 +93,10 @@ public class VersionUtil {
      */
     private static String getManifestVaadinVersion(JarFile jarFile)
             throws IOException {
+        String version = getManifestVersion(jarFile, "Implementation-Version");
+        if (version != null && version.matches("\\d+.\\d+.\\d+(\\..*)?")) {
+            return version;
+        }
         return getManifestVersion(jarFile, "Bundle-Version");
     }
 
