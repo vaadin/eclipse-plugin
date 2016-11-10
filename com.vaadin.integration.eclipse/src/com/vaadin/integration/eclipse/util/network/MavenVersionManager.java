@@ -27,19 +27,15 @@ import com.vaadin.integration.eclipse.wizards.VaadinArchetype;
 
 public class MavenVersionManager {
 
-    private static final String VERSIONS_FILE_NAME = "VERSIONS_7";
+    private static final String VERSIONS_FILE_NAME = "VERSIONS";
 
     private static final String ARCHETYPES_FILE_NAME = "eclipse-maven-archetypes.xml";
-    private static final String PRERELEASE_ARCHETYPES_FILE_NAME = "eclipse-maven-archetypes-prerelease.xml";
 
     private static final String AVAILABLE_VAADIN_VERSIONS_7_URL = DownloadManager.VAADIN_DOWNLOAD_BASE_URL
             + VERSIONS_FILE_NAME;
 
     private static final String AVAILABLE_VAADIN_ARCHETYPES_URL = DownloadManager.VAADIN_DOWNLOAD_BASE_URL
             + ARCHETYPES_FILE_NAME;
-
-    private static final String AVAILABLE_VAADIN_PRERELEASE_ARCHETYPES_URL = DownloadManager.VAADIN_DOWNLOAD_BASE_URL
-            + PRERELEASE_ARCHETYPES_FILE_NAME;
 
     private static List<MavenVaadinVersion> availableVersions;
 
