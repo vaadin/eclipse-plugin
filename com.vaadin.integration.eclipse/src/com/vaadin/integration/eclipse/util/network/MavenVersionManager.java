@@ -31,7 +31,7 @@ public class MavenVersionManager {
 
     private static final String ARCHETYPES_FILE_NAME = "eclipse-maven-archetypes.xml";
 
-    private static final String AVAILABLE_VAADIN_VERSIONS_7_URL = DownloadManager.VAADIN_DOWNLOAD_BASE_URL
+    private static final String AVAILABLE_VAADIN_VERSIONS_URL = DownloadManager.VAADIN_DOWNLOAD_BASE_URL
             + VERSIONS_FILE_NAME;
 
     private static final String AVAILABLE_VAADIN_ARCHETYPES_URL = DownloadManager.VAADIN_DOWNLOAD_BASE_URL
@@ -211,7 +211,7 @@ public class MavenVersionManager {
             throws CoreException {
         try {
             String versionData = loadAndCacheResource(
-                    AVAILABLE_VAADIN_VERSIONS_7_URL, VERSIONS_FILE_NAME);
+                    AVAILABLE_VAADIN_VERSIONS_URL, VERSIONS_FILE_NAME);
             return parseAvailableVersions(versionData);
         } catch (IOException e) {
             throw ErrorUtil.newCoreException(
