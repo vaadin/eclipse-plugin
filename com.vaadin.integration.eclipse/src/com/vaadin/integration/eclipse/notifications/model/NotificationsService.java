@@ -484,6 +484,7 @@ public final class NotificationsService {
                 saveCache(object);
             }
 
+            // A single notification is not wrapped into an array
             Object notifications = object.get(NOTIFICATIONS);
             List<Notification> list = new ArrayList<Notification>();
             if (notifications instanceof JSONArray) {
