@@ -20,7 +20,7 @@
     <keystore.store.password>reindeer</keystore.store.password>
     <keystore.key.password>reindeer</keystore.key.password>
 
-    <vaadin.eclipse.updatesite>http://vaadin.com/eclipse</vaadin.eclipse.updatesite>
+    <vaadin.eclipse.updatesite>https://vaadin.com/eclipse</vaadin.eclipse.updatesite>
   </properties>
 
   <repositories>
