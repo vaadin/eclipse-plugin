@@ -1,6 +1,7 @@
 language: java
 jdk: oraclejdk8
 sudo: false
+dist: trusty
 
 install: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dtycho.disableP2Mirrors=true -B -V
 
