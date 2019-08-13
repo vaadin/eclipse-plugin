@@ -275,7 +275,7 @@ public class StarterManager {
         File pomFile = new File(starterDirectory,
                 IMavenConstants.POM_FILE_NAME);
 
-        Model model = MavenPlugin.getMavenModelManager()
+        final Model model = MavenPlugin.getMavenModelManager()
                 .readMavenModel(pomFile);
         MavenProjectInfo mavenProjectInfo = new MavenProjectInfo(
                 "/" + IMavenConstants.POM_FILE_NAME, pomFile, model, null);
@@ -290,13 +290,24 @@ public class StarterManager {
                 Display.getDefault().asyncExec(new Runnable() {
                     @Override
                     public void run() {
-                        new MavenGoal(starterDirectory.getName(),
-                                "vaadin:prepare-frontend vaadin:build-frontend vaadin:prepare-frontend")
-                                        .execute();
+                        String dir = starterDirectory.getName();
+                        String cmd = "vaadin:prepare-frontend vaadin:build-frontend vaadin:prepare-frontend";
+                        String uiModuleName = getUiModuleName(
+                                model.getModules());
+                        new MavenGoal(dir, cmd, uiModuleName).execute();
                     }
                 });
             }
         });
         job.schedule();
+    }
+
+    private static String getUiModuleName(List<String> modules) {
+        for (String module : modules) {
+            if (module.endsWith("-ui")) {
+                return module;
+            }
+        }
+        return "";
     }
 }

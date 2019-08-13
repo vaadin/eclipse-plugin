@@ -39,18 +39,20 @@ public class MavenGoal {
 
     private final String projectName;
     private final String goal;
+    private final String uiModuleName;
 
     private final String mode = "run";
 
-    public MavenGoal(String projectName, String goal) {
+    public MavenGoal(String projectName, String goal, String uiModuleName) {
         this.projectName = projectName;
         this.goal = goal;
+        this.uiModuleName = uiModuleName;
     }
 
     public void execute() {
         try {
             ILaunchConfiguration launchConfiguration = createLaunchConfiguration(
-                    getProject());
+                    getProject(), uiModuleName);
             DebugUITools.launch(launchConfiguration, mode);
         } catch (CoreException e) {
             LogUtil.handleBackgroundException(e.getMessage(), e);
@@ -67,32 +69,33 @@ public class MavenGoal {
         return (IProject) root.findMember(projectName);
     }
 
-    private ILaunchConfiguration createLaunchConfiguration(IContainer basedir)
-            throws CoreException {
+    private ILaunchConfiguration createLaunchConfiguration(IContainer baseDir,
+            String subDir) throws CoreException {
         ILaunchManager launchManager = DebugPlugin.getDefault()
                 .getLaunchManager();
         ILaunchConfigurationType launchConfigurationType = launchManager
                 .getLaunchConfigurationType(
                         MavenLaunchConstants.LAUNCH_CONFIGURATION_TYPE_ID);
+        IPath projectPath = baseDir.getLocation().append(subDir);
 
         String rawConfigName = NLS.bind(Messages.ExecutePomAction_executing,
-                goal, basedir.getLocation().toString());
+                goal, projectPath.toString());
         String safeConfigName = launchManager
                 .generateLaunchConfigurationName(rawConfigName);
 
         ILaunchConfigurationWorkingCopy workingCopy = launchConfigurationType
                 .newInstance(null, safeConfigName);
         workingCopy.setAttribute(MavenLaunchConstants.ATTR_POM_DIR,
-                basedir.getLocation().toOSString());
+                projectPath.toOSString());
         workingCopy.setAttribute(MavenLaunchConstants.ATTR_GOALS, goal);
         workingCopy.setAttribute(IDebugUIConstants.ATTR_PRIVATE, true);
         workingCopy.setAttribute(RefreshTab.ATTR_REFRESH_SCOPE,
                 "${resource:" + projectName + "}");
         workingCopy.setAttribute(RefreshTab.ATTR_REFRESH_RECURSIVE, true);
 
-        setProjectConfiguration(workingCopy, basedir);
+        setProjectConfiguration(workingCopy, baseDir);
 
-        IPath path = getJREContainerPath(basedir);
+        IPath path = getJREContainerPath(baseDir);
         if (path != null) {
             workingCopy.setAttribute(
                     IJavaLaunchConfigurationConstants.ATTR_JRE_CONTAINER_PATH,
