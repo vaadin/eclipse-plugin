@@ -290,8 +290,9 @@ public class StarterManager {
                 Display.getDefault().asyncExec(new Runnable() {
                     @Override
                     public void run() {
-                        new MavenGoal(starterDirectory.getName(), "package")
-                                .execute();
+                        new MavenGoal(starterDirectory.getName(),
+                                "vaadin:prepare-frontend vaadin:build-frontend vaadin:prepare-frontend")
+                                        .execute();
                     }
                 });
             }
