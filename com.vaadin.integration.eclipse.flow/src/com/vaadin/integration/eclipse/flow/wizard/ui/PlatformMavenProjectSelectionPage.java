@@ -22,8 +22,7 @@ public class PlatformMavenProjectSelectionPage extends WizardPage {
         super("Vaadin 10+ project");
         configureImg();
         setTitle("Vaadin 10+ project");
-        setDescription(
-                "Select a Maven project type.\nPlease note that Vaadin 14 is still a pre-release version.");
+        setDescription("Select a Maven project type.");
     }
 
     @Override
