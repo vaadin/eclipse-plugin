@@ -238,7 +238,8 @@ public class StarterManager {
                     File starterDirectory = StarterManager
                             .unzip(ResourcesPlugin.getWorkspace().getRoot()
                                     .getLocation().toOSString(), starterFile);
-                    StarterManager.scheduleMavenImport(starterDirectory);
+                    StarterManager.scheduleMavenImport(starterDirectory,
+                            !"osgi".equals(stack.getId()));
                     AnalyticsService.trackProjectCreate(starter.getId(),
                             stack.getId());
                     starterFile.delete();
@@ -270,12 +271,12 @@ public class StarterManager {
     }
 
     @SuppressWarnings(value = { "restriction", "unchecked" })
-    private static void scheduleMavenImport(final File starterDirectory)
-            throws CoreException {
+    private static void scheduleMavenImport(final File starterDirectory,
+            boolean installDependencies) throws CoreException {
         File pomFile = new File(starterDirectory,
                 IMavenConstants.POM_FILE_NAME);
 
-        Model model = MavenPlugin.getMavenModelManager()
+        final Model model = MavenPlugin.getMavenModelManager()
                 .readMavenModel(pomFile);
         MavenProjectInfo mavenProjectInfo = new MavenProjectInfo(
                 "/" + IMavenConstants.POM_FILE_NAME, pomFile, model, null);
@@ -284,18 +285,32 @@ public class StarterManager {
                 Collections.singleton(mavenProjectInfo), Collections.EMPTY_LIST,
                 new ProjectImportConfiguration());
         job.setRule(MavenPlugin.getProjectConfigurationManager().getRule());
-        job.addJobChangeListener(new JobChangeAdapter() {
-            @Override
-            public void done(IJobChangeEvent event) {
-                Display.getDefault().asyncExec(new Runnable() {
-                    @Override
-                    public void run() {
-                        new MavenGoal(starterDirectory.getName(), "package")
-                                .execute();
-                    }
-                });
-            }
-        });
+        if (installDependencies) {
+            job.addJobChangeListener(new JobChangeAdapter() {
+                @Override
+                public void done(IJobChangeEvent event) {
+                    Display.getDefault().asyncExec(new Runnable() {
+                        @Override
+                        public void run() {
+                            String dir = starterDirectory.getName();
+                            String cmd = "vaadin:prepare-frontend vaadin:build-frontend vaadin:prepare-frontend";
+                            String uiModuleName = getUiModuleName(
+                                    model.getModules());
+                            new MavenGoal(dir, cmd, uiModuleName).execute();
+                        }
+                    });
+                }
+            });
+        }
         job.schedule();
+    }
+
+    private static String getUiModuleName(List<String> modules) {
+        for (String module : modules) {
+            if (module.endsWith("-ui")) {
+                return module;
+            }
+        }
+        return "";
     }
 }
