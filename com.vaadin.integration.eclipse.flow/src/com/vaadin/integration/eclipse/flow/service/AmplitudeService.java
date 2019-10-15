@@ -7,7 +7,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.apache.http.HttpResponse;
@@ -69,7 +68,7 @@ public class AmplitudeService {
     }
 
     public static String generateEventData(String eventType,
-            Optional<JsonObject> eventProps) {
+            JsonObject eventProps) {
         try {
             JsonObject event = new JsonObject();
 
@@ -90,8 +89,8 @@ public class AmplitudeService {
                             + System.getProperty("os.arch"));
             event.addProperty(eventTypeParam, eventType);
 
-            if (eventProps.isPresent()) {
-                event.add(eventPropsParam, eventProps.get());
+            if (eventProps != null) {
+                event.add(eventPropsParam, eventProps);
             }
 
             JsonArray events = new JsonArray();

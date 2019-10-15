@@ -1,7 +1,5 @@
 package com.vaadin.integration.eclipse.flow.service;
 
-import java.util.Optional;
-
 import com.google.gson.JsonObject;
 
 public class AnalyticsServiceFlow {
@@ -24,12 +22,12 @@ public class AnalyticsServiceFlow {
 
     private static String createEventData(String eventType, String starter,
             String techStack) {
-        Optional<JsonObject> eventProps = Optional.empty();
+        JsonObject eventProps = null;
         if (starter != null && techStack != null) {
             JsonObject props = new JsonObject();
             props.addProperty(starterPropParam, starter);
             props.addProperty(stackPropParam, techStack);
-            eventProps = Optional.of(props);
+            eventProps = props;
         }
         return AmplitudeService.generateEventData(eventType, eventProps);
     }
