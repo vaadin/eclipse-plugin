@@ -3,6 +3,8 @@ package com.vaadin.integration.eclipse.flow.service;
 import com.google.gson.JsonObject;
 
 public class NotificationAnalytic {
+    public static final String UTM_TRACKING_PARAM = "?utm_source=eclipse&utm_medium=notification&utm_campaign=eclipse_notifications";
+
     private static final String SHOW_NOTIFICATION_EVENT_TYPE = "Show notification";
     private static final String HIDE_NOTIFICATION_EVENT_TYPE = "Hide notification";
     private static final String LINK_CLICK_NOTIFICATION_EVENT_TYPE = "Notification link click";
