@@ -46,13 +46,11 @@ public class AmplitudeService {
     private final static String osNameParam = "os_name";
     private final static String osVersionParam = "os_version";
 
-    public static boolean sendTracking(String eventData) {
-        if (eventData == null) {
-            return false;
-        }
-
+    public static boolean sendTracking(String eventType,
+            List<NameValuePair> params) {
         try {
-            List<NameValuePair> body = createBody(eventData);
+            List<NameValuePair> body = createBody(
+                    generateEventData(eventType, params));
             HttpResponse response = Request.Post(url).bodyForm(body).execute()
                     .returnResponse();
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
@@ -68,7 +66,7 @@ public class AmplitudeService {
     }
 
     public static String generateEventData(String eventType,
-            JsonObject eventProps) {
+            List<NameValuePair> params) {
         try {
             JsonObject event = new JsonObject();
 
@@ -89,8 +87,12 @@ public class AmplitudeService {
                             + System.getProperty("os.arch"));
             event.addProperty(eventTypeParam, eventType);
 
-            if (eventProps != null) {
-                event.add(eventPropsParam, eventProps);
+            if (params.size() > 0) {
+                JsonObject props = new JsonObject();
+                params.forEach(p -> {
+                    props.addProperty(p.getName(), p.getValue());
+                });
+                event.add(eventPropsParam, props);
             }
 
             JsonArray events = new JsonArray();

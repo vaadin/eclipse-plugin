@@ -2,7 +2,7 @@ package com.vaadin.integration.eclipse.notifications;
 
 import org.eclipse.swt.widgets.Composite;
 
-import com.vaadin.integration.eclipse.flow.service.NotificationAnalytic;
+import com.vaadin.integration.eclipse.flow.service.Tracker;
 import com.vaadin.integration.eclipse.notifications.model.Notification;
 
 /**
@@ -19,8 +19,7 @@ class NotificationItem extends AbstractNotificationItem implements ItemAction {
     public void runAction(PopupUpdateManager manager) {
         activate();
         manager.showNotification(getNotification());
-        NotificationAnalytic
-                .trackNotificationLinkClick(this.notification.getLink());
+        Tracker.trackNotificationLinkClick(this.notification.getLink());
     }
 
     @Override
