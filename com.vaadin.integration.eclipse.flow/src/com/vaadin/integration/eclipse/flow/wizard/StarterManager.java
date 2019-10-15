@@ -43,7 +43,7 @@ import org.eclipse.ui.PlatformUI;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.vaadin.integration.eclipse.flow.service.AnalyticsServiceFlow;
+import com.vaadin.integration.eclipse.flow.service.ProjectAnalytic;
 import com.vaadin.integration.eclipse.flow.util.LogUtil;
 
 import net.lingala.zip4j.core.ZipFile;
@@ -240,7 +240,7 @@ public class StarterManager {
                                     .getLocation().toOSString(), starterFile);
                     StarterManager.scheduleMavenImport(starterDirectory,
                             !"osgi".equals(stack.getId()));
-                    AnalyticsServiceFlow.trackProjectCreate(starter.getId(),
+                    ProjectAnalytic.trackProjectCreate(starter.getId(),
                             stack.getId());
                     starterFile.delete();
                     monitor.done();

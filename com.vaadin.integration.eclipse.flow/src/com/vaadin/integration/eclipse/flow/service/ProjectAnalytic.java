@@ -2,7 +2,7 @@ package com.vaadin.integration.eclipse.flow.service;
 
 import com.google.gson.JsonObject;
 
-public class AnalyticsServiceFlow {
+public class ProjectAnalytic {
 
     public static final String INSTALL_EVENT_TYPE = "Install";
     private static final String CREATE_EVENT_TYPE = "Create project";

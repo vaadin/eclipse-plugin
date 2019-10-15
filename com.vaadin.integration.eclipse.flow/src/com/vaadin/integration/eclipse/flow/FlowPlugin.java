@@ -15,7 +15,7 @@ import org.osgi.framework.BundleContext;
 
 import com.vaadin.integration.eclipse.flow.pref.JavaPreferenceHandler;
 import com.vaadin.integration.eclipse.flow.pref.JavaPreferenceKey;
-import com.vaadin.integration.eclipse.flow.service.AnalyticsServiceFlow;
+import com.vaadin.integration.eclipse.flow.service.ProjectAnalytic;
 
 public class FlowPlugin extends AbstractUIPlugin {
 
@@ -40,7 +40,7 @@ public class FlowPlugin extends AbstractUIPlugin {
         super.start(context);
         if (!JavaPreferenceHandler
                 .getBooleanValue(JavaPreferenceKey.INSTALLED)) {
-            if (AnalyticsServiceFlow.track(AnalyticsServiceFlow.INSTALL_EVENT_TYPE)) {
+            if (ProjectAnalytic.track(ProjectAnalytic.INSTALL_EVENT_TYPE)) {
                 JavaPreferenceHandler
                         .saveBooleanValue(JavaPreferenceKey.INSTALLED, true);
             }

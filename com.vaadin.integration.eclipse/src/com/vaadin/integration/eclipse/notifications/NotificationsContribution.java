@@ -20,7 +20,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.menus.WorkbenchWindowControlContribution;
 
 import com.vaadin.integration.eclipse.VaadinPlugin;
-import com.vaadin.integration.eclipse.flow.service.AnalyticsServiceFramework;
+import com.vaadin.integration.eclipse.flow.service.NotificationAnalytic;
 import com.vaadin.integration.eclipse.notifications.model.Notification;
 import com.vaadin.integration.eclipse.notifications.model.VersionUpdateNotification;
 import com.vaadin.integration.eclipse.preferences.PreferenceConstants;
@@ -118,7 +118,7 @@ public class NotificationsContribution
 
         private void setPopupOpen(boolean visible) {
             isPopupOpen = visible;
-            AnalyticsServiceFramework.trackShowNotification(visible);
+            NotificationAnalytic.trackShowNotification(visible);
         }
 
         private boolean isPopupOpen() {

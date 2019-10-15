@@ -2,7 +2,7 @@ package com.vaadin.integration.eclipse.flow.service;
 
 import com.google.gson.JsonObject;
 
-public class AnalyticsServiceFramework {
+public class NotificationAnalytic {
     private static final String SHOW_NOTIFICATION_EVENT_TYPE = "Show notification";
     private static final String HIDE_NOTIFICATION_EVENT_TYPE = "Hide notification";
     private static final String LINK_CLICK_NOTIFICATION_EVENT_TYPE = "Notification link click";
