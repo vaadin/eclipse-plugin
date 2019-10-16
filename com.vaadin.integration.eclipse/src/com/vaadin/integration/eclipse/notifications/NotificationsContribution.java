@@ -20,6 +20,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.menus.WorkbenchWindowControlContribution;
 
 import com.vaadin.integration.eclipse.VaadinPlugin;
+import com.vaadin.integration.eclipse.flow.service.Tracker;
 import com.vaadin.integration.eclipse.notifications.model.Notification;
 import com.vaadin.integration.eclipse.notifications.model.VersionUpdateNotification;
 import com.vaadin.integration.eclipse.preferences.PreferenceConstants;
@@ -94,7 +95,8 @@ public class NotificationsContribution
                     return;
                 }
             }
-            VersionUpdateNotification versionNotification = ContributionService.getInstance().getVersionNotification();
+            VersionUpdateNotification versionNotification = ContributionService
+                    .getInstance().getVersionNotification();
             if (versionNotification != null && !versionNotification.isRead()) {
                 control.setImage(getNewIcon());
             } else {
@@ -117,6 +119,7 @@ public class NotificationsContribution
 
         private void setPopupOpen(boolean visible) {
             isPopupOpen = visible;
+            Tracker.trackShowNotification(visible);
         }
 
         private boolean isPopupOpen() {

@@ -31,7 +31,7 @@ abstract class AbstractNotificationItem extends Composite {
 
     private Label newNotificationLabel;
 
-    private final Notification notification;
+    protected final Notification notification;
 
     private final ItemStyle style;
     // this is currently redundant as no special ItemStyles are used

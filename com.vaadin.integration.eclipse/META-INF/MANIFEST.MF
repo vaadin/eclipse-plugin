@@ -48,7 +48,8 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.m2e.archetype.common;bundle-version="[1.4.0,2.0.0)",
  org.eclipse.m2e.maven.runtime;bundle-version="[1.4.0,2.0.0)",
  org.eclipse.help,
- org.eclipse.m2e.jdt
+ org.eclipse.m2e.jdt,
+ com.vaadin.integration.eclipse.flow;bundle-version="0.1.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-Activator: com.vaadin.integration.eclipse.VaadinPlugin
 Bundle-ActivationPolicy: lazy

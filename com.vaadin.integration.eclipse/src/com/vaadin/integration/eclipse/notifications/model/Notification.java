@@ -5,6 +5,7 @@ import java.util.Date;
 import org.eclipse.swt.graphics.Image;
 
 import com.vaadin.integration.eclipse.VaadinPlugin;
+import com.vaadin.integration.eclipse.flow.service.Tracker;
 
 /**
  * Data model for notification info
@@ -120,7 +121,7 @@ public class Notification implements Cloneable {
         }
 
         public Builder setLink(String link) {
-            notification.link = link;
+            notification.link = Tracker.getTrackableLink(link);
             return this;
         }
 
