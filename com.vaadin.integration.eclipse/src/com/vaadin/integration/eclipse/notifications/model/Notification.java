@@ -121,7 +121,7 @@ public class Notification implements Cloneable {
         }
 
         public Builder setLink(String link) {
-            notification.link = link + Tracker.UTM_TRACKING_PARAM;
+            notification.link = Tracker.getTrackableLink(link);
             return this;
         }
 

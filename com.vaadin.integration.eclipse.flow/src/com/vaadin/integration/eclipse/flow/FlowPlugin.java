@@ -40,7 +40,7 @@ public class FlowPlugin extends AbstractUIPlugin {
         super.start(context);
         if (!JavaPreferenceHandler
                 .getBooleanValue(JavaPreferenceKey.INSTALLED)) {
-            if (Tracker.track(Tracker.INSTALL_EVENT_TYPE)) {
+            if (Tracker.trackInstall()) {
                 JavaPreferenceHandler
                         .saveBooleanValue(JavaPreferenceKey.INSTALLED, true);
             }

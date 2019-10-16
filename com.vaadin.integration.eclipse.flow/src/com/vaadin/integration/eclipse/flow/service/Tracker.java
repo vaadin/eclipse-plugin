@@ -14,7 +14,7 @@ public class Tracker {
     private static final String starterPropParam = "Starter";
     private static final String stackPropParam = "Tech stack";
 
-    public static final String UTM_TRACKING_PARAM = "?utm_source=eclipse&utm_medium=notification&utm_campaign=eclipse_notifications";
+    private static final String UTM_TRACKING_PARAM = "?utm_source=eclipse&utm_medium=notification&utm_campaign=eclipse_notifications";
 
     private static final String SHOW_NOTIFICATION_EVENT_TYPE = "Show notification";
     private static final String HIDE_NOTIFICATION_EVENT_TYPE = "Hide notification";
@@ -22,8 +22,8 @@ public class Tracker {
 
     private static final String linkPropParam = "Link";
 
-    public static boolean track(String eventType) {
-        return AmplitudeService.sendTracking(eventType, null);
+    public static boolean trackInstall() {
+        return AmplitudeService.sendTracking(INSTALL_EVENT_TYPE, null);
     }
 
     public static boolean trackProjectCreate(String starter, String techStack) {
@@ -44,6 +44,10 @@ public class Tracker {
         params.add(new BasicNameValuePair(linkPropParam, link));
         return AmplitudeService.sendTracking(LINK_CLICK_NOTIFICATION_EVENT_TYPE,
                 params);
+    }
+
+    public static String getTrackableLink(String link) {
+        return link + Tracker.UTM_TRACKING_PARAM;
     }
 
 }
