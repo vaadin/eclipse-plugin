@@ -89,9 +89,10 @@ public class AmplitudeService {
 
             if (params.size() > 0) {
                 JsonObject props = new JsonObject();
-                params.forEach(p -> {
-                    props.addProperty(p.getName(), p.getValue());
-                });
+                for (int i = 0; i < params.size(); i++) {
+                    props.addProperty(params.get(i).getName(),
+                            params.get(i).getValue());
+                }
                 event.add(eventPropsParam, props);
             }
 
