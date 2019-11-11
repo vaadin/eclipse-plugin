@@ -87,7 +87,7 @@ public class AmplitudeService {
                             + System.getProperty("os.arch"));
             event.addProperty(eventTypeParam, eventType);
 
-            if (params.size() > 0) {
+            if (params != null && params.size() > 0) {
                 JsonObject props = new JsonObject();
                 for (int i = 0; i < params.size(); i++) {
                     props.addProperty(params.get(i).getName(),
