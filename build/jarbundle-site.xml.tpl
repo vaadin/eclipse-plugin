@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <description url="http://vaadin.com/eclipse/">
+   <description url="https://vaadin.com/eclipse/">
       Update site for Vaadin.
    </description>
    <feature url="features/com.vaadin.integration.eclipse.jarbundle_@com.vaadin.integration.eclipse.jarbundle-version@.jar" id="com.vaadin.integration.eclipse.jarbundle" version="@com.vaadin.integration.eclipse.jarbundle-version@">

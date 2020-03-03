@@ -23,7 +23,7 @@ import com.vaadin.integration.eclipse.util.files.LocalFileManager.FileType;
 
 public class DownloadManager {
 
-    public static final String VAADIN_DOWNLOAD_BASE_URL = "http://vaadin.com/download/";
+    public static final String VAADIN_DOWNLOAD_BASE_URL = "https://vaadin.com/download/";
 
     public static final String VAADIN_LATEST_URL = VAADIN_DOWNLOAD_BASE_URL
             + "LATEST";
@@ -31,7 +31,7 @@ public class DownloadManager {
     private static final String AVAILABLE_VAADIN_VERSIONS_ALL_URL = VAADIN_DOWNLOAD_BASE_URL
             + "VERSIONS_ALL";
 
-    private static final String GWT_DOWNLOAD_URL = "http://vaadin.com/download/external/gwt";
+    private static final String GWT_DOWNLOAD_URL = "https://vaadin.com/download/external/gwt";
 
     private static List<DownloadableVaadinVersion> availableVersions;
 

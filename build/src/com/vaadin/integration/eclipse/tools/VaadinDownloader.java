@@ -14,7 +14,7 @@ import org.apache.commons.io.IOUtils;
 
 public class VaadinDownloader {
 
-    private static final String VAADIN_BASE_URL = "http://vaadin.com/download";
+    private static final String VAADIN_BASE_URL = "https://vaadin.com/download";
     private static final String LATEST_URL = VAADIN_BASE_URL + "/LATEST";
     private static final String VAADIN_VERSION_ATTRIBUTE = "Bundle-version";
     private static final String GWT_VERSION_ATTRIBUTE = "GWT-Version";

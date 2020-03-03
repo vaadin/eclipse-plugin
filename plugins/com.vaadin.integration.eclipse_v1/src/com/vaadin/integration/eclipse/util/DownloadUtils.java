@@ -47,10 +47,10 @@ public class DownloadUtils {
     // this pattern does not filter out old versions
     private static final String VAADIN_VERSION_PART_PATTERN = "([0-9]*)\\.([0-9])\\.([^.]+)";
 
-    private static final String LATEST_BASE_URL = "http://vaadin.com/download";
+    private static final String LATEST_BASE_URL = "https://vaadin.com/download";
     private static final String LATEST_FILENAME = "LATEST";
-    private static final String VAADIN_DOWNLOAD_BASE_URL = "http://vaadin.com/download/";
-    private static final String GWT_DOWNLOAD_URL = "http://vaadin.com/download/external/gwt";
+    private static final String VAADIN_DOWNLOAD_BASE_URL = "https://vaadin.com/download/";
+    private static final String GWT_DOWNLOAD_URL = "https://vaadin.com/download/external/gwt";
 
     /**
      * A file version for a particular type of files (e.g. Vaadin JAR) and the
@@ -264,7 +264,7 @@ public class DownloadUtils {
 
     // Old IT Mill Toolkit downloads
     private static DownloadInformation TOOLKIT_JAR_DOWNLOAD = new ToolkitDownloadInformation(
-            "itmill-toolkit", "http://vaadin.com/download/release",
+            "itmill-toolkit", "https://vaadin.com/download/release",
             "itmill-toolkit-");
 
     // Vaadin download sites
