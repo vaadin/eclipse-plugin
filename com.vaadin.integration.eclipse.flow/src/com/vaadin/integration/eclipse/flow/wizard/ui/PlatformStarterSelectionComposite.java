@@ -117,7 +117,7 @@ public class PlatformStarterSelectionComposite extends Composite {
         stackCombo.setLabelProvider(new LabelProvider() {
             @Override
             public String getText(Object element) {
-                return ((TechStack) element).getId();
+                return ((TechStack) element).getTitle();
             }
         });
     }
