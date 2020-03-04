@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.IOUtils;
 
 public class EclipsePluginDownloader {
-    private static final String STABLE_ECLIPSE_SITE_URL = "http://vaadin.com/eclipse";
+    private static final String STABLE_ECLIPSE_SITE_URL = "https://vaadin.com/eclipse";
 
     public static void main(String[] args) throws IOException {
         downloadEclipsePlugin(args[0]);

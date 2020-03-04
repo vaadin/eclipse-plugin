@@ -6,7 +6,7 @@
       provider-name="Vaadin Ltd"
       plugin="com.vaadin.integration.eclipse">
 
-   <description url="http://vaadin.com/">
+   <description url="https://vaadin.com/">
       Contains the deprecated Vaadin WYSISYG editor, which has been superceded by the Vaadin Designer that provides the same functionality and more. The old WYSIWYG editor can still be used to maintain existing designs. 
    </description>
 
@@ -27,7 +27,7 @@ permissions and limitations under the License.
    </license>
 
    <url>
-      <update label="Vaadin Update Site" url="http://vaadin.com/eclipse/"/>
+      <update label="Vaadin Update Site" url="https://vaadin.com/eclipse/"/>
    </url>
 
    <requires>

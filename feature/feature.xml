@@ -6,7 +6,7 @@
       provider-name="Vaadin Ltd"
       plugin="com.vaadin.integration.eclipse">
 
-   <description url="http://vaadin.com/">
+   <description url="https://vaadin.com/">
       Vaadin Plug-in for Eclipse helps you to create and maintain Vaadin projects, widgetsets, widgets and more.
    </description>
 
@@ -27,7 +27,7 @@ permissions and limitations under the License.
    </license>
 
    <url>
-      <update label="Vaadin Update Site" url="http://vaadin.com/eclipse/"/>
+      <update label="Vaadin Update Site" url="https://vaadin.com/eclipse/"/>
    </url>
 
    <requires>
