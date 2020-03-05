@@ -20,9 +20,12 @@ import java.util.List;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.fluent.Request;
-import org.apache.http.client.fluent.Response;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.apache.maven.model.Model;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -58,12 +61,30 @@ public class StarterManager {
     private static final String TMP_STARTER_PREFIX = "tmp-starter-";
 
     public static List<Starter> fetchStarters() throws IOException {
-        Response response = Request.Get(START_SERVICE_URL)
-                .addHeader("accept", "application/json").execute();
-        String content = response.returnContent().asString();
-        Type listType = new TypeToken<ArrayList<Starter>>() {
-        }.getType();
-        return new Gson().fromJson(content, listType);
+        CloseableHttpClient client = null;
+        CloseableHttpResponse response = null;
+        try {
+            client = HttpClientBuilder.create().useSystemProperties().build();
+
+            HttpGet httpGet = new HttpGet(START_SERVICE_URL);
+            httpGet.addHeader("accept", "application/json");
+
+            response = client.execute(httpGet);
+            String content = new BasicResponseHandler()
+                    .handleResponse(response);
+
+            Type listType = new TypeToken<ArrayList<Starter>>() {
+            }.getType();
+
+            return new Gson().fromJson(content, listType);
+        } finally {
+            if (client != null) {
+                client.close();
+                if (response != null) {
+                    response.close();
+                }
+            }
+        }
     }
 
     public static List<Starter> getSupportedStarters(List<Starter> starters) {
@@ -98,20 +119,46 @@ public class StarterManager {
     public static File download(String release, String id, String appName,
             String groupId, String stack)
             throws IOException, URISyntaxException, FileNotFoundException {
+        CloseableHttpClient client = null;
+        CloseableHttpResponse response = null;
+        try {
+            client = HttpClientBuilder.create().useSystemProperties().build();
+
+            HttpGet httpGet = new HttpGet(
+                    getDownloadUrl(release, id, appName, groupId, stack));
+            httpGet.addHeader("accept", "application/json");
+
+            response = client.execute(httpGet);
+
+            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                throw new FileNotFoundException(
+                        EntityUtils.toString(response.getEntity()));
+            }
+
+            return writeToTmp(response);
+        } finally {
+            if (client != null) {
+                client.close();
+                if (response != null) {
+                    response.close();
+                }
+            }
+        }
+    }
+
+    private static String getDownloadUrl(String release, String id,
+            String appName, String groupId, String stack)
+            throws URISyntaxException {
         URIBuilder uriBuilder = new URIBuilder(
                 String.format(STARTER_DOWNLOAD_URL, release, id));
         uriBuilder.addParameter("appName", appName);
         uriBuilder.addParameter("groupId", groupId);
         uriBuilder.addParameter("techStack", stack);
+        return uriBuilder.build().toString();
+    }
 
-        HttpResponse response = Request.Get(uriBuilder.build().toString())
-                .addHeader("accept", "application/json").execute()
-                .returnResponse();
-        if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-            throw new FileNotFoundException(
-                    EntityUtils.toString(response.getEntity()));
-        }
-
+    private static File writeToTmp(HttpResponse response)
+            throws IOException, FileNotFoundException {
         File tmpDir = new File(System.getProperty("java.io.tmpdir"));
         File tmpFile = File.createTempFile(TMP_STARTER_PREFIX, ".zip", tmpDir);
         tmpFile.deleteOnExit();
@@ -125,6 +172,7 @@ public class StarterManager {
                 out.close();
             }
         }
+
         return tmpFile;
     }
 

@@ -38,6 +38,7 @@ public class FlowPlugin extends AbstractUIPlugin {
     @Override
     public void start(BundleContext context) throws Exception {
         super.start(context);
+        System.setProperty("jdk.http.auth.tunneling.disabledSchemes", "");
         if (!JavaPreferenceHandler
                 .getBooleanValue(JavaPreferenceKey.INSTALLED)) {
             if (Tracker.trackInstall()) {
