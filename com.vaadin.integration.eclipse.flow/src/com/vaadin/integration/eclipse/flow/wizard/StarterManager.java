@@ -100,8 +100,7 @@ public class StarterManager {
     }
 
     public static Starter getSupportedStarter(Starter starter) {
-        if (!"latest".equals(starter.getRelease())
-                || starter.isCommercial()
+        if (!"v14".equals(starter.getRelease()) || starter.isCommercial()
                 || "component".equals(starter.getId())) {
             return null;
         }
