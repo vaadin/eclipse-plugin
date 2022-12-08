@@ -140,7 +140,7 @@ public class DownloadManager {
      */
     private static List<DownloadableVaadinVersion> downloadAvailableVersionsList()
             throws CoreException {
-        List<MavenVaadinVersion> list = new ArrayList<>();
+        List<DownloadableVaadinVersion> list = new ArrayList<>();
         DownloadableVaadinVersion version = new DownloadableVaadinVersion("8.14.3");
         list.add(version);
         return list;
