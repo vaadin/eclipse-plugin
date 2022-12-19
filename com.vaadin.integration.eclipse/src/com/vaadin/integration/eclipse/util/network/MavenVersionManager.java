@@ -172,14 +172,7 @@ public class MavenVersionManager {
     public static synchronized List<MavenVaadinVersion> getAvailableVersions(
             boolean onlyRelease) throws CoreException {
         if (availableVersions == null) {
-            try {
-                availableVersions = downloadAvailableVersionsList();
-            } catch (CoreException e) {
-                ErrorUtil.handleBackgroundException(
-                        "Failed to retrieve available Vaadin 7 version list from server, using cached list",
-                        e);
-                availableVersions = getCachedAvailableVersionsList();
-            }
+            availableVersions = downloadAvailableVersionsList();
         }
 
         List<MavenVaadinVersion> versions;
@@ -205,18 +198,12 @@ public class MavenVersionManager {
      * If the download succeeds, also save the list in the cache.
      *
      * @return
-     * @throws CoreException
      */
-    private static List<MavenVaadinVersion> downloadAvailableVersionsList()
-            throws CoreException {
-        try {
-            String versionData = loadAndCacheResource(
-                    AVAILABLE_VAADIN_VERSIONS_URL, VERSIONS_FILE_NAME);
-            return parseAvailableVersions(versionData);
-        } catch (IOException e) {
-            throw ErrorUtil.newCoreException(
-                    "Failed to download list of available Vaadin versions", e);
-        }
+    private static List<MavenVaadinVersion> downloadAvailableVersionsList() {
+        List<MavenVaadinVersion> list = new ArrayList<>();
+        MavenVaadinVersion version = new MavenVaadinVersion("7.7.17");
+        list.add(version);
+        return list;
     }
 
     private static String loadAndCacheResource(String url, String cacheFileName)
