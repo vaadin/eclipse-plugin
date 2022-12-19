@@ -135,20 +135,23 @@ public class DownloadManager {
 
     /**
      * Download and return the list of available Vaadin versions from vaadin.com
-     * 
+     *
      * @return
      */
     private static List<DownloadableVaadinVersion> downloadAvailableVersionsList()
             throws CoreException {
-        List<DownloadableVaadinVersion> list = new ArrayList<>();
-        DownloadableVaadinVersion version = new DownloadableVaadinVersion("8.14.3");
-        list.add(version);
-        return list;
+        try {
+            String versionData = downloadURL(AVAILABLE_VAADIN_VERSIONS_ALL_URL);
+            return parseAvailableVersions(versionData);
+        } catch (IOException e) {
+            throw ErrorUtil.newCoreException(
+                    "Failed to download list of available Vaadin versions", e);
+        }
     }
 
     /**
      * Parses the available versions and URLs from comma separated data.
-     * 
+     *
      * @param versionData
      * @return
      */

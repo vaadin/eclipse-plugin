@@ -200,7 +200,7 @@ public class MavenVersionManager {
      * @return
      */
     private static List<MavenVaadinVersion> downloadAvailableVersionsList() {
-        List<MavenVaadinVersion> list = new ArrayList<>();
+        List<MavenVaadinVersion> list = new ArrayList<MavenVaadinVersion>();
         MavenVaadinVersion version = new MavenVaadinVersion("7.7.17");
         list.add(version);
         return list;
