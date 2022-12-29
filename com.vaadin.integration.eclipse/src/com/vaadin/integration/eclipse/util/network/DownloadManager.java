@@ -37,7 +37,7 @@ public class DownloadManager {
 
     /**
      * Returns the latest release version available to download.
-     * 
+     *
      * @return Version string for the latest Vaadin release version.
      * @throws CoreException
      *             If the latest version could not be checked due to network
@@ -59,7 +59,7 @@ public class DownloadManager {
 
     /**
      * Returns the contents of the file the URL refers to.
-     * 
+     *
      * @param fileURL
      *            The URL location of the file
      * @return The contents of the given URL
@@ -73,7 +73,7 @@ public class DownloadManager {
 
     /**
      * Returns an InputStream for the given URL. Takes care of proxies etc.
-     * 
+     *
      * @param urlString
      * @return
      * @throws IOException
@@ -90,16 +90,16 @@ public class DownloadManager {
      * Returns a list of what Vaadin versions are available for download. The
      * list contains release version and additionally, if includeDevelopment is
      * true, nightly and pre-release versions.
-     * 
+     *
      * It is not guaranteed that the list is fetched from the site every time
      * this is called.
-     * 
+     *
      * @param onlyRelease
      *            True to include only release builds, false to include others
      *            also (nightly, pre-release)
      * @return A sorted list of available Vaadin versions
      * @throws CoreException
-     * 
+     *
      */
     public static synchronized List<DownloadableVaadinVersion> getAvailableVersions(
             boolean onlyRelease) throws CoreException {
@@ -184,7 +184,7 @@ public class DownloadManager {
 
     /**
      * Download Vaadin JAR with the given version number.
-     * 
+     *
      * @param versionNumber
      * @param subProgressMonitor
      * @throws CoreException
@@ -206,14 +206,13 @@ public class DownloadManager {
                         downloadableVersion.getType(), versionNumber,
                         subProgressMonitor);
             } catch (CoreException e) {
-                throw ErrorUtil.newCoreException(
-                        "Failed to download Vaadin version ("
+                throw ErrorUtil
+                        .newCoreException("Failed to download Vaadin version ("
                                 + downloadableVersion.getVersionNumber(), e);
             }
         } else {
-            throw ErrorUtil
-                    .newCoreException("Unable to find requested version ("
-                            + versionNumber + ")");
+            throw ErrorUtil.newCoreException(
+                    "Unable to find requested version (" + versionNumber + ")");
         }
 
     }
@@ -240,7 +239,7 @@ public class DownloadManager {
     /**
      * Downloads the gwt-user.jar for the specified GWT version if it has not
      * already been dowloaded.
-     * 
+     *
      * @param version
      * @param monitor
      * @throws CoreException
@@ -262,7 +261,7 @@ public class DownloadManager {
     /**
      * Downloads the gwt-dev.jar for the specified GWT version if it has not
      * already been dowloaded.
-     * 
+     *
      * @param version
      * @param monitor
      * @throws CoreException
@@ -299,8 +298,8 @@ public class DownloadManager {
             String url = GWT_DEPENDENCY_JAR_DOWNLOAD_URL(gwtVersion,
                     dependencyJar);
 
-            IPath target = LocalFileManager.getLocalGWTDependencyJar(
-                    gwtVersion, dependencyJar);
+            IPath target = LocalFileManager.getLocalGWTDependencyJar(gwtVersion,
+                    dependencyJar);
             downloadFileToLocalStore(url, target.toFile());
         } finally {
             monitor.done();
@@ -312,7 +311,7 @@ public class DownloadManager {
      * Downloads the url and stores it in the local file store as the selected
      * type and version. Silently returns false if the file already exists in
      * the local file store.
-     * 
+     *
      * @param url
      * @param fileType
      * @param version
@@ -337,7 +336,7 @@ public class DownloadManager {
     /**
      * Downloads the file from the given url and stores it as targetFile. Does
      * nothing if targetFile already exists.
-     * 
+     *
      * @param url
      * @param targetFile
      * @return true if the file was downloaded, false otherwise
@@ -356,8 +355,8 @@ public class DownloadManager {
                 targetFile.getParentFile().mkdirs();
             }
 
-            IOUtils.copy(getDownloadStream(url), new FileOutputStream(
-                    targetFile));
+            IOUtils.copy(getDownloadStream(url),
+                    new FileOutputStream(targetFile));
 
             return true;
         } catch (IOException e) {
