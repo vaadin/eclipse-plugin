@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Vaadin Eclipse Plugin
+Bundle-SymbolicName: vaadin-eclipse-plugin;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: Vaadin
+Require-Bundle: org.eclipse.ui
+Automatic-Module-Name: vaadin.eclipse.plugin
+Bundle-RequiredExecutionEnvironment: JavaSE-21
