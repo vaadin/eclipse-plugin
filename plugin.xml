@@ -57,6 +57,18 @@
             </command>
          </toolbar>
       </menuContribution>
+
+      <menuContribution
+            locationURI="statusLine:org.eclipse.ui.statusLine?after=additions">
+         <toolbar id="vaadin-eclipse-plugin.toolbars.statusLogoToolbar">
+            <command
+                  id="vaadin-eclipse-plugin.toolbars.statusLogo"
+                  commandId="vaadin-eclipse-plugin.commands.sampleCommand"
+                  icon="icons/sample.png"
+                  tooltip="Vaadin Plugin active">
+            </command>
+         </toolbar>
+      </menuContribution>
    </extension>
 
 </plugin>

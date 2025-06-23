@@ -4,6 +4,9 @@ Bundle-Name: Vaadin Eclipse Plugin
 Bundle-SymbolicName: vaadin-eclipse-plugin;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Vendor: Vaadin
-Require-Bundle: org.eclipse.ui
+Require-Bundle: org.eclipse.ui,\
+ org.junit;resolution:=optional,\
+ org.eclipse.ui.workbench;resolution:=optional,\
+ org.eclipse.ui.tests;resolution:=optional
 Automatic-Module-Name: vaadin.eclipse.plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-21
