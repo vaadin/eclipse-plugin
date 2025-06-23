@@ -5,6 +5,7 @@ Bundle-SymbolicName: vaadin-eclipse-plugin;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Vendor: Vaadin
 Require-Bundle: org.eclipse.ui
+Import-Package: javax.servlet,javax.servlet.http,org.osgi.service.http
 Bundle-Activator: com.vaadin.plugin.Activator
 Automatic-Module-Name: vaadin.eclipse.plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-21

@@ -1,7 +1,7 @@
 # eclipse-plugin
 
 This repository contains a minimal Eclipse plugin example for Vaadin.
-The plugin now starts a small REST service on a random TCP port during startup to allow communication with Vaadin Copilot. The service exposes a unique `/api/{serviceName}` endpoint and the full endpoint URL is available in the `vaadin.copilot.endpoint` system property.
+The plugin now registers a servlet using the OSGi `HttpService` when it starts. The servlet exposes a unique `/api/{serviceName}` endpoint on the container's HTTP server, and the full endpoint URL is available in the `vaadin.copilot.endpoint` system property.
 
 ## License
 

@@ -2,7 +2,8 @@ package com.vaadin.plugin;
 
 import org.eclipse.core.runtime.Plugin;
 import org.osgi.framework.BundleContext;
-import java.io.IOException;
+import org.osgi.service.http.NamespaceException;
+import javax.servlet.ServletException;
 
 public class Activator extends Plugin {
     private static Activator plugin;
@@ -21,17 +22,17 @@ public class Activator extends Plugin {
         super.start(context);
         restService = new CopilotRestService();
         try {
-            restService.start();
+            restService.start(context);
             System.setProperty("vaadin.copilot.endpoint", restService.getEndpoint());
-        } catch (IOException e) {
-            System.err.println("Failed to start Copilot REST service: " + e.getMessage());
+        } catch (ServletException | NamespaceException e) {
+            System.err.println("Failed to register Copilot servlet: " + e.getMessage());
         }
     }
 
     @Override
     public void stop(BundleContext context) throws Exception {
         if (restService != null) {
-            restService.stop();
+            restService.stop(context);
             restService = null;
         }
         plugin = null;

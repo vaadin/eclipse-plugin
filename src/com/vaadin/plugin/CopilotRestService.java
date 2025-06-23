@@ -1,65 +1,53 @@
 package com.vaadin.plugin;
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpExchange;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.service.http.HttpService;
+import org.osgi.service.http.NamespaceException;
+import javax.servlet.ServletException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /**
- * Minimal REST service for Vaadin Copilot integration. Starts on a random
- * free port and exposes a unique /api/{serviceName} endpoint accepting POST
- * requests.
+ * Registers a simple servlet for Vaadin Copilot integration using the OSGi
+ * {@link HttpService}. The servlet is bound to a unique "/api/{serviceName}"
+ * alias and the full endpoint URL can be retrieved via {@link #getEndpoint()}.
  */
 public class CopilotRestService {
-    private HttpServer server;
-    private int port;
+    private HttpService httpService;
+    private ServiceReference<HttpService> serviceRef;
     private String serviceName;
+    private String endpoint;
 
-    public void start() throws IOException {
+    public void start(BundleContext context) throws ServletException, NamespaceException {
         serviceName = "copilot-" + UUID.randomUUID();
-        server = HttpServer.create(new InetSocketAddress(0), 0);
-        port = server.getAddress().getPort();
-        server.createContext("/api/" + serviceName, new CopilotHandler());
-        server.setExecutor(null); // default executor
-        server.start();
-        System.out.println("Copilot REST service started on " + getEndpoint());
-    }
-
-    public void stop() {
-        if (server != null) {
-            server.stop(0);
-            server = null;
+        serviceRef = context.getServiceReference(HttpService.class);
+        if (serviceRef == null) {
+            throw new IllegalStateException("HttpService not available");
         }
+        httpService = context.getService(serviceRef);
+        String alias = "/api/" + serviceName;
+        httpService.registerServlet(alias, new CopilotServlet(), null, null);
+        String port = context.getProperty("org.osgi.service.http.port");
+        if (port == null) {
+            port = "8080";
+        }
+        endpoint = "http://localhost:" + port + alias;
+        System.out.println("Copilot REST service registered at " + endpoint);
     }
 
-    public int getPort() {
-        return port;
+    public void stop(BundleContext context) {
+        if (httpService != null) {
+            String alias = "/api/" + serviceName;
+            httpService.unregister(alias);
+            context.ungetService(serviceRef);
+            httpService = null;
+            serviceRef = null;
+        }
     }
 
     public String getEndpoint() {
-        return "http://127.0.0.1:" + port + "/api/" + serviceName;
+        return endpoint;
     }
 
-    private static class CopilotHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(405, -1);
-                return;
-            }
-            InputStream is = exchange.getRequestBody();
-            String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-            System.out.println("Received Copilot request: " + body);
-            byte[] response = "OK".getBytes(StandardCharsets.UTF_8);
-            exchange.sendResponseHeaders(200, response.length);
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(response);
-            }
-        }
-    }
 }
