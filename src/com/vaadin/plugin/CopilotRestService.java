@@ -8,22 +8,26 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 /**
  * Minimal REST service for Vaadin Copilot integration. Starts on a random
- * free port and exposes a single /copilot endpoint accepting POST requests.
+ * free port and exposes a unique /api/{serviceName} endpoint accepting POST
+ * requests.
  */
 public class CopilotRestService {
     private HttpServer server;
     private int port;
+    private String serviceName;
 
     public void start() throws IOException {
+        serviceName = "copilot-" + UUID.randomUUID();
         server = HttpServer.create(new InetSocketAddress(0), 0);
         port = server.getAddress().getPort();
-        server.createContext("/copilot", new CopilotHandler());
+        server.createContext("/api/" + serviceName, new CopilotHandler());
         server.setExecutor(null); // default executor
         server.start();
-        System.out.println("Copilot REST service started on port " + port);
+        System.out.println("Copilot REST service started on " + getEndpoint());
     }
 
     public void stop() {
@@ -35,6 +39,10 @@ public class CopilotRestService {
 
     public int getPort() {
         return port;
+    }
+
+    public String getEndpoint() {
+        return "http://127.0.0.1:" + port + "/api/" + serviceName;
     }
 
     private static class CopilotHandler implements HttpHandler {

@@ -22,6 +22,7 @@ public class Activator extends Plugin {
         restService = new CopilotRestService();
         try {
             restService.start();
+            System.setProperty("vaadin.copilot.endpoint", restService.getEndpoint());
         } catch (IOException e) {
             System.err.println("Failed to start Copilot REST service: " + e.getMessage());
         }
