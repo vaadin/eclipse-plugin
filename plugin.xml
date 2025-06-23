@@ -57,6 +57,11 @@
             </command>
          </toolbar>
       </menuContribution>
-   </extension>
+  </extension>
+
+  <extension
+        point="org.eclipse.ui.startup">
+     <startup class="com.vaadin.plugin.EarlyStartup"/>
+  </extension>
 
 </plugin>
