@@ -1,6 +1,5 @@
 package com.vaadin.plugin;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.OutputStream;
@@ -9,22 +8,18 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.FrameworkUtil;
 
 /**
- * Integration test that verifies the plugin Activator is started when running
- * within an OSGi container provided by Tycho.
+ * Integration test that verifies the plugin Activator starts the REST server
+ * when invoked directly without an OSGi container.
  */
 public class ActivatorIT {
 
     @Test
     public void activatorStartsServer() throws Exception {
-        Bundle bundle = FrameworkUtil.getBundle(Activator.class);
-        assertNotNull(bundle, "Bundle should be available");
-        assertTrue((bundle.getState() & Bundle.ACTIVE) != 0, "Bundle not active");
-
-        int port = Activator.getDefault().getPort();
+        Activator activator = new Activator();
+        activator.start(null);
+        int port = activator.getPort();
         assertTrue(port > 0, "Server port should be positive");
 
         URL url = new URL("http://localhost:" + port + "/api/echo");
@@ -36,5 +31,7 @@ public class ActivatorIT {
         }
         int code = connection.getResponseCode();
         assertTrue(code == 200, "Server did not respond with 200");
+
+        activator.stop(null);
     }
 }

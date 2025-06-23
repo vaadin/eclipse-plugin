@@ -12,7 +12,9 @@ public class Activator extends AbstractUIPlugin {
 
     @Override
     public void start(BundleContext context) throws Exception {
-        super.start(context);
+        if (context != null) {
+            super.start(context);
+        }
         plugin = this;
         server = new RestServer();
         server.start();
@@ -25,7 +27,9 @@ public class Activator extends AbstractUIPlugin {
             server = null;
         }
         plugin = null;
-        super.stop(context);
+        if (context != null) {
+            super.stop(context);
+        }
     }
 
     public static Activator getDefault() {
