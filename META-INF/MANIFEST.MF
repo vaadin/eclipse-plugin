@@ -5,6 +5,9 @@ Bundle-SymbolicName: vaadin-eclipse-plugin;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Vendor: Vaadin
 Require-Bundle: org.eclipse.ui,\
+ org.eclipse.core.expressions;resolution:=optional,\
+ org.eclipse.jdt.core;resolution:=optional,\
+ org.eclipse.core.resources;resolution:=optional,\
  org.junit;resolution:=optional,\
  org.eclipse.ui.workbench;resolution:=optional,\
  org.eclipse.ui.tests;resolution:=optional

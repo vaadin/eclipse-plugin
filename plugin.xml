@@ -30,6 +30,15 @@
             sequence="M1+6">
       </key>
    </extension>
+   <extension point="org.eclipse.core.expressions.propertyTesters">
+      <propertyTester
+            namespace="com.vaadin.plugin"
+            properties="isVaadinProject"
+            type="org.eclipse.core.resources.IProject"
+            class="com.vaadin.plugin.VaadinProjectPropertyTester"
+            forcePluginActivation="true">
+      </propertyTester>
+   </extension>
    <extension
          point="org.eclipse.ui.menus">
       <menuContribution
@@ -42,6 +51,13 @@
                   commandId="vaadin-eclipse-plugin.commands.sampleCommand"
                   id="vaadin-eclipse-plugin.menus.sampleCommand"
                   mnemonic="S">
+               <visibleWhen>
+                  <with variable="selection">
+                     <iterate operator="or">
+                        <test property="com.vaadin.plugin.isVaadinProject"/>
+                     </iterate>
+                  </with>
+               </visibleWhen>
             </command>
          </menu>
       </menuContribution>
@@ -54,6 +70,13 @@
                   commandId="vaadin-eclipse-plugin.commands.sampleCommand"
                   icon="icons/sample.png"
                   tooltip="Say hello world">
+               <visibleWhen>
+                  <with variable="selection">
+                     <iterate operator="or">
+                        <test property="com.vaadin.plugin.isVaadinProject"/>
+                     </iterate>
+                  </with>
+               </visibleWhen>
             </command>
          </toolbar>
       </menuContribution>
@@ -66,6 +89,13 @@
                   commandId="vaadin-eclipse-plugin.commands.sampleCommand"
                   icon="icons/sample.png"
                   tooltip="Vaadin Plugin active">
+               <visibleWhen>
+                  <with variable="selection">
+                     <iterate operator="or">
+                        <test property="com.vaadin.plugin.isVaadinProject"/>
+                     </iterate>
+                  </with>
+               </visibleWhen>
             </command>
          </toolbar>
       </menuContribution>
