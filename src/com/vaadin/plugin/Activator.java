@@ -4,8 +4,6 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.http.NamespaceException;
 import javax.servlet.ServletException;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
 
 /**
  * Bundle activator that starts the Copilot REST service on plugin startup.
@@ -33,8 +31,8 @@ public class Activator extends AbstractUIPlugin {
             restService.start(context);
             System.setProperty("vaadin.copilot.endpoint", restService.getEndpoint());
         } catch (ServletException | NamespaceException e) {
-            getLog().log(new Status(IStatus.ERROR, PLUGIN_ID,
-                    "Failed to register Copilot servlet", e));
+            System.err.println("Failed to register Copilot servlet");
+            e.printStackTrace();
         }
     }
 
