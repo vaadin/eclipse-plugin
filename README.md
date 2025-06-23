@@ -1,7 +1,7 @@
 # eclipse-plugin
 
 This repository contains a minimal Eclipse plugin example for Vaadin.
-The plug-in defines a `BundleActivator` that registers a servlet using the OSGi `HttpService` when it starts. The servlet exposes a unique `/api/{serviceName}` endpoint on the container's HTTP server, and the full endpoint URL is available in the `vaadin.copilot.endpoint` system property.
+The plug-in registers a servlet using the OSGi `HttpService` when the workbench starts. The servlet exposes a unique `/api/{serviceName}` endpoint on the container's HTTP server, and the full endpoint URL is available in the `vaadin.copilot.endpoint` system property.
 
 ## License
 
