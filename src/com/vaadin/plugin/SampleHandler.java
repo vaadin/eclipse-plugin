@@ -9,13 +9,10 @@ import org.eclipse.jface.dialogs.MessageDialog;
 
 public class SampleHandler extends AbstractHandler {
 
-	@Override
-	public Object execute(ExecutionEvent event) throws ExecutionException {
-		IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindowChecked(event);
-		MessageDialog.openInformation(
-				window.getShell(),
-				"Vaadin Eclipse Plugin",
-				"Hello, Eclipse world");
-		return null;
-	}
+    @Override
+    public Object execute(ExecutionEvent event) throws ExecutionException {
+        IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindowChecked(event);
+        MessageDialog.openInformation(window.getShell(), "Vaadin Eclipse Plugin", "Hello, Eclipse world");
+        return null;
+    }
 }
