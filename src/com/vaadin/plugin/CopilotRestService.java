@@ -6,12 +6,12 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Starts a small HTTP server for Copilot integration. The server exposes a
- * single <code>/api/copilot</code> endpoint that accepts POST requests.
+ * Starts a small HTTP server for Copilot integration.
  */
 public class CopilotRestService {
     private HttpServer server;
@@ -19,10 +19,10 @@ public class CopilotRestService {
 
     /** Start the embedded HTTP server on a random port. */
     public void start() throws IOException {
-        server = HttpServer.create(new InetSocketAddress(0), 0);
-        server.createContext("/api/copilot", new Handler());
+        server = HttpServer.create(new InetSocketAddress(InetAddress.getLocalHost(), 0), 0);
+        server.createContext("/vaadin/copilot", new Handler());
         server.start();
-        endpoint = "http://localhost:" + server.getAddress().getPort() + "/api/copilot";
+        endpoint = "http://localhost:" + server.getAddress().getPort() + "/vaadin/copilot";
         System.out.println("Copilot REST service started at " + endpoint);
     }
 
@@ -48,7 +48,9 @@ public class CopilotRestService {
             }
             InputStream is = exchange.getRequestBody();
             String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+
             System.out.println("Received Copilot request: " + body);
+
             byte[] resp = "OK".getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, resp.length);
             try (OutputStream os = exchange.getResponseBody()) {

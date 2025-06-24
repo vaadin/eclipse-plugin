@@ -6,6 +6,7 @@ Bundle-Version: 1.0.0.qualifier
 Bundle-Vendor: Vaadin
 Require-Bundle: org.eclipse.ui
 Bundle-Activator: com.vaadin.plugin.Activator
+Bundle-ActivationPolicy: lazy
 Import-Package: org.osgi.framework,com.sun.net.httpserver
 Automatic-Module-Name: vaadin.eclipse.plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-21

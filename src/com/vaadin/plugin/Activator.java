@@ -4,8 +4,7 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
 /**
- * Bundle activator that starts the REST service when the plug-in is
- * activated and stops it on shutdown.
+ * Bundle activator that starts the REST service when the plug-in is activated and stops it on shutdown.
  */
 public class Activator implements BundleActivator {
     private CopilotRestService restService;
