@@ -10,7 +10,7 @@
     <packaging>eclipse-plugin</packaging>
 
     <properties>
-        <tycho.version>4.0.13</tycho.version>
+        <tycho-version>4.0.1</tycho-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -19,13 +19,32 @@
             <plugin>
                 <groupId>org.eclipse.tycho</groupId>
                 <artifactId>tycho-maven-plugin</artifactId>
-                <version>${tycho.version}</version>
+                <version>${tycho-version}</version>
                 <extensions>true</extensions>
+            </plugin>
+            <plugin>
+                <groupId>org.eclipse.tycho</groupId>
+                <artifactId>tycho-packaging-plugin</artifactId>
+                <version>${tycho-version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.eclipse.tycho</groupId>
+                <artifactId>p2-maven-plugin</artifactId>
+                <version>${tycho-version}</version>
             </plugin>
             <plugin>
                 <groupId>org.eclipse.tycho</groupId>
                 <artifactId>target-platform-configuration</artifactId>
                 <version>${tycho-version}</version>
+                <configuration>
+                    <environments>
+                        <environment>
+                            <os>linux</os>
+                            <ws>gtk</ws>
+                            <arch>x86_64</arch>
+                        </environment>
+                    </environments>
+                </configuration>
             </plugin>
 
             <plugin>
