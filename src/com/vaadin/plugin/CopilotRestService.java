@@ -6,9 +6,20 @@ import com.google.gson.JsonParser;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.ide.IDE;
+import org.eclipse.ui.texteditor.ITextEditor;
+import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.BadLocationException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -170,21 +181,181 @@ public class CopilotRestService {
         }
         
         private String handleWrite(IProject project, JsonObject data) {
-            // TODO: Implement file writing
-            System.out.println("Write command for project: " + project.getName());
-            return "{\"status\": \"ok\"}";
+            try {
+                String fileName = data.get("file").getAsString();
+                String content = data.get("content").getAsString();
+                String undoLabel = data.has("undoLabel") ? data.get("undoLabel").getAsString() : null;
+                
+                System.out.println("Write command for project: " + project.getName() + ", file: " + fileName);
+                
+                // Convert absolute path to workspace-relative path
+                IPath filePath = new org.eclipse.core.runtime.Path(fileName);
+                IFile file = null;
+                
+                // Try to find the file within the project
+                if (filePath.isAbsolute()) {
+                    IPath projectPath = project.getLocation();
+                    if (projectPath != null && projectPath.isPrefixOf(filePath)) {
+                        IPath relativePath = filePath.removeFirstSegments(projectPath.segmentCount());
+                        file = project.getFile(relativePath);
+                    }
+                }
+                
+                if (file == null) {
+                    return "{\"error\": \"File not found in project: " + fileName + "\"}";
+                }
+                
+                final IFile finalFile = file;
+                final String finalContent = content;
+                
+                // Execute file write operation in UI thread
+                PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
+                    try {
+                        java.io.ByteArrayInputStream stream = new java.io.ByteArrayInputStream(finalContent.getBytes("UTF-8"));
+                        
+                        if (finalFile.exists()) {
+                            // Update existing file
+                            finalFile.setContents(stream, true, true, null);
+                        } else {
+                            // Create new file (and parent directories if needed)
+                            createParentFolders(finalFile);
+                            finalFile.create(stream, true, null);
+                        }
+                        
+                        // Refresh the file in workspace
+                        finalFile.refreshLocal(IResource.DEPTH_ZERO, null);
+                        
+                    } catch (Exception e) {
+                        System.err.println("Error writing file: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                });
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", "ok");
+                return gson.toJson(response);
+                
+            } catch (Exception e) {
+                System.err.println("Error in write handler: " + e.getMessage());
+                e.printStackTrace();
+                return "{\"error\": \"" + e.getMessage() + "\"}";
+            }
         }
         
         private String handleWriteBase64(IProject project, JsonObject data) {
-            // TODO: Implement base64 file writing
-            System.out.println("WriteBase64 command for project: " + project.getName());
-            return "{\"status\": \"ok\"}";
+            try {
+                String fileName = data.get("file").getAsString();
+                String base64Content = data.get("content").getAsString();
+                String undoLabel = data.has("undoLabel") ? data.get("undoLabel").getAsString() : null;
+                
+                System.out.println("WriteBase64 command for project: " + project.getName() + ", file: " + fileName);
+                
+                // Convert absolute path to workspace-relative path
+                IPath filePath = new org.eclipse.core.runtime.Path(fileName);
+                IFile file = null;
+                
+                // Try to find the file within the project
+                if (filePath.isAbsolute()) {
+                    IPath projectPath = project.getLocation();
+                    if (projectPath != null && projectPath.isPrefixOf(filePath)) {
+                        IPath relativePath = filePath.removeFirstSegments(projectPath.segmentCount());
+                        file = project.getFile(relativePath);
+                    }
+                }
+                
+                if (file == null) {
+                    return "{\"error\": \"File not found in project: " + fileName + "\"}";
+                }
+                
+                final IFile finalFile = file;
+                final String finalBase64Content = base64Content;
+                
+                // Execute file write operation in UI thread
+                PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
+                    try {
+                        // Decode base64 content
+                        byte[] decodedBytes = java.util.Base64.getDecoder().decode(finalBase64Content);
+                        java.io.ByteArrayInputStream stream = new java.io.ByteArrayInputStream(decodedBytes);
+                        
+                        if (finalFile.exists()) {
+                            // Update existing file
+                            finalFile.setContents(stream, true, true, null);
+                        } else {
+                            // Create new file (and parent directories if needed)
+                            createParentFolders(finalFile);
+                            finalFile.create(stream, true, null);
+                        }
+                        
+                        // Refresh the file in workspace
+                        finalFile.refreshLocal(IResource.DEPTH_ZERO, null);
+                        
+                    } catch (Exception e) {
+                        System.err.println("Error writing base64 file: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                });
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", "ok");
+                return gson.toJson(response);
+                
+            } catch (Exception e) {
+                System.err.println("Error in writeBase64 handler: " + e.getMessage());
+                e.printStackTrace();
+                return "{\"error\": \"" + e.getMessage() + "\"}";
+            }
         }
         
         private String handleDelete(IProject project, JsonObject data) {
-            // TODO: Implement file deletion
-            System.out.println("Delete command for project: " + project.getName());
-            return "{\"status\": \"ok\"}";
+            try {
+                String fileName = data.get("file").getAsString();
+                
+                System.out.println("Delete command for project: " + project.getName() + ", file: " + fileName);
+                
+                // Convert absolute path to workspace-relative path
+                IPath filePath = new org.eclipse.core.runtime.Path(fileName);
+                IFile file = null;
+                
+                // Try to find the file within the project
+                if (filePath.isAbsolute()) {
+                    IPath projectPath = project.getLocation();
+                    if (projectPath != null && projectPath.isPrefixOf(filePath)) {
+                        IPath relativePath = filePath.removeFirstSegments(projectPath.segmentCount());
+                        file = project.getFile(relativePath);
+                    }
+                }
+                
+                if (file == null) {
+                    return "{\"error\": \"File not found in project: " + fileName + "\"}";
+                }
+                
+                if (!file.exists()) {
+                    return "{\"error\": \"File does not exist: " + fileName + "\"}";
+                }
+                
+                final IFile finalFile = file;
+                
+                // Execute file delete operation in UI thread
+                PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
+                    try {
+                        finalFile.delete(true, null);
+                        System.out.println("File deleted: " + fileName);
+                        
+                    } catch (Exception e) {
+                        System.err.println("Error deleting file: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                });
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", "ok");
+                return gson.toJson(response);
+                
+            } catch (Exception e) {
+                System.err.println("Error in delete handler: " + e.getMessage());
+                e.printStackTrace();
+                return "{\"error\": \"" + e.getMessage() + "\"}";
+            }
         }
         
         private String handleUndo(IProject project, JsonObject data) {
@@ -200,15 +371,114 @@ public class CopilotRestService {
         }
         
         private String handleRefresh(IProject project) {
-            // TODO: Implement project refresh
-            System.out.println("Refresh command for project: " + project.getName());
-            return "{\"status\": \"ok\"}";
+            try {
+                System.out.println("Refresh command for project: " + project.getName());
+                
+                // Execute refresh operation in UI thread
+                PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
+                    try {
+                        // Refresh the entire project
+                        project.refreshLocal(IResource.DEPTH_INFINITE, null);
+                        System.out.println("Project refreshed: " + project.getName());
+                        
+                    } catch (Exception e) {
+                        System.err.println("Error refreshing project: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                });
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", "ok");
+                return gson.toJson(response);
+                
+            } catch (Exception e) {
+                System.err.println("Error in refresh handler: " + e.getMessage());
+                e.printStackTrace();
+                return "{\"error\": \"" + e.getMessage() + "\"}";
+            }
         }
         
         private String handleShowInIde(IProject project, JsonObject data) {
-            // TODO: Implement show in IDE functionality
-            System.out.println("ShowInIde command for project: " + project.getName());
-            return "{\"status\": \"ok\"}";
+            try {
+                String fileName = data.get("file").getAsString();
+                int line = data.has("line") ? data.get("line").getAsInt() : 0;
+                int column = data.has("column") ? data.get("column").getAsInt() : 0;
+                
+                System.out.println("ShowInIde command for project: " + project.getName() + 
+                                 ", file: " + fileName + ", line: " + line + ", column: " + column);
+                
+                if (line < 0 || column < 0) {
+                    return "{\"error\": \"Invalid line or column number (" + line + ":" + column + ")\"}";
+                }
+                
+                // Convert absolute path to workspace-relative path
+                IPath filePath = new org.eclipse.core.runtime.Path(fileName);
+                IFile file = null;
+                
+                // Try to find the file within the project
+                if (filePath.isAbsolute()) {
+                    IPath projectPath = project.getLocation();
+                    if (projectPath != null && projectPath.isPrefixOf(filePath)) {
+                        IPath relativePath = filePath.removeFirstSegments(projectPath.segmentCount());
+                        file = project.getFile(relativePath);
+                    }
+                }
+                
+                if (file == null || !file.exists()) {
+                    return "{\"error\": \"File not found: " + fileName + "\"}";
+                }
+                
+                final IFile finalFile = file;
+                final int finalLine = line;
+                final int finalColumn = column;
+                
+                // Execute show in IDE operation in UI thread
+                PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
+                    try {
+                        IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+                        if (window != null) {
+                            IWorkbenchPage page = window.getActivePage();
+                            if (page != null) {
+                                // Open the file in editor
+                                ITextEditor editor = (ITextEditor) IDE.openEditor(page, finalFile, true);
+                                
+                                if (editor != null && finalLine > 0) {
+                                    // Navigate to specific line and column
+                                    IDocument document = editor.getDocumentProvider().getDocument(editor.getEditorInput());
+                                    if (document != null) {
+                                        try {
+                                            // Convert line number to offset (Eclipse uses 0-based line numbers)
+                                            int offset = document.getLineOffset(finalLine - 1) + finalColumn;
+                                            editor.selectAndReveal(offset, 0);
+                                        } catch (BadLocationException e) {
+                                            // If line/column is invalid, just open the file
+                                            System.err.println("Invalid line/column, opening file without navigation: " + e.getMessage());
+                                        }
+                                    }
+                                }
+                                
+                                // Bring window to front
+                                window.getShell().forceActive();
+                            }
+                        }
+                        
+                        System.out.println("File opened in IDE: " + fileName + " at " + finalLine + ":" + finalColumn);
+                        
+                    } catch (PartInitException e) {
+                        System.err.println("Error opening file in IDE: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                });
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", "ok");
+                return gson.toJson(response);
+                
+            } catch (Exception e) {
+                System.err.println("Error in showInIde handler: " + e.getMessage());
+                e.printStackTrace();
+                return "{\"error\": \"" + e.getMessage() + "\"}";
+            }
         }
         
         private String handleGetModulePaths(IProject project) {
@@ -284,6 +554,22 @@ public class CopilotRestService {
             response.put("version", "1.0.0");
             response.put("ide", "eclipse");
             return gson.toJson(response);
+        }
+
+        private void createParentFolders(IFile file) throws Exception {
+            IFolder parent = (IFolder) file.getParent();
+            if (parent != null && !parent.exists()) {
+                createParentFolders(parent);
+                parent.create(true, true, null);
+            }
+        }
+        
+        private void createParentFolders(IFolder folder) throws Exception {
+            IFolder parent = (IFolder) folder.getParent();
+            if (parent != null && !parent.exists()) {
+                createParentFolders(parent);
+                parent.create(true, true, null);
+            }
         }
     }
 }
