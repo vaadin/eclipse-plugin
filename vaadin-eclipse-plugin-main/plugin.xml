@@ -64,4 +64,23 @@
      <startup class="com.vaadin.plugin.EarlyStartup"/>
   </extension>
 
+  <extension
+        point="org.eclipse.ui.newWizards">
+     <category
+           id="com.vaadin.plugin.wizards"
+           name="Vaadin">
+     </category>
+     <wizard
+           category="com.vaadin.plugin.wizards"
+           class="com.vaadin.plugin.wizards.NewVaadinProjectWizard"
+           icon="icons/vaadin-icon.png"
+           id="com.vaadin.plugin.wizards.NewVaadinProjectWizard"
+           name="Vaadin Project"
+           project="true">
+        <description>
+           Create a new Vaadin project from a starter template
+        </description>
+     </wizard>
+  </extension>
+
 </plugin>
