@@ -267,11 +267,12 @@ case "newCommand":
 ## Known Issues
 
 1. **Binary file undo/redo**: Fixed - Now properly handles base64 encoded content for binary files
-2. **Headless limitations**: Some UI operations don't work in test environment
-3. **No operation batching**: Multiple rapid operations aren't grouped for undo
-4. **Limited error recovery**: Some error conditions could be handled more gracefully
-5. **Undo/redo in tests**: Operation history context not properly initialized in test environment, causing undo/redo tests to fail
-6. **Java project classpath**: VaadinProjectAnalyzer tests fail due to classpath nesting issues in test environment
+2. **Eclipse IDE import**: Fixed - Main plugin exports packages via MANIFEST.MF for test fragment visibility
+3. **Headless limitations**: Some UI operations don't work in test environment
+4. **No operation batching**: Multiple rapid operations aren't grouped for undo
+5. **Limited error recovery**: Some error conditions could be handled more gracefully
+6. **Undo/redo in tests**: Operation history context not properly initialized in test environment, causing undo/redo tests to fail
+7. **Java project classpath**: VaadinProjectAnalyzer tests fail due to classpath nesting issues in test environment
 
 ## Future Enhancements
 
