@@ -37,7 +37,11 @@ public class CopilotClient {
     }
 
     public HttpResponse<String> write(Path path, String content) throws IOException, InterruptedException {
-        return send("write", new Message.WriteFileMessage(path.toString(), null, content));
+        return write(path, content, "File modification");
+    }
+    
+    public HttpResponse<String> write(Path path, String content, String undoLabel) throws IOException, InterruptedException {
+        return send("write", new Message.WriteFileMessage(path.toString(), undoLabel, content));
     }
 
     public HttpResponse<String> restartApplication() throws IOException, InterruptedException {
@@ -45,7 +49,11 @@ public class CopilotClient {
     }
 
     public HttpResponse<String> writeBinary(Path path, String content) throws IOException, InterruptedException {
-        return send("writeBase64", new Message.WriteFileMessage(path.toString(), null, content));
+        return writeBinary(path, content, "Binary file modification");
+    }
+    
+    public HttpResponse<String> writeBinary(Path path, String content, String undoLabel) throws IOException, InterruptedException {
+        return send("writeBase64", new Message.WriteFileMessage(path.toString(), undoLabel, content));
     }
 
     public HttpResponse<String> showInIde(Path path, int line, int column) throws IOException, InterruptedException {
@@ -94,6 +102,13 @@ public class CopilotClient {
 
     public Optional<JsonObject> getVaadinSecurity() throws IOException, InterruptedException {
         return sendForJson("getVaadinSecurity", new Message.GetVaadinSecurityMessage());
+    }
+    
+    /**
+     * Generic send command method for tests.
+     */
+    public HttpResponse<String> sendCommand(String command, JsonObject data) throws IOException, InterruptedException {
+        return send(command, data);
     }
 
     private HttpResponse<String> send(String command, Object data) throws IOException, InterruptedException {

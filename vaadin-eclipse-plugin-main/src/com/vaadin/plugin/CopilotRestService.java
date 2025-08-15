@@ -345,10 +345,8 @@ public class CopilotRestService {
                     // Refresh the file in workspace
                     finalFile.refreshLocal(IResource.DEPTH_ZERO, null);
                     
-                    // For binary files, we'll track the base64 content
-                    String newContentString = new String(decodedBytes, "UTF-8");
-                    String oldContentString = oldContent.isEmpty() ? "" : new String(java.util.Base64.getDecoder().decode(oldContent), "UTF-8");
-                    CopilotUndoManager.getInstance().recordOperation(finalFile, oldContentString, newContentString, undoLabel);
+                    // For binary files, store the base64 content directly
+                    CopilotUndoManager.getInstance().recordOperation(finalFile, oldContent, finalBase64Content, undoLabel, true);
                     
                 } catch (Exception e) {
                     System.err.println("Error writing base64 file: " + e.getMessage());
