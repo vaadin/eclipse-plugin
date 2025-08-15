@@ -30,6 +30,14 @@ import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.jdt.core.search.TypeNameMatch;
 import org.eclipse.jdt.core.search.TypeNameMatchRequestor;
+import org.eclipse.debug.core.DebugPlugin;
+import org.eclipse.debug.core.ILaunch;
+import org.eclipse.debug.core.ILaunchConfiguration;
+import org.eclipse.debug.core.ILaunchConfigurationType;
+import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
+import org.eclipse.debug.core.ILaunchManager;
+import org.eclipse.debug.ui.DebugUITools;
+import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
@@ -38,6 +46,13 @@ import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.core.runtime.jobs.IJobChangeEvent;
+import org.eclipse.core.runtime.jobs.JobChangeAdapter;
+import org.eclipse.core.commands.operations.IOperationHistory;
+import org.eclipse.core.commands.operations.IOperationHistoryListener;
+import org.eclipse.core.commands.operations.IUndoableOperation;
+import org.eclipse.core.commands.operations.OperationHistoryEvent;
+import org.eclipse.core.commands.operations.OperationHistoryFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -233,6 +248,14 @@ public class CopilotRestService {
                 
                 // Execute file write operation - no UI thread needed for file operations
                 try {
+                    // Get old content for undo if file exists
+                    String oldContent = "";
+                    if (finalFile.exists()) {
+                        try (java.io.InputStream is = finalFile.getContents()) {
+                            oldContent = new String(is.readAllBytes(), "UTF-8");
+                        }
+                    }
+                    
                     java.io.ByteArrayInputStream stream = new java.io.ByteArrayInputStream(finalContent.getBytes("UTF-8"));
                     
                     if (finalFile.exists()) {
@@ -246,6 +269,9 @@ public class CopilotRestService {
                     
                     // Refresh the file in workspace
                     finalFile.refreshLocal(IResource.DEPTH_ZERO, null);
+                    
+                    // Record operation for undo/redo
+                    CopilotUndoManager.getInstance().recordOperation(finalFile, oldContent, finalContent, undoLabel);
                     
                 } catch (Exception e) {
                     System.err.println("Error writing file: " + e.getMessage());
@@ -294,6 +320,15 @@ public class CopilotRestService {
                 
                 // Execute file write operation - no UI thread needed
                 try {
+                    // Get old content for undo if file exists
+                    String oldContent = "";
+                    if (finalFile.exists()) {
+                        try (java.io.InputStream is = finalFile.getContents()) {
+                            byte[] oldBytes = is.readAllBytes();
+                            oldContent = java.util.Base64.getEncoder().encodeToString(oldBytes);
+                        }
+                    }
+                    
                     // Decode base64 content
                     byte[] decodedBytes = java.util.Base64.getDecoder().decode(finalBase64Content);
                     java.io.ByteArrayInputStream stream = new java.io.ByteArrayInputStream(decodedBytes);
@@ -309,6 +344,11 @@ public class CopilotRestService {
                     
                     // Refresh the file in workspace
                     finalFile.refreshLocal(IResource.DEPTH_ZERO, null);
+                    
+                    // For binary files, we'll track the base64 content
+                    String newContentString = new String(decodedBytes, "UTF-8");
+                    String oldContentString = oldContent.isEmpty() ? "" : new String(java.util.Base64.getDecoder().decode(oldContent), "UTF-8");
+                    CopilotUndoManager.getInstance().recordOperation(finalFile, oldContentString, newContentString, undoLabel);
                     
                 } catch (Exception e) {
                     System.err.println("Error writing base64 file: " + e.getMessage());
@@ -358,8 +398,17 @@ public class CopilotRestService {
                 
                 // Execute file delete operation - no UI thread needed
                 try {
+                    // Get content for undo before deleting
+                    String oldContent = "";
+                    try (java.io.InputStream is = finalFile.getContents()) {
+                        oldContent = new String(is.readAllBytes(), "UTF-8");
+                    }
+                    
                     finalFile.delete(true, null);
                     System.out.println("File deleted: " + fileName);
+                    
+                    // Record delete as setting content to empty (can be undone by recreating with old content)
+                    CopilotUndoManager.getInstance().recordOperation(finalFile, oldContent, "", "Delete " + fileName);
                     
                 } catch (Exception e) {
                     System.err.println("Error deleting file: " + e.getMessage());
@@ -381,26 +430,63 @@ public class CopilotRestService {
         private String handleUndo(IProject project, JsonObject data) {
             System.out.println("Undo command for project: " + project.getName());
             
-            // Eclipse has IOperationHistory for undo/redo operations
-            // but it requires tracking operations when they are performed.
-            // Since we're not tracking edit operations with the operation history,
-            // we can't perform proper undo at this time.
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("performed", false);
-            response.put("message", "Undo functionality requires operation history tracking");
-            return gson.toJson(response);
+            try {
+                List<String> filePaths = new ArrayList<>();
+                
+                if (data.has("files") && data.get("files").isJsonArray()) {
+                    for (var fileElement : data.get("files").getAsJsonArray()) {
+                        filePaths.add(fileElement.getAsString());
+                    }
+                }
+                
+                boolean performed = CopilotUndoManager.getInstance().performUndo(filePaths);
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("performed", performed);
+                if (!performed) {
+                    response.put("message", "No undo operations available for specified files");
+                }
+                return gson.toJson(response);
+                
+            } catch (Exception e) {
+                System.err.println("Error performing undo: " + e.getMessage());
+                e.printStackTrace();
+                Map<String, Object> response = new HashMap<>();
+                response.put("performed", false);
+                response.put("error", e.getMessage());
+                return gson.toJson(response);
+            }
         }
         
         private String handleRedo(IProject project, JsonObject data) {
             System.out.println("Redo command for project: " + project.getName());
             
-            // Similar to undo, redo requires operation history tracking
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("performed", false);
-            response.put("message", "Redo functionality requires operation history tracking");
-            return gson.toJson(response);
+            try {
+                List<String> filePaths = new ArrayList<>();
+                
+                if (data.has("files") && data.get("files").isJsonArray()) {
+                    for (var fileElement : data.get("files").getAsJsonArray()) {
+                        filePaths.add(fileElement.getAsString());
+                    }
+                }
+                
+                boolean performed = CopilotUndoManager.getInstance().performRedo(filePaths);
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("performed", performed);
+                if (!performed) {
+                    response.put("message", "No redo operations available for specified files");
+                }
+                return gson.toJson(response);
+                
+            } catch (Exception e) {
+                System.err.println("Error performing redo: " + e.getMessage());
+                e.printStackTrace();
+                Map<String, Object> response = new HashMap<>();
+                response.put("performed", false);
+                response.put("error", e.getMessage());
+                return gson.toJson(response);
+            }
         }
         
         private String handleRefresh(IProject project) {
@@ -646,18 +732,110 @@ public class CopilotRestService {
         private String handleRestartApplication(IProject project, JsonObject data) {
             System.out.println("RestartApplication command for project: " + project.getName());
             
-            // In Eclipse, restarting applications would require integration with
-            // launch configurations and the debug framework.
-            // This is a stub implementation - actual implementation would need
-            // to interact with ILaunchManager and ILaunchConfiguration
-            
-            String mainClass = data.has("mainClass") ? data.get("mainClass").getAsString() : null;
-            System.out.println("Would restart application with main class: " + mainClass);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "ok");
-            response.put("message", "Restart functionality not yet implemented in Eclipse plugin");
-            return gson.toJson(response);
+            try {
+                String mainClass = data.has("mainClass") ? data.get("mainClass").getAsString() : null;
+                
+                ILaunchManager launchManager = DebugPlugin.getDefault().getLaunchManager();
+                
+                // First, try to find a running launch that matches
+                ILaunch[] launches = launchManager.getLaunches();
+                ILaunch targetLaunch = null;
+                ILaunchConfiguration targetConfig = null;
+                
+                for (ILaunch launch : launches) {
+                    if (!launch.isTerminated()) {
+                        ILaunchConfiguration config = launch.getLaunchConfiguration();
+                        if (config != null) {
+                            try {
+                                String projectName = config.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, "");
+                                if (projectName.equals(project.getName())) {
+                                    if (mainClass != null) {
+                                        String configMainClass = config.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, "");
+                                        if (configMainClass.equals(mainClass)) {
+                                            targetLaunch = launch;
+                                            targetConfig = config;
+                                            break;
+                                        }
+                                    } else {
+                                        // No specific main class requested, use first matching project
+                                        targetLaunch = launch;
+                                        targetConfig = config;
+                                        break;
+                                    }
+                                }
+                            } catch (CoreException e) {
+                                // Skip this configuration
+                            }
+                        }
+                    }
+                }
+                
+                // If no running launch found, try to find a configuration
+                if (targetConfig == null) {
+                    ILaunchConfiguration[] configs = launchManager.getLaunchConfigurations();
+                    for (ILaunchConfiguration config : configs) {
+                        try {
+                            String projectName = config.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, "");
+                            if (projectName.equals(project.getName())) {
+                                if (mainClass != null) {
+                                    String configMainClass = config.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, "");
+                                    if (configMainClass.equals(mainClass)) {
+                                        targetConfig = config;
+                                        break;
+                                    }
+                                } else {
+                                    targetConfig = config;
+                                    break;
+                                }
+                            }
+                        } catch (CoreException e) {
+                            // Skip this configuration
+                        }
+                    }
+                }
+                
+                if (targetConfig != null) {
+                    // Terminate existing launch if running
+                    if (targetLaunch != null && !targetLaunch.isTerminated()) {
+                        targetLaunch.terminate();
+                        // Wait a bit for termination
+                        Thread.sleep(500);
+                    }
+                    
+                    // Launch again
+                    final ILaunchConfiguration finalConfig = targetConfig;
+                    
+                    // Run in UI thread if workbench is available
+                    if (PlatformUI.isWorkbenchRunning()) {
+                        PlatformUI.getWorkbench().getDisplay().asyncExec(() -> {
+                            DebugUITools.launch(finalConfig, ILaunchManager.RUN_MODE);
+                        });
+                    } else {
+                        // Headless mode - launch directly
+                        finalConfig.launch(ILaunchManager.RUN_MODE, null);
+                    }
+                    
+                    System.out.println("Restarted application for project: " + project.getName());
+                    
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("status", "ok");
+                    response.put("message", "Application restarted");
+                    return gson.toJson(response);
+                } else {
+                    // No configuration found - this is OK, just log it
+                    System.out.println("No launch configuration found for project: " + project.getName());
+                    
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("status", "ok");
+                    response.put("message", "No launch configuration found to restart");
+                    return gson.toJson(response);
+                }
+                
+            } catch (Exception e) {
+                System.err.println("Error restarting application: " + e.getMessage());
+                e.printStackTrace();
+                return "{\"error\": \"" + e.getMessage() + "\"}";
+            }
         }
         
         private String handleGetVaadinRoutes(IProject project) {
@@ -668,19 +846,9 @@ public class CopilotRestService {
             try {
                 if (project.hasNature(JavaCore.NATURE_ID)) {
                     IJavaProject javaProject = JavaCore.create(project);
-                    
-                    // Search for classes with @Route annotation
-                    SearchEngine searchEngine = new SearchEngine();
-                    IJavaSearchScope scope = SearchEngine.createJavaSearchScope(new IJavaProject[]{javaProject});
-                    
-                    // This is a simplified implementation
-                    // A full implementation would need to:
-                    // 1. Find all classes with @Route annotation
-                    // 2. Parse the route value from the annotation
-                    // 3. Handle route parameters and nested routes
-                    
-                    // For now, return empty array as implementing full annotation scanning
-                    // would require significant additional code
+                    VaadinProjectAnalyzer analyzer = new VaadinProjectAnalyzer(javaProject);
+                    routes = analyzer.findVaadinRoutes();
+                    System.out.println("Found " + routes.size() + " Vaadin routes");
                 }
             } catch (Exception e) {
                 System.err.println("Error getting Vaadin routes: " + e.getMessage());
@@ -759,9 +927,10 @@ public class CopilotRestService {
             
             try {
                 if (project.hasNature(JavaCore.NATURE_ID)) {
-                    // This would search for classes extending Vaadin Component classes
-                    // Simplified implementation - full implementation would require
-                    // searching for all classes that extend com.vaadin.flow.component.Component
+                    IJavaProject javaProject = JavaCore.create(project);
+                    VaadinProjectAnalyzer analyzer = new VaadinProjectAnalyzer(javaProject);
+                    components = analyzer.findVaadinComponents(includeMethods);
+                    System.out.println("Found " + components.size() + " Vaadin components");
                 }
             } catch (Exception e) {
                 System.err.println("Error getting Vaadin components: " + e.getMessage());
@@ -781,9 +950,10 @@ public class CopilotRestService {
             
             try {
                 if (project.hasNature(JavaCore.NATURE_ID)) {
-                    // This would search for JPA entities (@Entity annotation)
-                    // Simplified implementation - full implementation would require
-                    // searching for all classes with javax.persistence.Entity annotation
+                    IJavaProject javaProject = JavaCore.create(project);
+                    VaadinProjectAnalyzer analyzer = new VaadinProjectAnalyzer(javaProject);
+                    entities = analyzer.findEntities(includeMethods);
+                    System.out.println("Found " + entities.size() + " JPA entities");
                 }
             } catch (Exception e) {
                 System.err.println("Error getting Vaadin entities: " + e.getMessage());
@@ -803,9 +973,11 @@ public class CopilotRestService {
             
             try {
                 if (project.hasNature(JavaCore.NATURE_ID)) {
-                    // This would search for Spring Security configurations
-                    // Simplified implementation - full implementation would require
-                    // searching for @EnableWebSecurity, SecurityFilterChain beans, etc.
+                    IJavaProject javaProject = JavaCore.create(project);
+                    VaadinProjectAnalyzer analyzer = new VaadinProjectAnalyzer(javaProject);
+                    security = analyzer.findSecurityConfigurations();
+                    userDetails = analyzer.findUserDetailsServices();
+                    System.out.println("Found " + security.size() + " security configs and " + userDetails.size() + " user detail services");
                 }
             } catch (Exception e) {
                 System.err.println("Error getting Vaadin security: " + e.getMessage());
