@@ -225,6 +225,200 @@ public class VaadinProjectAnalyzerTest extends BaseIntegrationTest {
 		assertEquals("UserDetails services list should be empty", 0, services.size());
 	}
 
+	@Test
+	public void testMultipleRoutesInSameProject() throws CoreException {
+		// Create multiple route classes
+		createJavaClass("src", "com.example.views", "MainView", "package com.example.views;\n"
+				+ "import com.vaadin.flow.router.Route;\n" + "@Route(\"\")\n" + "public class MainView {}\n");
+
+		createJavaClass("src", "com.example.views", "AboutView", "package com.example.views;\n"
+				+ "import com.vaadin.flow.router.Route;\n" + "@Route(\"about\")\n" + "public class AboutView {}\n");
+
+		createJavaClass("src", "com.example.views", "ContactView", "package com.example.views;\n"
+				+ "import com.vaadin.flow.router.Route;\n" + "@Route(\"contact\")\n" + "public class ContactView {}\n");
+
+		testProject.refreshLocal(2, null);
+
+		List<Map<String, Object>> routes = analyzer.findVaadinRoutes();
+		assertEquals("Should find three routes", 3, routes.size());
+
+		// Verify all routes are found
+		boolean foundMain = routes.stream().anyMatch(r -> "com.example.views.MainView".equals(r.get("classname")));
+		boolean foundAbout = routes.stream().anyMatch(r -> "com.example.views.AboutView".equals(r.get("classname")));
+		boolean foundContact = routes.stream()
+				.anyMatch(r -> "com.example.views.ContactView".equals(r.get("classname")));
+
+		assertTrue("Should find MainView", foundMain);
+		assertTrue("Should find AboutView", foundAbout);
+		assertTrue("Should find ContactView", foundContact);
+	}
+
+	@Test
+	public void testMultipleEntitiesWithBothJavaxAndJakarta() throws CoreException {
+		// Mix of javax and jakarta persistence entities
+		createJavaClass("src", "com.example.model", "LegacyEntity",
+				"package com.example.model;\n" + "import javax.persistence.Entity;\n" + "import javax.persistence.Id;\n"
+						+ "@Entity\n" + "public class LegacyEntity {\n" + "    @Id\n" + "    private Long id;\n"
+						+ "}\n");
+
+		createJavaClass("src", "com.example.model", "ModernEntity",
+				"package com.example.model;\n" + "import jakarta.persistence.Entity;\n"
+						+ "import jakarta.persistence.Id;\n" + "@Entity\n" + "public class ModernEntity {\n"
+						+ "    @Id\n" + "    private Long id;\n" + "}\n");
+
+		testProject.refreshLocal(2, null);
+
+		List<Map<String, Object>> entities = analyzer.findEntities(false);
+		assertEquals("Should find both javax and jakarta entities", 2, entities.size());
+
+		boolean foundLegacy = entities.stream()
+				.anyMatch(e -> "com.example.model.LegacyEntity".equals(e.get("classname")));
+		boolean foundModern = entities.stream()
+				.anyMatch(e -> "com.example.model.ModernEntity".equals(e.get("classname")));
+
+		assertTrue("Should find LegacyEntity with javax", foundLegacy);
+		assertTrue("Should find ModernEntity with jakarta", foundModern);
+	}
+
+	@Test
+	public void testNestedClasses() throws CoreException {
+		// Create a class with nested classes that have annotations
+		createJavaClass("src", "com.example", "OuterClass",
+				"package com.example;\n" + "import com.vaadin.flow.router.Route;\n"
+						+ "import javax.persistence.Entity;\n" + "public class OuterClass {\n"
+						+ "    @Route(\"inner\")\n" + "    public static class InnerView {}\n" + "    \n"
+						+ "    @Entity\n" + "    public static class InnerEntity {\n" + "        private Long id;\n"
+						+ "    }\n" + "}\n");
+
+		testProject.refreshLocal(2, null);
+
+		List<Map<String, Object>> routes = analyzer.findVaadinRoutes();
+		List<Map<String, Object>> entities = analyzer.findEntities(false);
+
+		// Check if nested classes are found
+		assertEquals("Should find nested route", 1, routes.size());
+		assertEquals("Should find nested entity", 1, entities.size());
+	}
+
+	@Test
+	public void testClassWithMultipleAnnotations() throws CoreException {
+		// Create a class that is both a route and an entity
+		createJavaClass("src", "com.example", "HybridClass",
+				"package com.example;\n" + "import com.vaadin.flow.router.Route;\n"
+						+ "import javax.persistence.Entity;\n" + "@Route(\"hybrid\")\n" + "@Entity\n"
+						+ "public class HybridClass {\n" + "    private Long id;\n" + "}\n");
+
+		testProject.refreshLocal(2, null);
+
+		List<Map<String, Object>> routes = analyzer.findVaadinRoutes();
+		List<Map<String, Object>> entities = analyzer.findEntities(false);
+
+		assertEquals("Should find as route", 1, routes.size());
+		assertEquals("Should find as entity", 1, entities.size());
+
+		assertEquals("Route class should match", "com.example.HybridClass", routes.get(0).get("classname"));
+		assertEquals("Entity class should match", "com.example.HybridClass", entities.get(0).get("classname"));
+	}
+
+	@Test
+	public void testEmptyPackage() throws CoreException {
+		// Create a class in default package (no package declaration)
+		IFolder srcFolder = testProject.getFolder("src");
+		IFile javaFile = srcFolder.getFile("DefaultPackageClass.java");
+		String content = "import com.vaadin.flow.router.Route;\n" + "@Route(\"default\")\n"
+				+ "public class DefaultPackageClass {}\n";
+		javaFile.create(new java.io.ByteArrayInputStream(content.getBytes()), true, null);
+
+		testProject.refreshLocal(2, null);
+
+		List<Map<String, Object>> routes = analyzer.findVaadinRoutes();
+		assertEquals("Should find route in default package", 1, routes.size());
+		assertEquals("DefaultPackageClass", routes.get(0).get("classname"));
+	}
+
+	@Test
+	public void testComplexMethodSignatures() throws CoreException {
+		// Test entity with complex method signatures
+		createJavaClass("src", "com.example", "ComplexEntity",
+				"package com.example;\n" + "import javax.persistence.Entity;\n" + "import java.util.List;\n"
+						+ "import java.util.Map;\n" + "@Entity\n" + "public class ComplexEntity {\n"
+						+ "    public void simple() {}\n" + "    public String withReturn() { return null; }\n"
+						+ "    public void withParam(String param) {}\n"
+						+ "    public void multiParam(String s, int i, boolean b) {}\n"
+						+ "    public List<String> genericReturn() { return null; }\n"
+						+ "    public void genericParam(Map<String, List<Integer>> map) {}\n"
+						+ "    public <T> T genericMethod(T input) { return input; }\n" + "}\n");
+
+		testProject.refreshLocal(2, null);
+
+		List<Map<String, Object>> entities = analyzer.findEntities(true);
+		assertEquals("Should find entity", 1, entities.size());
+
+		String methods = (String) entities.get(0).get("methods");
+		assertNotNull("Should have methods", methods);
+
+		// Check various method signatures
+		assertTrue("Should include simple method", methods.contains("simple()"));
+		assertTrue("Should include method with return", methods.contains("withReturn()"));
+		assertTrue("Should include method with param", methods.contains("withParam(String)"));
+		assertTrue("Should include method with multiple params", methods.contains("multiParam(String,int,boolean)"));
+	}
+
+	@Test
+	public void testAnnotationWithoutValue() throws CoreException {
+		// Test Route annotation without explicit value
+		createJavaClass("src", "com.example", "ImplicitRoute", "package com.example;\n"
+				+ "import com.vaadin.flow.router.Route;\n" + "@Route\n" + "public class ImplicitRoute {}\n");
+
+		testProject.refreshLocal(2, null);
+
+		List<Map<String, Object>> routes = analyzer.findVaadinRoutes();
+		assertEquals("Should find route", 1, routes.size());
+
+		Map<String, Object> route = routes.get(0);
+		String routeValue = (String) route.get("route");
+		assertTrue("Route value should be empty or null", routeValue == null || routeValue.isEmpty());
+	}
+
+	@Test
+	public void testSecurityConfigWithFormLogin() throws CoreException {
+		// Create security config with formLogin method
+		createJavaClass("src", "com.example.security", "WebSecurityConfig",
+				"package com.example.security;\n"
+						+ "import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;\n"
+						+ "@EnableWebSecurity\n" + "public class WebSecurityConfig {\n"
+						+ "    public void configure() {\n" + "        formLogin();\n" + "    }\n" + "    \n"
+						+ "    private void formLogin() {\n" + "        // Configure form login\n" + "    }\n" + "}\n");
+
+		testProject.refreshLocal(2, null);
+
+		List<Map<String, Object>> configs = analyzer.findSecurityConfigurations();
+		assertEquals("Should find security config", 1, configs.size());
+
+		Map<String, Object> config = configs.get(0);
+		// The analyzer looks for login view in methods
+		String loginView = (String) config.get("loginView");
+		assertEquals("Should default to /login", "/login", loginView);
+	}
+
+	@Test
+	public void testPathResolution() throws CoreException {
+		// Test that paths are correctly resolved
+		createJavaClass("src", "com.example.deep.nested.pack", "DeepClass", "package com.example.deep.nested.pack;\n"
+				+ "import javax.persistence.Entity;\n" + "@Entity\n" + "public class DeepClass {}\n");
+
+		testProject.refreshLocal(2, null);
+
+		List<Map<String, Object>> entities = analyzer.findEntities(false);
+		assertEquals("Should find entity", 1, entities.size());
+
+		Map<String, Object> entity = entities.get(0);
+		String path = (String) entity.get("path");
+		assertNotNull("Should have path", path);
+		assertTrue("Path should contain package structure", path.contains("com/example/deep/nested/pack"));
+		assertTrue("Path should end with class file", path.endsWith("DeepClass.java"));
+	}
+
 	/**
 	 * Helper method to create a Java class in the test project.
 	 */
