@@ -47,7 +47,14 @@ public class CopilotUndoManager {
      * Record a file modification operation for undo/redo.
      */
     public void recordOperation(IFile file, String oldContent, String newContent, String label) {
-        CopilotFileEditOperation operation = new CopilotFileEditOperation(file, oldContent, newContent, label);
+        recordOperation(file, oldContent, newContent, label, false);
+    }
+    
+    /**
+     * Record a file modification operation for undo/redo with binary flag.
+     */
+    public void recordOperation(IFile file, String oldContent, String newContent, String label, boolean isBase64) {
+        CopilotFileEditOperation operation = new CopilotFileEditOperation(file, oldContent, newContent, label, isBase64);
         
         try {
             operationHistory.execute(operation, null, null);
@@ -174,12 +181,18 @@ public class CopilotUndoManager {
         private final String oldContent;
         private final String newContent;
         private final String label;
+        private final boolean isBase64;
         
         public CopilotFileEditOperation(IFile file, String oldContent, String newContent, String label) {
+            this(file, oldContent, newContent, label, false);
+        }
+        
+        public CopilotFileEditOperation(IFile file, String oldContent, String newContent, String label, boolean isBase64) {
             this.file = file;
             this.oldContent = oldContent;
             this.newContent = newContent;
             this.label = label != null ? label : "Copilot Edit";
+            this.isBase64 = isBase64;
         }
         
         @Override
@@ -199,7 +212,21 @@ public class CopilotUndoManager {
         
         private IStatus setFileContent(String content) {
             try {
-                java.io.ByteArrayInputStream stream = new java.io.ByteArrayInputStream(content.getBytes("UTF-8"));
+                byte[] bytes;
+                if (isBase64) {
+                    // For binary files, content is base64 encoded
+                    if (content.isEmpty()) {
+                        // Empty content for file deletion
+                        bytes = new byte[0];
+                    } else {
+                        bytes = java.util.Base64.getDecoder().decode(content);
+                    }
+                } else {
+                    // For text files, content is plain text
+                    bytes = content.getBytes("UTF-8");
+                }
+                
+                java.io.ByteArrayInputStream stream = new java.io.ByteArrayInputStream(bytes);
                 file.setContents(stream, true, true, null);
                 return Status.OK_STATUS;
             } catch (Exception e) {
