@@ -14,6 +14,7 @@
     <properties>
         <tycho-version>4.0.13</tycho-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <spotless.version>2.45.0</spotless.version>
     </properties>
 
     <modules>
@@ -51,6 +52,28 @@
                             <arch>x86_64</arch>
                         </environment>
                     </environments>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless.version}</version>
+                <configuration>
+                    <java>
+                        <includes>
+                            <include>vaadin-eclipse-plugin-main/src/**/*.java</include>
+                            <include>vaadin-eclipse-plugin.tests/src/**/*.java</include>
+                        </includes>
+                        <eclipse>
+                            <version>4.21.0</version>
+                        </eclipse>
+                        <removeUnusedImports />
+                        <importOrder>
+                            <order>java,javax,org,com,</order>
+                        </importOrder>
+                        <endWithNewline />
+                        <trimTrailingWhitespace />
+                    </java>
                 </configuration>
             </plugin>
         </plugins>

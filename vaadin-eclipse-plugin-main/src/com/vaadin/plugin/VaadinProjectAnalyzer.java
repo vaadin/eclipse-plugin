@@ -1,8 +1,11 @@
 package com.vaadin.plugin;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -16,65 +19,60 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.search.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
  * Utility class for analyzing Vaadin projects and finding various components.
  */
 public class VaadinProjectAnalyzer {
-    
+
     private final IJavaProject javaProject;
-    
+
     public VaadinProjectAnalyzer(IJavaProject javaProject) {
         this.javaProject = javaProject;
     }
-    
+
     /**
      * Find all classes with @Route annotation.
      */
     public List<Map<String, Object>> findVaadinRoutes() throws CoreException {
         List<Map<String, Object>> routes = new ArrayList<>();
-        
+
         // Search for all types with @Route annotation
         List<IType> routeTypes = findTypesWithAnnotation("com.vaadin.flow.router.Route");
-        
+
         for (IType type : routeTypes) {
             Map<String, Object> route = new HashMap<>();
-            
+
             // Get the route value from annotation
             String routeValue = getAnnotationValue(type, "com.vaadin.flow.router.Route", "value");
             if (routeValue == null) {
                 routeValue = ""; // Default route
             }
-            
+
             route.put("route", routeValue);
             route.put("classname", type.getFullyQualifiedName());
             routes.add(route);
         }
-        
+
         return routes;
     }
-    
+
     /**
      * Find all Vaadin components (classes extending Component).
      */
     public List<Map<String, Object>> findVaadinComponents(boolean includeMethods) throws CoreException {
         List<Map<String, Object>> components = new ArrayList<>();
-        
+
         // Find the Component type
         IType componentType = javaProject.findType("com.vaadin.flow.component.Component");
         if (componentType == null) {
             // Vaadin not in classpath
             return components;
         }
-        
+
         // Search for all subtypes of Component
         ITypeHierarchy hierarchy = componentType.newTypeHierarchy(javaProject, null);
         IType[] allSubtypes = hierarchy.getAllSubtypes(componentType);
-        
+
         for (IType type : allSubtypes) {
             // Only include project types, not library types
             if (type.getResource() != null && type.getResource().getProject().equals(javaProject.getProject())) {
@@ -82,11 +80,11 @@ public class VaadinProjectAnalyzer {
                 component.put("class", type.getFullyQualifiedName());
                 component.put("origin", "project");
                 component.put("source", "java");
-                
+
                 if (type.getResource() != null) {
                     component.put("path", type.getResource().getProjectRelativePath().toString());
                 }
-                
+
                 if (includeMethods) {
                     StringBuilder methods = new StringBuilder();
                     for (IMethod method : type.getMethods()) {
@@ -97,32 +95,32 @@ public class VaadinProjectAnalyzer {
                     }
                     component.put("methods", methods.toString());
                 }
-                
+
                 components.add(component);
             }
         }
-        
+
         return components;
     }
-    
+
     /**
      * Find all JPA entities.
      */
     public List<Map<String, Object>> findEntities(boolean includeMethods) throws CoreException {
         List<Map<String, Object>> entities = new ArrayList<>();
-        
+
         // Search for types with @Entity annotation
         List<IType> entityTypes = findTypesWithAnnotation("javax.persistence.Entity");
         entityTypes.addAll(findTypesWithAnnotation("jakarta.persistence.Entity"));
-        
+
         for (IType type : entityTypes) {
             Map<String, Object> entity = new HashMap<>();
             entity.put("classname", type.getFullyQualifiedName());
-            
+
             if (type.getResource() != null) {
                 entity.put("path", type.getResource().getProjectRelativePath().toString());
             }
-            
+
             if (includeMethods) {
                 StringBuilder methods = new StringBuilder();
                 for (IMethod method : type.getMethods()) {
@@ -133,60 +131,62 @@ public class VaadinProjectAnalyzer {
                 }
                 entity.put("methods", methods.toString());
             }
-            
+
             entities.add(entity);
         }
-        
+
         return entities;
     }
-    
+
     /**
      * Find Spring Security configurations.
      */
     public List<Map<String, Object>> findSecurityConfigurations() throws CoreException {
         List<Map<String, Object>> configs = new ArrayList<>();
-        
+
         // Search for @EnableWebSecurity or @Configuration with security beans
-        List<IType> securityTypes = findTypesWithAnnotation("org.springframework.security.config.annotation.web.configuration.EnableWebSecurity");
-        
+        List<IType> securityTypes = findTypesWithAnnotation(
+                "org.springframework.security.config.annotation.web.configuration.EnableWebSecurity");
+
         for (IType type : securityTypes) {
             Map<String, Object> config = new HashMap<>();
             config.put("class", type.getFullyQualifiedName());
             config.put("origin", "project");
             config.put("source", "java");
-            
+
             if (type.getResource() != null) {
                 config.put("path", type.getResource().getProjectRelativePath().toString());
             }
-            
+
             // Try to find login view from annotations or method returns
             String loginView = findLoginView(type);
             if (loginView != null) {
                 config.put("loginView", loginView);
             }
-            
+
             configs.add(config);
         }
-        
+
         return configs;
     }
-    
+
     /**
      * Find UserDetailsService implementations.
      */
     public List<Map<String, Object>> findUserDetailsServices() throws CoreException {
         List<Map<String, Object>> services = new ArrayList<>();
-        
+
         // Find UserDetailsService interface
-        IType userDetailsServiceType = javaProject.findType("org.springframework.security.core.userdetails.UserDetailsService");
+        IType userDetailsServiceType = javaProject
+                .findType("org.springframework.security.core.userdetails.UserDetailsService");
         if (userDetailsServiceType == null) {
             return services;
         }
-        
+
         // Search for all implementations
         ITypeHierarchy hierarchy = userDetailsServiceType.newTypeHierarchy(javaProject, null);
         IType[] implementations = hierarchy.getAllSubtypes(userDetailsServiceType);
-        
+
         for (IType type : implementations) {
             // Only include project types
             if (type.getResource() != null && type.getResource().getProject().equals(javaProject.getProject())) {
@@ -194,30 +194,30 @@ public class VaadinProjectAnalyzer {
                 service.put("class", type.getFullyQualifiedName());
                 service.put("origin", "project");
                 service.put("source", "java");
-                
+
                 if (type.getResource() != null) {
                     service.put("path", type.getResource().getProjectRelativePath().toString());
                 }
-                
+
                 // Try to find related entity classes
                 String entities = findRelatedEntities(type);
                 if (entities != null) {
                     service.put("entity", entities);
                 }
-                
+
                 services.add(service);
             }
         }
-        
+
         return services;
     }
-    
+
     /**
      * Helper method to find types with a specific annotation.
      */
     private List<IType> findTypesWithAnnotation(String annotationName) throws CoreException {
         List<IType> types = new ArrayList<>();
-        
+
         // Search all compilation units in the project
         IPackageFragment[] packages = javaProject.getPackageFragments();
         for (IPackageFragment pkg : packages) {
@@ -232,17 +232,17 @@ public class VaadinProjectAnalyzer {
                 }
             }
         }
-        
+
         return types;
     }
-    
+
     /**
      * Check if a type has a specific annotation.
      */
     private boolean hasAnnotation(IType type, String annotationName) throws JavaModelException {
         IAnnotation[] annotations = type.getAnnotations();
         String simpleName = annotationName.substring(annotationName.lastIndexOf('.') + 1);
-        
+
         for (IAnnotation annotation : annotations) {
             String name = annotation.getElementName();
             // Check both simple name and fully qualified name
@@ -252,14 +252,15 @@ public class VaadinProjectAnalyzer {
         }
         return false;
     }
-    
+
     /**
      * Get annotation value for a specific attribute.
      */
-    private String getAnnotationValue(IType type, String annotationName, String attributeName) throws JavaModelException {
+    private String getAnnotationValue(IType type, String annotationName, String attributeName)
+            throws JavaModelException {
         IAnnotation[] annotations = type.getAnnotations();
         String simpleName = annotationName.substring(annotationName.lastIndexOf('.') + 1);
-        
+
         for (IAnnotation annotation : annotations) {
             String name = annotation.getElementName();
             if (name.equals(simpleName) || name.equals(annotationName)) {
@@ -271,7 +272,7 @@ public class VaadinProjectAnalyzer {
         }
         return null;
     }
-    
+
     /**
      * Get method signature in a readable format.
      */
@@ -279,7 +280,7 @@ public class VaadinProjectAnalyzer {
         StringBuilder signature = new StringBuilder();
         signature.append(method.getElementName());
         signature.append("(");
-        
+
         String[] parameterTypes = method.getParameterTypes();
         for (int i = 0; i < parameterTypes.length; i++) {
             if (i > 0) {
@@ -287,11 +288,11 @@ public class VaadinProjectAnalyzer {
             }
             signature.append(Signature.getSignatureSimpleName(parameterTypes[i]));
         }
-        
+
         signature.append(")");
         return signature.toString();
     }
-    
+
     /**
      * Try to find login view configuration.
      */
@@ -299,21 +300,20 @@ public class VaadinProjectAnalyzer {
         // Look for methods that might configure login view
         for (IMethod method : type.getMethods()) {
             // This is simplified - would need more sophisticated analysis
-            if (method.getElementName().contains("configure") || 
-                method.getElementName().contains("formLogin")) {
+            if (method.getElementName().contains("configure") || method.getElementName().contains("formLogin")) {
                 // Would need to parse method body to find actual login view
                 return "/login"; // Default assumption
             }
         }
         return null;
     }
-    
+
     /**
      * Find entities related to a UserDetailsService.
      */
     private String findRelatedEntities(IType type) throws JavaModelException {
         List<String> entities = new ArrayList<>();
-        
+
         // Look for fields that might be entity types
         for (IJavaElement element : type.getChildren()) {
             if (element.getElementType() == IJavaElement.FIELD) {
@@ -324,7 +324,7 @@ public class VaadinProjectAnalyzer {
                 }
             }
         }
-        
+
         return entities.isEmpty() ? null : String.join(",", entities);
     }
 }
