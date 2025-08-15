@@ -5,14 +5,21 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.vaadin</groupId>
-    <artifactId>vaadin-eclipse-plugin</artifactId>
+    <artifactId>vaadin-eclipse-plugin-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <packaging>eclipse-plugin</packaging>
+    <packaging>pom</packaging>
+
+    <name>Vaadin Eclipse Plugin Parent</name>
 
     <properties>
         <tycho-version>4.0.13</tycho-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <modules>
+        <module>vaadin-eclipse-plugin-main</module>
+        <module>vaadin-eclipse-plugin.tests</module>
+    </modules>
 
     <build>
         <plugins>
@@ -21,16 +28,6 @@
                 <artifactId>tycho-maven-plugin</artifactId>
                 <version>${tycho-version}</version>
                 <extensions>true</extensions>
-            </plugin>
-            <plugin>
-                <groupId>org.eclipse.tycho</groupId>
-                <artifactId>tycho-packaging-plugin</artifactId>
-                <version>${tycho-version}</version>
-            </plugin>
-            <plugin>
-                <groupId>org.eclipse.tycho</groupId>
-                <artifactId>p2-maven-plugin</artifactId>
-                <version>${tycho-version}</version>
             </plugin>
             <plugin>
                 <groupId>org.eclipse.tycho</groupId>
@@ -54,56 +51,6 @@
                             <arch>x86_64</arch>
                         </environment>
                     </environments>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.eclipse.tycho</groupId>
-                <artifactId>tycho-surefire-plugin</artifactId>
-                <version>${tycho-version}</version>
-                <executions>
-                    <execution>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <useUIHarness>false</useUIHarness>
-                    <includes>
-                        <include>**/*Test.java</include>
-                    </includes>
-                    <dependencies>
-                        <dependency>
-                            <type>eclipse-plugin</type>
-                            <artifactId>org.junit</artifactId>
-                            <version>0.0.0</version>
-                        </dependency>
-                        <dependency>
-                            <type>eclipse-plugin</type>
-                            <artifactId>org.hamcrest.core</artifactId>
-                            <version>0.0.0</version>
-                        </dependency>
-                    </dependencies>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>com.diffplug.spotless</groupId>
-                <artifactId>spotless-maven-plugin</artifactId>
-                <version>2.44.4</version>
-                <configuration>
-                    <java>
-                        <toggleOffOn />
-                        <includes>
-                            <include>src/**/*.java</include>
-                            <include>test/**/*.java</include>
-                        </includes>
-                        <eclipse>
-                            <version>4.35</version>
-                            <file>${project.basedir}/eclipse-formatter.xml</file>
-                        </eclipse>
-                    </java>
                 </configuration>
             </plugin>
         </plugins>
