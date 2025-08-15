@@ -24,8 +24,6 @@ Import-Package: org.osgi.framework,
  com.sun.net.httpserver,
  com.google.gson;version="2.8.0"
 Export-Package: com.vaadin.plugin,
- com.vaadin.plugin.actions,
- com.vaadin.plugin.copilot,
  com.vaadin.plugin.wizards
 Automatic-Module-Name: vaadin.eclipse.plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-17
