@@ -1,9 +1,5 @@
 package com.vaadin.plugin;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -12,6 +8,10 @@ import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Optional;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 /**
  * Client for communicating with the Copilot REST service.
@@ -39,8 +39,9 @@ public class CopilotClient {
     public HttpResponse<String> write(Path path, String content) throws IOException, InterruptedException {
         return write(path, content, "File modification");
     }
-    
-    public HttpResponse<String> write(Path path, String content, String undoLabel) throws IOException, InterruptedException {
+
+    public HttpResponse<String> write(Path path, String content, String undoLabel)
+            throws IOException, InterruptedException {
         return send("write", new Message.WriteFileMessage(path.toString(), undoLabel, content));
     }
 
@@ -51,8 +52,9 @@ public class CopilotClient {
     public HttpResponse<String> writeBinary(Path path, String content) throws IOException, InterruptedException {
         return writeBinary(path, content, "Binary file modification");
     }
-    
-    public HttpResponse<String> writeBinary(Path path, String content, String undoLabel) throws IOException, InterruptedException {
+
+    public HttpResponse<String> writeBinary(Path path, String content, String undoLabel)
+            throws IOException, InterruptedException {
         return send("writeBase64", new Message.WriteFileMessage(path.toString(), undoLabel, content));
     }
 
@@ -103,7 +105,7 @@ public class CopilotClient {
     public Optional<JsonObject> getVaadinSecurity() throws IOException, InterruptedException {
         return sendForJson("getVaadinSecurity", new Message.GetVaadinSecurityMessage());
     }
-    
+
     /**
      * Generic send command method for tests.
      */
@@ -114,30 +116,28 @@ public class CopilotClient {
     private HttpResponse<String> send(String command, Object data) throws IOException, InterruptedException {
         Message.CopilotRestRequest message = new Message.CopilotRestRequest(command, projectBasePath, data);
         String body = gson.toJson(message);
-        
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(endpoint))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
+
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(endpoint))
+                .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(body)).build();
 
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    private Optional<JsonObject> sendForJson(String command, Object dataCommand) throws IOException, InterruptedException {
+    private Optional<JsonObject> sendForJson(String command, Object dataCommand)
+            throws IOException, InterruptedException {
         HttpResponse<String> response = send(command, dataCommand);
-        
+
         if (response.statusCode() != 200) {
-            System.err.println("Unexpected response (" + response.statusCode() + 
-                             ") communicating with the IDE plugin: " + response.body());
+            System.err.println("Unexpected response (" + response.statusCode() + ") communicating with the IDE plugin: "
+                    + response.body());
             return Optional.empty();
         }
-        
+
         if (response.body() != null && !response.body().isEmpty()) {
             JsonObject responseJson = JsonParser.parseString(response.body()).getAsJsonObject();
             return Optional.of(responseJson);
         }
-        
+
         return Optional.empty();
     }
 }

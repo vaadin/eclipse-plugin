@@ -156,6 +156,12 @@ eclipse-plugin/
 
 ### Build Commands
 ```bash
+# Format code (ALWAYS run before committing)
+mvn spotless:apply
+
+# Check code formatting without applying changes
+mvn spotless:check
+
 # Compile only
 mvn clean compile
 
@@ -307,11 +313,18 @@ This project follows the same licensing as the Vaadin framework. See LICENSE fil
 
 ## Development Practices
 
+### Code Formatting
+**IMPORTANT**: Always run `mvn spotless:apply` from the project root before committing code.
+- This ensures consistent code formatting across the entire codebase
+- The Spotless plugin is configured in the root pom.xml with Eclipse formatter settings
+- Formatting includes import organization, trailing whitespace removal, and consistent indentation
+
 ### Automatic Commits
 When using Claude as an AI assistant, commits are automatically created when:
 - A task is completed and the project is in a working state
 - Significant milestones are reached
 - User explicitly requests a commit
+- **Note**: `mvn spotless:apply` should be run before each commit
 
 ### Documentation Updates
 This AGENTS.md file is automatically updated when:
