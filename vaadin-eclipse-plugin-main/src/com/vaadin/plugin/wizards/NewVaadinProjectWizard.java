@@ -134,58 +134,69 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
     private Path extractProject(Path zipFile, String projectName, IProgressMonitor monitor) throws IOException {
         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
         Path workspacePath = Paths.get(root.getLocation().toString());
-        Path projectPath = workspacePath.resolve(projectName);
 
-        // Create project directory
-        Files.createDirectories(projectPath);
+        // The ZIP from start.vaadin.com contains a root folder that should become the
+        // project folder
+        // We need to extract to workspace and rename if necessary
 
-        // Extract ZIP
+        // First, extract to a temp location to inspect the structure
+        Path tempExtractPath = Files.createTempDirectory("vaadin-extract-");
+
         try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(zipFile.toFile())))) {
             ZipEntry entry;
             byte[] buffer = new byte[4096];
-
-            // First pass: find the root folder in the ZIP
             String rootFolder = null;
+
             while ((entry = zis.getNextEntry()) != null) {
-                if (entry.isDirectory() && !entry.getName().contains("/")) {
-                    rootFolder = entry.getName();
-                    break;
+                String entryName = entry.getName();
+
+                // Identify the root folder in the ZIP
+                if (rootFolder == null && entry.isDirectory() && !entryName.contains("/")) {
+                    rootFolder = entryName.replace("/", "");
                 }
-            }
-            zis.close();
 
-            // Second pass: extract files, stripping root folder
-            try (ZipInputStream zis2 = new ZipInputStream(
-                    new BufferedInputStream(new FileInputStream(zipFile.toFile())))) {
-                while ((entry = zis2.getNextEntry()) != null) {
-                    String entryName = entry.getName();
+                Path targetPath = tempExtractPath.resolve(entryName);
 
-                    // Strip root folder if present
-                    if (rootFolder != null && entryName.startsWith(rootFolder)) {
-                        entryName = entryName.substring(rootFolder.length());
-                        if (entryName.isEmpty())
-                            continue;
-                    }
-
-                    Path targetPath = projectPath.resolve(entryName);
-
-                    if (entry.isDirectory()) {
-                        Files.createDirectories(targetPath);
-                    } else {
-                        Files.createDirectories(targetPath.getParent());
-                        try (FileOutputStream fos = new FileOutputStream(targetPath.toFile())) {
-                            int len;
-                            while ((len = zis2.read(buffer)) > 0) {
-                                fos.write(buffer, 0, len);
-                            }
+                if (entry.isDirectory()) {
+                    Files.createDirectories(targetPath);
+                } else {
+                    Files.createDirectories(targetPath.getParent());
+                    try (FileOutputStream fos = new FileOutputStream(targetPath.toFile())) {
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
                         }
                     }
-                    zis2.closeEntry();
                 }
+                zis.closeEntry();
             }
-        }
 
-        return projectPath;
+            // Now move the extracted content to the workspace with the correct project name
+            Path extractedProjectPath = rootFolder != null ? tempExtractPath.resolve(rootFolder) : tempExtractPath;
+            Path finalProjectPath = workspacePath.resolve(projectName);
+
+            // If project directory already exists, delete it
+            if (Files.exists(finalProjectPath)) {
+                deleteDirectory(finalProjectPath);
+            }
+
+            // Move the extracted project to the workspace
+            Files.move(extractedProjectPath, finalProjectPath);
+
+            // Clean up temp directory if it still exists
+            if (Files.exists(tempExtractPath)) {
+                deleteDirectory(tempExtractPath);
+            }
+
+            return finalProjectPath;
+        }
+    }
+
+    private void deleteDirectory(Path path) throws IOException {
+        if (Files.exists(path)) {
+            Files.walk(path).sorted(java.util.Comparator.reverseOrder()).map(Path::toFile)
+                    .forEach(java.io.File::delete);
+        }
     }
 
     private IProject importProject(Path projectPath, String projectName, IProgressMonitor monitor)
