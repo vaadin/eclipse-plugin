@@ -68,9 +68,12 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 		IFolder resources = testProject.getFolder("src/main/resources");
 		createFolderHierarchy(resources);
 
-		// Add to classpath
+		// Add to classpath (include JRE container)
+		IClasspathEntry containerEntry = JavaCore.newContainerEntry(
+				org.eclipse.core.runtime.Path.fromPortableString("org.eclipse.jdt.launching.JRE_CONTAINER"));
 		IClasspathEntry[] entries = new IClasspathEntry[]{JavaCore.newSourceEntry(srcMain.getFullPath()),
-				JavaCore.newSourceEntry(srcTest.getFullPath()), JavaCore.newSourceEntry(resources.getFullPath())};
+				JavaCore.newSourceEntry(srcTest.getFullPath()), JavaCore.newSourceEntry(resources.getFullPath()),
+				containerEntry};
 		javaProject.setRawClasspath(entries, null);
 
 		// Test the endpoint
@@ -329,9 +332,9 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 	 */
 	private void createFolderHierarchy(IFolder folder) throws CoreException {
 		if (!folder.exists()) {
-			IFolder parent = (IFolder) folder.getParent();
+			org.eclipse.core.resources.IContainer parent = folder.getParent();
 			if (parent != null && !parent.exists() && parent.getType() == org.eclipse.core.resources.IResource.FOLDER) {
-				createFolderHierarchy(parent);
+				createFolderHierarchy((IFolder) parent);
 			}
 			folder.create(true, true, null);
 		}

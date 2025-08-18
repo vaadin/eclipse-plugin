@@ -80,12 +80,28 @@ public class CopilotUndoManager {
             for (String filePath : filePaths) {
                 IFile file = findFile(filePath);
                 if (file != null) {
-                    IUndoContext context = getUndoContext(file);
+                    // Get the workspace context which our operations use
+                    IUndoContext context = ResourcesPlugin.getWorkspace().getAdapter(IUndoContext.class);
                     if (context != null && operationHistory.canUndo(context)) {
                         IStatus status = operationHistory.undo(context, null, null);
                         if (status.isOK()) {
                             performed = true;
                             System.out.println("Undo performed for: " + filePath);
+                        }
+                    } else {
+                        // Try with file-specific operations
+                        String fileKey = file.getFullPath().toString();
+                        List<IUndoableOperation> operations = fileOperations.get(fileKey);
+                        if (operations != null && !operations.isEmpty()) {
+                            IUndoableOperation lastOp = operations.get(operations.size() - 1);
+                            if (lastOp.canUndo()) {
+                                IStatus status = lastOp.undo(null, null);
+                                if (status.isOK()) {
+                                    performed = true;
+                                    System.out.println("Undo performed for: " + filePath);
+                                    operations.remove(operations.size() - 1);
+                                }
+                            }
                         }
                     }
                 }
@@ -108,7 +124,8 @@ public class CopilotUndoManager {
             for (String filePath : filePaths) {
                 IFile file = findFile(filePath);
                 if (file != null) {
-                    IUndoContext context = getUndoContext(file);
+                    // Get the workspace context which our operations use
+                    IUndoContext context = ResourcesPlugin.getWorkspace().getAdapter(IUndoContext.class);
                     if (context != null && operationHistory.canRedo(context)) {
                         IStatus status = operationHistory.redo(context, null, null);
                         if (status.isOK()) {

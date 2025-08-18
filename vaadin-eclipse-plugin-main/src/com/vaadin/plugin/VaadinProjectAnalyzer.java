@@ -223,17 +223,35 @@ public class VaadinProjectAnalyzer {
         for (IPackageFragment pkg : packages) {
             if (pkg.getKind() == IPackageFragmentRoot.K_SOURCE) {
                 for (ICompilationUnit unit : pkg.getCompilationUnits()) {
-                    IType[] allTypes = unit.getAllTypes();
-                    for (IType type : allTypes) {
+                    // Use getTypes() to get only top-level types first
+                    IType[] topLevelTypes = unit.getTypes();
+                    for (IType type : topLevelTypes) {
+                        // Check the top-level type
                         if (hasAnnotation(type, annotationName)) {
                             types.add(type);
                         }
+                        // Check nested types
+                        checkNestedTypes(type, annotationName, types);
                     }
                 }
             }
         }
 
         return types;
+    }
+
+    /**
+     * Recursively check nested types for annotations.
+     */
+    private void checkNestedTypes(IType type, String annotationName, List<IType> types) throws JavaModelException {
+        IType[] nestedTypes = type.getTypes();
+        for (IType nested : nestedTypes) {
+            if (hasAnnotation(nested, annotationName)) {
+                types.add(nested);
+            }
+            // Recursively check deeper nested types
+            checkNestedTypes(nested, annotationName, types);
+        }
     }
 
     /**
@@ -264,9 +282,24 @@ public class VaadinProjectAnalyzer {
         for (IAnnotation annotation : annotations) {
             String name = annotation.getElementName();
             if (name.equals(simpleName) || name.equals(annotationName)) {
-                Object value = annotation.getMemberValuePairs()[0];
-                if (value != null) {
-                    return value.toString().replaceAll("\"", "");
+                org.eclipse.jdt.core.IMemberValuePair[] pairs = annotation.getMemberValuePairs();
+                if (pairs != null && pairs.length > 0) {
+                    // Look for the specific attribute
+                    for (org.eclipse.jdt.core.IMemberValuePair pair : pairs) {
+                        if (pair.getMemberName().equals(attributeName)) {
+                            Object value = pair.getValue();
+                            if (value != null) {
+                                return value.toString().replaceAll("\"", "");
+                            }
+                        }
+                    }
+                    // If attribute not found, try first pair's value if it's "value"
+                    if (attributeName.equals("value") && pairs.length > 0 && pairs[0].getMemberName().equals("value")) {
+                        Object value = pairs[0].getValue();
+                        if (value != null) {
+                            return value.toString().replaceAll("\"", "");
+                        }
+                    }
                 }
             }
         }
