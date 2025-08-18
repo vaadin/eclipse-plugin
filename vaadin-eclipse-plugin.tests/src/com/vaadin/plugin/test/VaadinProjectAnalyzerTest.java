@@ -35,11 +35,11 @@ public class VaadinProjectAnalyzerTest extends BaseIntegrationTest {
 			srcFolder.create(true, true, null);
 		}
 
-		// Add source folder to classpath
-		IClasspathEntry[] oldEntries = javaProject.getRawClasspath();
-		IClasspathEntry[] newEntries = new IClasspathEntry[oldEntries.length + 1];
-		System.arraycopy(oldEntries, 0, newEntries, 0, oldEntries.length);
-		newEntries[oldEntries.length] = JavaCore.newSourceEntry(srcFolder.getFullPath());
+		// Set proper classpath with only the source folder (replace default entries)
+		IClasspathEntry sourceEntry = JavaCore.newSourceEntry(srcFolder.getFullPath());
+		IClasspathEntry containerEntry = JavaCore.newContainerEntry(
+				org.eclipse.core.runtime.Path.fromPortableString("org.eclipse.jdt.launching.JRE_CONTAINER"));
+		IClasspathEntry[] newEntries = new IClasspathEntry[]{sourceEntry, containerEntry};
 		javaProject.setRawClasspath(newEntries, null);
 
 		analyzer = new VaadinProjectAnalyzer(javaProject);
