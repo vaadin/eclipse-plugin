@@ -2,8 +2,10 @@ package com.vaadin.plugin;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IAnnotation;
@@ -108,14 +110,23 @@ public class VaadinProjectAnalyzer {
      */
     public List<Map<String, Object>> findEntities(boolean includeMethods) throws CoreException {
         List<Map<String, Object>> entities = new ArrayList<>();
+        Set<String> processedTypes = new HashSet<>();
 
         // Search for types with @Entity annotation
-        List<IType> entityTypes = findTypesWithAnnotation("javax.persistence.Entity");
+        List<IType> entityTypes = new ArrayList<>();
+        entityTypes.addAll(findTypesWithAnnotation("javax.persistence.Entity"));
         entityTypes.addAll(findTypesWithAnnotation("jakarta.persistence.Entity"));
 
         for (IType type : entityTypes) {
+            String fullyQualifiedName = type.getFullyQualifiedName();
+            // Skip if already processed (to avoid duplicates)
+            if (processedTypes.contains(fullyQualifiedName)) {
+                continue;
+            }
+            processedTypes.add(fullyQualifiedName);
+            
             Map<String, Object> entity = new HashMap<>();
-            entity.put("classname", type.getFullyQualifiedName());
+            entity.put("classname", fullyQualifiedName);
 
             if (type.getResource() != null) {
                 entity.put("path", type.getResource().getProjectRelativePath().toString());
