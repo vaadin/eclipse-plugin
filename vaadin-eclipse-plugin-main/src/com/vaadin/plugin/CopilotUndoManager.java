@@ -82,25 +82,16 @@ public class CopilotUndoManager {
                 if (file != null) {
                     // Get the workspace context which our operations use
                     IUndoContext context = ResourcesPlugin.getWorkspace().getAdapter(IUndoContext.class);
-                    if (context != null && operationHistory.canUndo(context)) {
-                        IStatus status = operationHistory.undo(context, null, null);
-                        if (status.isOK()) {
-                            performed = true;
-                            System.out.println("Undo performed for: " + filePath);
-                        }
-                    } else {
-                        // Try with file-specific operations
-                        String fileKey = file.getFullPath().toString();
-                        List<IUndoableOperation> operations = fileOperations.get(fileKey);
-                        if (operations != null && !operations.isEmpty()) {
-                            IUndoableOperation lastOp = operations.get(operations.size() - 1);
-                            if (lastOp.canUndo()) {
-                                IStatus status = lastOp.undo(null, null);
-                                if (status.isOK()) {
-                                    performed = true;
-                                    System.out.println("Undo performed for: " + filePath);
-                                    operations.remove(operations.size() - 1);
-                                }
+                    System.out.println("Undo attempt for: " + filePath + ", context: " + context);
+                    if (context != null) {
+                        boolean canUndo = operationHistory.canUndo(context);
+                        System.out.println("Can undo: " + canUndo);
+                        if (canUndo) {
+                            IStatus status = operationHistory.undo(context, null, null);
+                            System.out.println("Undo status: " + status.isOK() + ", message: " + status.getMessage());
+                            if (status.isOK()) {
+                                performed = true;
+                                System.out.println("Undo performed for: " + filePath);
                             }
                         }
                     }
@@ -126,11 +117,17 @@ public class CopilotUndoManager {
                 if (file != null) {
                     // Get the workspace context which our operations use
                     IUndoContext context = ResourcesPlugin.getWorkspace().getAdapter(IUndoContext.class);
-                    if (context != null && operationHistory.canRedo(context)) {
-                        IStatus status = operationHistory.redo(context, null, null);
-                        if (status.isOK()) {
-                            performed = true;
-                            System.out.println("Redo performed for: " + filePath);
+                    System.out.println("Redo attempt for: " + filePath + ", context: " + context);
+                    if (context != null) {
+                        boolean canRedo = operationHistory.canRedo(context);
+                        System.out.println("Can redo: " + canRedo);
+                        if (canRedo) {
+                            IStatus status = operationHistory.redo(context, null, null);
+                            System.out.println("Redo status: " + status.isOK() + ", message: " + status.getMessage());
+                            if (status.isOK()) {
+                                performed = true;
+                                System.out.println("Redo performed for: " + filePath);
+                            }
                         }
                     }
                 }
