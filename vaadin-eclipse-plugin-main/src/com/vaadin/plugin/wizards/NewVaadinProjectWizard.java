@@ -269,10 +269,27 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             Class<?> mavenPluginClass = Class.forName("org.eclipse.m2e.core.MavenPlugin");
             Object mavenPlugin = mavenPluginClass.getMethod("getDefault").invoke(null);
             
-            // Get the project configurationManager
-            Object configurationManager = mavenPluginClass.getMethod("getProjectConfigurationManager").invoke(mavenPlugin);
+            // Get the project registry
+            Object projectRegistry = mavenPluginClass.getMethod("getMavenProjectRegistry").invoke(mavenPlugin);
             
-            // Update project configuration
+            // Create a MavenUpdateRequest with force update from pom.xml
+            Class<?> updateRequestClass = Class.forName("org.eclipse.m2e.core.project.MavenUpdateRequest");
+            Object updateRequest = updateRequestClass
+                .getConstructor(IProject[].class, boolean.class, boolean.class)
+                .newInstance(new IProject[] { project }, 
+                    false,  // offline - false to allow downloading dependencies
+                    true);  // force update from pom.xml
+            
+            // Set additional flags for full update
+            updateRequestClass.getMethod("setForce", boolean.class).invoke(updateRequest, true);
+            
+            // Refresh the project configuration
+            projectRegistry.getClass()
+                .getMethod("refresh", updateRequestClass, IProgressMonitor.class)
+                .invoke(projectRegistry, updateRequest, monitor != null ? monitor : new NullProgressMonitor());
+            
+            // Also update project configuration
+            Object configurationManager = mavenPluginClass.getMethod("getProjectConfigurationManager").invoke(mavenPlugin);
             configurationManager.getClass()
                 .getMethod("updateProjectConfiguration", IProject.class, IProgressMonitor.class)
                 .invoke(configurationManager, project, monitor != null ? monitor : new NullProgressMonitor());
@@ -280,6 +297,7 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
         } catch (Exception e) {
             // M2E plugin not available or update failed - log but don't fail the import
             System.err.println("Could not update Maven project configuration: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
