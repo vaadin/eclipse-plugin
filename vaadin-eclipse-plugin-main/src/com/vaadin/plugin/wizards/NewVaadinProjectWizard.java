@@ -106,9 +106,15 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
         subMonitor.subTask("Importing project...");
         IProject project = importProject(projectPath, model.getProjectName(), subMonitor.split(20));
 
-        // Step 4: Open README
+        // Step 4: Update Maven/Gradle configuration
+        subMonitor.subTask("Updating project configuration...");
+        if (Files.exists(projectPath.resolve("pom.xml"))) {
+            updateMavenProject(project, subMonitor.split(5));
+        }
+        
+        // Step 5: Open README
         subMonitor.subTask("Opening README...");
-        openReadme(project, subMonitor.split(10));
+        openReadme(project, subMonitor.split(5));
 
         // Clean up
         Files.deleteIfExists(tempZip);
@@ -253,11 +259,6 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
 
             // Refresh to pick up extracted files
             project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
-            
-            // Update Maven configuration if it's a Maven project
-            if (Files.exists(projectPath.resolve("pom.xml"))) {
-                updateMavenProject(project, monitor);
-            }
         }
 
         return project;
