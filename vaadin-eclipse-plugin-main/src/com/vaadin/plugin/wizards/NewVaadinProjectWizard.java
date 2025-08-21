@@ -206,6 +206,46 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             IProjectDescription description = ResourcesPlugin.getWorkspace().newProjectDescription(projectName);
             description.setLocation(null); // Use default location
 
+            // Check if pom.xml exists to determine if it's a Maven project
+            if (Files.exists(projectPath.resolve("pom.xml"))) {
+                // Add Maven nature and Java nature
+                description.setNatureIds(new String[] {
+                    "org.eclipse.jdt.core.javanature",
+                    "org.eclipse.m2e.core.maven2Nature"
+                });
+                
+                // Add Maven and Java builders
+                org.eclipse.core.resources.ICommand javaBuilder = description.newCommand();
+                javaBuilder.setBuilderName("org.eclipse.jdt.core.javabuilder");
+                
+                org.eclipse.core.resources.ICommand mavenBuilder = description.newCommand();
+                mavenBuilder.setBuilderName("org.eclipse.m2e.core.maven2Builder");
+                
+                description.setBuildSpec(new org.eclipse.core.resources.ICommand[] {
+                    javaBuilder,
+                    mavenBuilder
+                });
+            } else if (Files.exists(projectPath.resolve("build.gradle")) || 
+                       Files.exists(projectPath.resolve("build.gradle.kts"))) {
+                // Add Gradle nature and Java nature
+                description.setNatureIds(new String[] {
+                    "org.eclipse.jdt.core.javanature",
+                    "org.eclipse.buildship.core.gradleprojectnature"
+                });
+                
+                // Add Gradle and Java builders
+                org.eclipse.core.resources.ICommand javaBuilder = description.newCommand();
+                javaBuilder.setBuilderName("org.eclipse.jdt.core.javabuilder");
+                
+                org.eclipse.core.resources.ICommand gradleBuilder = description.newCommand();
+                gradleBuilder.setBuilderName("org.eclipse.buildship.core.gradleprojectbuilder");
+                
+                description.setBuildSpec(new org.eclipse.core.resources.ICommand[] {
+                    javaBuilder,
+                    gradleBuilder
+                });
+            }
+
             // Create and open project
             project.create(description, monitor);
             project.open(monitor);
