@@ -105,42 +105,23 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
         subMonitor.subTask("Extracting project...");
         Path projectPath = extractProject(tempZip, model.getProjectName(), subMonitor.split(30));
 
-        // Step 3: Import as Eclipse project
+        // Step 3: Import project based on type
         subMonitor.subTask("Importing project...");
-        IProject project = importProject(projectPath, model.getProjectName(), subMonitor.split(20));
-
-        // Step 4: Ensure project is fully synchronized
-        subMonitor.subTask("Synchronizing project...");
-        project.refreshLocal(IResource.DEPTH_INFINITE, subMonitor.split(5));
+        IProject project = null;
         
-        // Step 5: Schedule Maven/Gradle configuration update to run after wizard completes
         if (Files.exists(projectPath.resolve("pom.xml"))) {
-            // Schedule the Maven update as a background job
-            Job mavenUpdateJob = new Job("Updating Maven project configuration") {
-                @Override
-                protected IStatus run(IProgressMonitor monitor) {
-                    try {
-                        // Wait for Eclipse to fully process the new project
-                        Thread.sleep(3000);
-                        
-                        // Refresh project once more to ensure all files are recognized
-                        project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
-                        
-                        // Now update Maven configuration
-                        updateMavenProject(project, monitor);
-                        
-                        return Status.OK_STATUS;
-                    } catch (Exception e) {
-                        return new Status(IStatus.ERROR, "com.vaadin.plugin", 
-                            "Failed to update Maven configuration: " + e.getMessage(), e);
-                    }
-                }
-            };
-            mavenUpdateJob.setUser(false); // Run in background
-            mavenUpdateJob.schedule(500); // Schedule to run after 500ms
+            // Import as Maven project directly
+            project = importMavenProject(projectPath, model.getProjectName(), subMonitor.split(25));
+        } else if (Files.exists(projectPath.resolve("build.gradle")) || 
+                   Files.exists(projectPath.resolve("build.gradle.kts"))) {
+            // Import as Gradle project
+            project = importProject(projectPath, model.getProjectName(), subMonitor.split(25));
+        } else {
+            // Import as generic Eclipse project
+            project = importProject(projectPath, model.getProjectName(), subMonitor.split(25));
         }
         
-        // Step 6: Open README
+        // Step 4: Open README
         subMonitor.subTask("Opening README...");
         openReadme(project, subMonitor.split(5));
 
@@ -231,6 +212,53 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
         }
     }
 
+    private IProject importMavenProject(Path projectPath, String projectName, IProgressMonitor monitor)
+            throws CoreException {
+        try {
+            // Use reflection to call M2E import functionality
+            Class<?> mavenPluginClass = Class.forName("org.eclipse.m2e.core.MavenPlugin");
+            Object mavenPlugin = mavenPluginClass.getMethod("getDefault").invoke(null);
+            
+            // Get the project configuration manager
+            Object configManager = mavenPluginClass.getMethod("getProjectConfigurationManager").invoke(mavenPlugin);
+            
+            // Create ImportConfiguration
+            Class<?> importConfigClass = Class.forName("org.eclipse.m2e.core.project.ProjectImportConfiguration");
+            Object importConfig = importConfigClass.newInstance();
+            
+            // Set the project name
+            importConfigClass.getMethod("setProjectName", String.class).invoke(importConfig, projectName);
+            
+            // Import the project
+            Class<?> configManagerClass = configManager.getClass();
+            Object mavenModel = null; // We'll let M2E read the pom.xml
+            
+            IProject project = (IProject) configManagerClass.getMethod("importProject",
+                String.class,  // pomFile path
+                Class.forName("org.apache.maven.model.Model"),  // Maven model (can be null)
+                importConfigClass,  // ImportConfiguration
+                IProgressMonitor.class)
+                .invoke(configManager, 
+                    projectPath.resolve("pom.xml").toString(),
+                    mavenModel,
+                    importConfig,
+                    monitor);
+            
+            if (project != null) {
+                // Refresh to ensure all files are visible
+                project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+            }
+            
+            return project;
+            
+        } catch (Exception e) {
+            // Fallback to regular import if M2E is not available or import fails
+            System.err.println("Maven import failed, falling back to regular import: " + e.getMessage());
+            e.printStackTrace();
+            return importProject(projectPath, projectName, monitor);
+        }
+    }
+    
     private IProject importProject(Path projectPath, String projectName, IProgressMonitor monitor)
             throws CoreException {
         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
@@ -292,44 +320,6 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
         return project;
     }
 
-    private void updateMavenProject(IProject project, IProgressMonitor monitor) {
-        try {
-            // Use reflection to avoid hard dependency on m2e plugin
-            Class<?> mavenPluginClass = Class.forName("org.eclipse.m2e.core.MavenPlugin");
-            Object mavenPlugin = mavenPluginClass.getMethod("getDefault").invoke(null);
-            
-            // Get the project registry
-            Object projectRegistry = mavenPluginClass.getMethod("getMavenProjectRegistry").invoke(mavenPlugin);
-            
-            // Create a MavenUpdateRequest with force update from pom.xml
-            Class<?> updateRequestClass = Class.forName("org.eclipse.m2e.core.project.MavenUpdateRequest");
-            Object updateRequest = updateRequestClass
-                .getConstructor(IProject[].class, boolean.class, boolean.class)
-                .newInstance(new IProject[] { project }, 
-                    false,  // offline - false to allow downloading dependencies
-                    true);  // force update from pom.xml
-            
-            // Set additional flags for full update
-            updateRequestClass.getMethod("setForce", boolean.class).invoke(updateRequest, true);
-            
-            // Refresh the project configuration
-            projectRegistry.getClass()
-                .getMethod("refresh", updateRequestClass, IProgressMonitor.class)
-                .invoke(projectRegistry, updateRequest, monitor != null ? monitor : new NullProgressMonitor());
-            
-            // Also update project configuration
-            Object configurationManager = mavenPluginClass.getMethod("getProjectConfigurationManager").invoke(mavenPlugin);
-            configurationManager.getClass()
-                .getMethod("updateProjectConfiguration", IProject.class, IProgressMonitor.class)
-                .invoke(configurationManager, project, monitor != null ? monitor : new NullProgressMonitor());
-                
-        } catch (Exception e) {
-            // M2E plugin not available or update failed - log but don't fail the import
-            System.err.println("Could not update Maven project configuration: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-    
     private void openReadme(IProject project, IProgressMonitor monitor) {
         PlatformUI.getWorkbench().getDisplay().asyncExec(() -> {
             try {
