@@ -3,6 +3,7 @@ package com.vaadin.plugin.wizards;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
@@ -40,13 +41,14 @@ public class VaadinProjectWizardPage extends WizardPage {
     private Combo languageCombo;
     private Combo buildToolCombo;
     private Combo architectureCombo;
+    private Label kotlinNote;
 
     private ProjectModel model;
 
     public VaadinProjectWizardPage() {
         super("vaadinProjectPage");
-        setTitle("New Vaadin Project");
-        setDescription("Create a new Vaadin project from a starter template");
+        setTitle("Vaadin");
+        setDescription("Create a new Vaadin project");
         model = new ProjectModel();
     }
 
@@ -117,6 +119,15 @@ public class VaadinProjectWizardPage extends WizardPage {
 
         // Project type selection
         createProjectTypeSection(container);
+        
+        // Add separator
+        Label separator = new Label(container, SWT.SEPARATOR | SWT.HORIZONTAL);
+        gd = new GridData(GridData.FILL_HORIZONTAL);
+        gd.horizontalSpan = 3;
+        separator.setLayoutData(gd);
+        
+        // Add help sections
+        createHelpSections(container);
 
         // Initialize default location
         updateDefaultLocation();
@@ -128,10 +139,48 @@ public class VaadinProjectWizardPage extends WizardPage {
         setControl(container);
     }
 
+    private void createHelpSections(Composite parent) {
+        // Getting Started section
+        Label gettingStartedLabel = new Label(parent, SWT.NONE);
+        gettingStartedLabel.setText("Getting Started");
+        gettingStartedLabel.setFont(JFaceResources.getFontRegistry().getBold(JFaceResources.DEFAULT_FONT));
+        GridData gd = new GridData();
+        gd.horizontalSpan = 3;
+        gettingStartedLabel.setLayoutData(gd);
+        
+        Label gettingStartedText = new Label(parent, SWT.WRAP);
+        gettingStartedText.setText("The Getting Started guide will quickly familiarize you with your new Walking Skeleton " +
+                "implementation. You'll learn how to set up your development environment, understand the project " +
+                "structure, and find resources to help you add muscles to your skeleton—transforming it into a " +
+                "fully-featured application.");
+        gd = new GridData(GridData.FILL_HORIZONTAL);
+        gd.horizontalSpan = 3;
+        gd.widthHint = 500;
+        gettingStartedText.setLayoutData(gd);
+        
+        // Flow and Hilla section
+        Label flowHillaLabel = new Label(parent, SWT.NONE);
+        flowHillaLabel.setText("Flow and Hilla");
+        flowHillaLabel.setFont(JFaceResources.getFontRegistry().getBold(JFaceResources.DEFAULT_FONT));
+        gd = new GridData();
+        gd.horizontalSpan = 3;
+        gd.verticalIndent = 10;
+        flowHillaLabel.setLayoutData(gd);
+        
+        Label flowHillaText = new Label(parent, SWT.WRAP);
+        flowHillaText.setText("Flow framework is the most productive choice, allowing 100% of the user interface to be " +
+                "coded in server-side Java. Hilla framework, on the other hand, enables implementation of your user " +
+                "interface with React while automatically connecting it to your Java backend.");
+        gd = new GridData(GridData.FILL_HORIZONTAL);
+        gd.horizontalSpan = 3;
+        gd.widthHint = 500;
+        flowHillaText.setLayoutData(gd);
+    }
+    
     private void createProjectTypeSection(Composite parent) {
         // Starter Project Section
         Group starterGroup = new Group(parent, SWT.NONE);
-        starterGroup.setText("Starter Project (Walking Skeleton)");
+        starterGroup.setText("Starter Project");
         GridData gd = new GridData(GridData.FILL_HORIZONTAL);
         gd.horizontalSpan = 3;
         starterGroup.setLayoutData(gd);
@@ -152,6 +201,23 @@ public class VaadinProjectWizardPage extends WizardPage {
         vaadinVersionCombo.select(0);
         vaadinVersionCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
+        // Include Walking Skeleton section
+        Label skeletonLabel = new Label(starterGroup, SWT.NONE);
+        skeletonLabel.setText("Include Walking Skeleton");
+        skeletonLabel.setFont(JFaceResources.getFontRegistry().getBold(JFaceResources.DEFAULT_FONT));
+        gd = new GridData();
+        gd.horizontalSpan = 2;
+        skeletonLabel.setLayoutData(gd);
+        
+        Label descLabel = new Label(starterGroup, SWT.WRAP);
+        descLabel.setText("A walking skeleton is a minimal application that includes a fully-functional " +
+                "end-to-end workflow. All major building blocks are included, but it does not yet " +
+                "perform any meaningful tasks.");
+        gd = new GridData(GridData.FILL_HORIZONTAL);
+        gd.horizontalSpan = 2;
+        gd.widthHint = 400;
+        descLabel.setLayoutData(gd);
+
         flowCheckbox = new Button(starterGroup, SWT.CHECK);
         flowCheckbox.setText("Pure Java with Vaadin Flow");
         flowCheckbox.setSelection(true);
@@ -166,9 +232,9 @@ public class VaadinProjectWizardPage extends WizardPage {
         gd.horizontalSpan = 2;
         hillaCheckbox.setLayoutData(gd);
 
-        // Hello World Section
+        // Hello World Projects Section
         Group helloWorldGroup = new Group(parent, SWT.NONE);
-        helloWorldGroup.setText("Hello World Project");
+        helloWorldGroup.setText("Hello World Projects");
         gd = new GridData(GridData.FILL_HORIZONTAL);
         gd.horizontalSpan = 3;
         helloWorldGroup.setLayoutData(gd);
@@ -184,7 +250,7 @@ public class VaadinProjectWizardPage extends WizardPage {
         label.setText("Framework:");
 
         frameworkCombo = new Combo(helloWorldGroup, SWT.READ_ONLY);
-        frameworkCombo.setItems("Flow (Java)", "Hilla (React)");
+        frameworkCombo.setItems("Flow / Java", "Hilla / React");
         frameworkCombo.select(0);
         frameworkCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
@@ -197,7 +263,7 @@ public class VaadinProjectWizardPage extends WizardPage {
         languageCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         label = new Label(helloWorldGroup, SWT.NONE);
-        label.setText("Build Tool:");
+        label.setText("Build tool:");
 
         buildToolCombo = new Combo(helloWorldGroup, SWT.READ_ONLY);
         buildToolCombo.setItems("Maven", "Gradle");
@@ -211,6 +277,14 @@ public class VaadinProjectWizardPage extends WizardPage {
         architectureCombo.setItems("Spring Boot", "Quarkus", "Jakarta EE", "Servlet");
         architectureCombo.select(0);
         architectureCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        
+        // Add note label for Kotlin (initially hidden)
+        kotlinNote = new Label(helloWorldGroup, SWT.WRAP | SWT.ITALIC);
+        kotlinNote.setText("Kotlin support uses a community add-on.");
+        kotlinNote.setVisible(false);
+        gd = new GridData(GridData.FILL_HORIZONTAL);
+        gd.horizontalSpan = 2;
+        kotlinNote.setLayoutData(gd);
 
         // Add listeners to enable/disable sections
         starterProjectRadio.addSelectionListener(new SelectionAdapter() {
@@ -272,6 +346,11 @@ public class VaadinProjectWizardPage extends WizardPage {
             boolean isKotlin = languageCombo.getSelectionIndex() == 1;
             boolean isGradle = buildToolCombo.getSelectionIndex() == 1;
             String architecture = architectureCombo.getText();
+
+            // Show/hide Kotlin note
+            if (kotlinNote != null) {
+                kotlinNote.setVisible(isKotlin);
+            }
 
             // Hilla only supports Spring Boot
             if (isHilla && !architecture.equals("Spring Boot")) {
