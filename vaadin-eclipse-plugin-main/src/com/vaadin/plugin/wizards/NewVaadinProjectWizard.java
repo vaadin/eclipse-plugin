@@ -45,7 +45,7 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
     public NewVaadinProjectWizard() {
         super();
         setNeedsProgressMonitor(true);
-        setWindowTitle("New Vaadin Project");
+        setWindowTitle("Vaadin");
     }
 
     @Override
@@ -134,13 +134,15 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
     private Path extractProject(Path zipFile, String projectName, IProgressMonitor monitor) throws IOException {
         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
         Path workspacePath = Paths.get(root.getLocation().toString());
+        Path finalProjectPath = workspacePath.resolve(projectName);
 
-        // The ZIP from start.vaadin.com contains a root folder that should become the
-        // project folder
-        // We need to extract to workspace and rename if necessary
+        // If project directory already exists, delete it
+        if (Files.exists(finalProjectPath)) {
+            deleteDirectory(finalProjectPath);
+        }
 
-        // First, extract to a temp location to inspect the structure
-        Path tempExtractPath = Files.createTempDirectory("vaadin-extract-");
+        // Create the project directory
+        Files.createDirectories(finalProjectPath);
 
         try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(zipFile.toFile())))) {
             ZipEntry entry;
@@ -150,12 +152,24 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             while ((entry = zis.getNextEntry()) != null) {
                 String entryName = entry.getName();
 
-                // Identify the root folder in the ZIP
-                if (rootFolder == null && entry.isDirectory() && !entryName.contains("/")) {
-                    rootFolder = entryName.replace("/", "");
+                // Identify the root folder in the ZIP (if any)
+                if (rootFolder == null && entryName.contains("/")) {
+                    int firstSlash = entryName.indexOf("/");
+                    rootFolder = entryName.substring(0, firstSlash + 1);
                 }
 
-                Path targetPath = tempExtractPath.resolve(entryName);
+                // Skip the root folder itself and strip it from the path
+                String targetName = entryName;
+                if (rootFolder != null && entryName.startsWith(rootFolder)) {
+                    targetName = entryName.substring(rootFolder.length());
+                    // Skip if it's just the root folder entry itself
+                    if (targetName.isEmpty()) {
+                        zis.closeEntry();
+                        continue;
+                    }
+                }
+
+                Path targetPath = finalProjectPath.resolve(targetName);
 
                 if (entry.isDirectory()) {
                     Files.createDirectories(targetPath);
@@ -169,23 +183,6 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
                     }
                 }
                 zis.closeEntry();
-            }
-
-            // Now move the extracted content to the workspace with the correct project name
-            Path extractedProjectPath = rootFolder != null ? tempExtractPath.resolve(rootFolder) : tempExtractPath;
-            Path finalProjectPath = workspacePath.resolve(projectName);
-
-            // If project directory already exists, delete it
-            if (Files.exists(finalProjectPath)) {
-                deleteDirectory(finalProjectPath);
-            }
-
-            // Move the extracted project to the workspace
-            Files.move(extractedProjectPath, finalProjectPath);
-
-            // Clean up temp directory if it still exists
-            if (Files.exists(tempExtractPath)) {
-                deleteDirectory(tempExtractPath);
             }
 
             return finalProjectPath;
