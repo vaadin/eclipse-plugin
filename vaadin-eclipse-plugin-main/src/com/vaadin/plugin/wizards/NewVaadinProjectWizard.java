@@ -22,6 +22,7 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
@@ -252,11 +253,36 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
 
             // Refresh to pick up extracted files
             project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+            
+            // Update Maven configuration if it's a Maven project
+            if (Files.exists(projectPath.resolve("pom.xml"))) {
+                updateMavenProject(project, monitor);
+            }
         }
 
         return project;
     }
 
+    private void updateMavenProject(IProject project, IProgressMonitor monitor) {
+        try {
+            // Use reflection to avoid hard dependency on m2e plugin
+            Class<?> mavenPluginClass = Class.forName("org.eclipse.m2e.core.MavenPlugin");
+            Object mavenPlugin = mavenPluginClass.getMethod("getDefault").invoke(null);
+            
+            // Get the project configurationManager
+            Object configurationManager = mavenPluginClass.getMethod("getProjectConfigurationManager").invoke(mavenPlugin);
+            
+            // Update project configuration
+            configurationManager.getClass()
+                .getMethod("updateProjectConfiguration", IProject.class, IProgressMonitor.class)
+                .invoke(configurationManager, project, monitor != null ? monitor : new NullProgressMonitor());
+                
+        } catch (Exception e) {
+            // M2E plugin not available or update failed - log but don't fail the import
+            System.err.println("Could not update Maven project configuration: " + e.getMessage());
+        }
+    }
+    
     private void openReadme(IProject project, IProgressMonitor monitor) {
         PlatformUI.getWorkbench().getDisplay().asyncExec(() -> {
             try {
