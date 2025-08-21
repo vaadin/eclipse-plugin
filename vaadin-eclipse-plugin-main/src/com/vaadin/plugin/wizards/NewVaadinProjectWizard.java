@@ -22,8 +22,11 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubMonitor;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -106,13 +109,38 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
         subMonitor.subTask("Importing project...");
         IProject project = importProject(projectPath, model.getProjectName(), subMonitor.split(20));
 
-        // Step 4: Update Maven/Gradle configuration
-        subMonitor.subTask("Updating project configuration...");
+        // Step 4: Ensure project is fully synchronized
+        subMonitor.subTask("Synchronizing project...");
+        project.refreshLocal(IResource.DEPTH_INFINITE, subMonitor.split(5));
+        
+        // Step 5: Schedule Maven/Gradle configuration update to run after wizard completes
         if (Files.exists(projectPath.resolve("pom.xml"))) {
-            updateMavenProject(project, subMonitor.split(5));
+            // Schedule the Maven update as a background job
+            Job mavenUpdateJob = new Job("Updating Maven project configuration") {
+                @Override
+                protected IStatus run(IProgressMonitor monitor) {
+                    try {
+                        // Wait for Eclipse to fully process the new project
+                        Thread.sleep(3000);
+                        
+                        // Refresh project once more to ensure all files are recognized
+                        project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+                        
+                        // Now update Maven configuration
+                        updateMavenProject(project, monitor);
+                        
+                        return Status.OK_STATUS;
+                    } catch (Exception e) {
+                        return new Status(IStatus.ERROR, "com.vaadin.plugin", 
+                            "Failed to update Maven configuration: " + e.getMessage(), e);
+                    }
+                }
+            };
+            mavenUpdateJob.setUser(false); // Run in background
+            mavenUpdateJob.schedule(500); // Schedule to run after 500ms
         }
         
-        // Step 5: Open README
+        // Step 6: Open README
         subMonitor.subTask("Opening README...");
         openReadme(project, subMonitor.split(5));
 
