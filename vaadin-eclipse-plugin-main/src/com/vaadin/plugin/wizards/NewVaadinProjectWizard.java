@@ -214,49 +214,34 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
 
     private IProject importMavenProject(Path projectPath, String projectName, IProgressMonitor monitor)
             throws CoreException {
+        // Now we can use M2E directly without reflection since it's a required dependency
         try {
             System.out.println("=== Attempting M2E Maven import ===");
             System.out.println("Project path: " + projectPath);
             System.out.println("Project name: " + projectName);
             System.out.println("POM file: " + projectPath.resolve("pom.xml"));
             
-            // Use reflection to call M2E import functionality
-            Class<?> mavenPluginClass = Class.forName("org.eclipse.m2e.core.MavenPlugin");
-            System.out.println("M2E plugin class loaded successfully");
-            
-            Object mavenPlugin = mavenPluginClass.getMethod("getDefault").invoke(null);
-            System.out.println("M2E plugin instance obtained: " + mavenPlugin);
+            // Import using M2E API directly
+            System.out.println("Getting M2E configuration manager...");
             
             // Get the project configuration manager
-            Object configManager = mavenPluginClass.getMethod("getProjectConfigurationManager").invoke(mavenPlugin);
-            System.out.println("Project configuration manager obtained: " + configManager);
+            org.eclipse.m2e.core.project.IProjectConfigurationManager configManager = 
+                org.eclipse.m2e.core.MavenPlugin.getProjectConfigurationManager();
+            System.out.println("Project configuration manager obtained");
             
             // Create ImportConfiguration
-            Class<?> importConfigClass = Class.forName("org.eclipse.m2e.core.project.ProjectImportConfiguration");
-            Object importConfig = importConfigClass.newInstance();
-            System.out.println("Import configuration created");
-            
-            // Set the project name
-            importConfigClass.getMethod("setProjectName", String.class).invoke(importConfig, projectName);
-            System.out.println("Project name set in import config: " + projectName);
+            org.eclipse.m2e.core.project.ProjectImportConfiguration importConfig = 
+                new org.eclipse.m2e.core.project.ProjectImportConfiguration();
+            importConfig.setProjectName(projectName);
+            System.out.println("Import configuration created with project name: " + projectName);
             
             // Import the project
-            Class<?> configManagerClass = configManager.getClass();
-            System.out.println("Config manager class: " + configManagerClass.getName());
-            
-            Object mavenModel = null; // We'll let M2E read the pom.xml
-            
             System.out.println("Calling importProject method...");
-            IProject project = (IProject) configManagerClass.getMethod("importProject",
-                String.class,  // pomFile path
-                Class.forName("org.apache.maven.model.Model"),  // Maven model (can be null)
-                importConfigClass,  // ImportConfiguration
-                IProgressMonitor.class)
-                .invoke(configManager, 
-                    projectPath.resolve("pom.xml").toString(),
-                    mavenModel,
-                    importConfig,
-                    monitor);
+            IProject project = configManager.importProject(
+                projectPath.resolve("pom.xml").toString(),
+                null, // Maven model - let M2E read it
+                importConfig,
+                monitor);
             
             System.out.println("Project imported via M2E: " + project);
             
@@ -273,9 +258,6 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             System.out.println("=== M2E Maven import completed successfully ===");
             return project;
             
-        } catch (ClassNotFoundException e) {
-            System.err.println("M2E plugin not found: " + e.getMessage());
-            return importProject(projectPath, projectName, monitor);
         } catch (Exception e) {
             System.err.println("Maven import failed with exception: " + e.getClass().getName());
             System.err.println("Message: " + e.getMessage());
