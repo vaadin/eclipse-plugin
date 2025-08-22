@@ -54,15 +54,39 @@ public class CopilotRestService {
 
     /** Start the embedded HTTP server on a random port. */
     public void start() throws IOException {
-        server = HttpServer.create(new InetSocketAddress(InetAddress.getLocalHost(), 0), 0);
-        String contextPath = "/vaadin/" + CopilotUtil.getServiceName();
-        server.createContext(contextPath, new Handler());
-        server.start();
-        endpoint = "http://localhost:" + server.getAddress().getPort() + contextPath;
-        System.out.println("Copilot REST service started at " + endpoint);
+        try {
+            // Bind to localhost (127.0.0.1) explicitly
+            server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+            String contextPath = "/vaadin/" + CopilotUtil.getServiceName();
+            server.createContext(contextPath, new Handler());
+            
+            // Add a simple health check endpoint for testing
+            server.createContext("/health", exchange -> {
+                String response = "OK";
+                exchange.sendResponseHeaders(200, response.length());
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(response.getBytes());
+                }
+            });
+            
+            server.setExecutor(null); // creates a default executor
+            server.start();
+            
+            // Get the actual port after binding
+            int actualPort = server.getAddress().getPort();
+            endpoint = "http://localhost:" + actualPort + contextPath;
+            System.out.println("Copilot REST service started successfully!");
+            System.out.println("  Main endpoint: " + endpoint);
+            System.out.println("  Health check: http://localhost:" + actualPort + "/health");
+            System.out.println("  Server is listening on port " + actualPort);
 
-        // Create dotfiles for all open projects
-        createDotFilesForOpenProjects();
+            // Create dotfiles for all open projects
+            createDotFilesForOpenProjects();
+        } catch (IOException e) {
+            System.err.println("Failed to start Copilot REST service: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     /** Stop the server if it is running. */

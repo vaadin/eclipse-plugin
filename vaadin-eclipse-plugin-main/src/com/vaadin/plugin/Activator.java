@@ -16,19 +16,27 @@ public class Activator implements BundleActivator {
 
     @Override
     public void start(BundleContext context) throws Exception {
-        restService = new CopilotRestService();
-        restService.start();
-        System.setProperty("vaadin.copilot.endpoint", restService.getEndpoint());
+        try {
+            restService = new CopilotRestService();
+            restService.start();
+            System.setProperty("vaadin.copilot.endpoint", restService.getEndpoint());
 
-        // Register the server launch listener
-        serverLaunchListener = new ServerLaunchListener();
-        DebugPlugin.getDefault().getLaunchManager().addLaunchListener(serverLaunchListener);
-        
-        // Initialize dotfile manager
-        dotfileManager = CopilotDotfileManager.getInstance();
-        dotfileManager.initialize();
-        // Update all dotfiles with the current endpoint
-        dotfileManager.updateAllDotfiles();
+            // Register the server launch listener
+            serverLaunchListener = new ServerLaunchListener();
+            DebugPlugin.getDefault().getLaunchManager().addLaunchListener(serverLaunchListener);
+            
+            // Initialize dotfile manager
+            dotfileManager = CopilotDotfileManager.getInstance();
+            dotfileManager.initialize();
+            // Update all dotfiles with the current endpoint
+            dotfileManager.updateAllDotfiles();
+        } catch (Exception e) {
+            System.err.println("Failed to start Vaadin Eclipse Plugin: " + e.getMessage());
+            e.printStackTrace();
+            // Clean up any partially initialized resources
+            stop(context);
+            throw e;
+        }
     }
 
     @Override
