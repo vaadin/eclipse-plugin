@@ -43,7 +43,7 @@ public class ProjectModel {
 
         // Add project name as group and artifact ID
         String artifactId = toArtifactId(projectName);
-        url.append("groupId=com.example");
+        url.append("groupId=com.example.application");
         url.append("&artifactId=").append(encode(artifactId));
         url.append("&name=").append(encode(projectName));
 
@@ -72,7 +72,7 @@ public class ProjectModel {
 
         // Add project name
         String artifactId = toArtifactId(projectName);
-        url.append("groupId=com.example");
+        url.append("groupId=com.example.application");
         url.append("&artifactId=").append(encode(artifactId));
         url.append("&name=").append(encode(projectName));
 
