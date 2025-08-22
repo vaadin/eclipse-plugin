@@ -56,7 +56,9 @@ public class VaadinModuleArtifactAdapter extends ModuleDelegate {
         String projectPath = project.getLocation().toOSString();
         byte[] content = projectPath.getBytes();
 
-        return new VirtualModuleFile(HELLO_FILE_NAME, Path.ROOT, content);
+        // Place the file in WEB-INF/classes so it's available as a classpath resource
+        IPath classesPath = new Path("WEB-INF").append("classes");
+        return new VirtualModuleFile(HELLO_FILE_NAME, classesPath, content);
     }
 
     /**

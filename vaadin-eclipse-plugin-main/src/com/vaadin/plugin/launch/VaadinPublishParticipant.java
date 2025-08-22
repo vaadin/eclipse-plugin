@@ -99,18 +99,26 @@ public class VaadinPublishParticipant extends PublishTaskDelegate {
             // Get the project's absolute path
             String projectPath = project.getLocation().toOSString();
 
-            // Create the hello.txt file in the deployment directory
+            // Create the hello.txt file in WEB-INF/classes so it's available as a classpath
+            // resource
             File deployDir = deploymentPath.toFile();
-            if (!deployDir.exists()) {
-                deployDir.mkdirs();
+            File webInfDir = new File(deployDir, "WEB-INF");
+            File classesDir = new File(webInfDir, "classes");
+
+            // Ensure the WEB-INF/classes directory exists
+            if (!classesDir.exists()) {
+                classesDir.mkdirs();
             }
 
-            File helloFile = new File(deployDir, HELLO_FILE_NAME);
+            // Write hello.txt to WEB-INF/classes so it's available via
+            // getResourceAsStream()
+            File helloFile = new File(classesDir, HELLO_FILE_NAME);
             try (FileWriter writer = new FileWriter(helloFile)) {
                 writer.write(projectPath);
             }
 
-            System.out.println("Injected " + HELLO_FILE_NAME + " into WAR at: " + helloFile.getAbsolutePath());
+            System.out.println(
+                    "Injected " + HELLO_FILE_NAME + " as classpath resource at: " + helloFile.getAbsolutePath());
         }
 
         @Override
