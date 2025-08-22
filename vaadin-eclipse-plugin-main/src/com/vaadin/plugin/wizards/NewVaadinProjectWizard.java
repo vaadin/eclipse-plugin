@@ -214,57 +214,34 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
 
     private IProject importMavenProject(Path projectPath, String projectName, IProgressMonitor monitor)
             throws CoreException {
-        // Now we can use M2E directly without reflection since it's a required dependency
+        // Use the regular import and then configure as Maven
+        System.out.println("=== Creating project and configuring Maven ===");
+        
+        // First create the project normally
+        IProject project = importProject(projectPath, projectName, monitor);
+        
         try {
-            System.out.println("=== Attempting M2E Maven import ===");
-            System.out.println("Project path: " + projectPath);
-            System.out.println("Project name: " + projectName);
-            System.out.println("POM file: " + projectPath.resolve("pom.xml"));
-            
-            // Import using M2E API directly
-            System.out.println("Getting M2E configuration manager...");
-            
-            // Get the project configuration manager
+            // Then configure it as a Maven project
             org.eclipse.m2e.core.project.IProjectConfigurationManager configManager = 
                 org.eclipse.m2e.core.MavenPlugin.getProjectConfigurationManager();
-            System.out.println("Project configuration manager obtained");
             
-            // Create ImportConfiguration
-            org.eclipse.m2e.core.project.ProjectImportConfiguration importConfig = 
-                new org.eclipse.m2e.core.project.ProjectImportConfiguration();
-            importConfig.setProjectName(projectName);
-            System.out.println("Import configuration created with project name: " + projectName);
-            
-            // Import the project
-            System.out.println("Calling importProject method...");
-            IProject project = configManager.importProject(
-                projectPath.resolve("pom.xml").toString(),
-                null, // Maven model - let M2E read it
-                importConfig,
+            // Enable Maven nature on the project
+            configManager.enableMavenNature(project, 
+                new org.eclipse.m2e.core.project.ResolverConfiguration(), 
                 monitor);
             
-            System.out.println("Project imported via M2E: " + project);
+            // Update project configuration
+            configManager.updateProjectConfiguration(project, monitor);
             
-            if (project != null) {
-                System.out.println("Project name: " + project.getName());
-                System.out.println("Project location: " + project.getLocation());
-                System.out.println("Has Maven nature: " + project.hasNature("org.eclipse.m2e.core.maven2Nature"));
-                
-                // Refresh to ensure all files are visible
-                project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
-                System.out.println("Project refreshed");
-            }
-            
-            System.out.println("=== M2E Maven import completed successfully ===");
-            return project;
+            System.out.println("Maven nature enabled and project configured");
+            System.out.println("Has Maven nature: " + project.hasNature("org.eclipse.m2e.core.maven2Nature"));
             
         } catch (Exception e) {
-            System.err.println("Maven import failed with exception: " + e.getClass().getName());
-            System.err.println("Message: " + e.getMessage());
+            System.err.println("Failed to configure Maven nature: " + e.getMessage());
             e.printStackTrace();
-            System.err.println("=== Falling back to regular import ===");
-            return importProject(projectPath, projectName, monitor);
         }
+        
+        return project;
     }
     
     private IProject importProject(Path projectPath, String projectName, IProgressMonitor monitor)
@@ -281,26 +258,8 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             IProjectDescription description = ResourcesPlugin.getWorkspace().newProjectDescription(projectName);
             description.setLocation(null); // Use default location
 
-            // Check if pom.xml exists to determine if it's a Maven project
-            if (Files.exists(projectPath.resolve("pom.xml"))) {
-                // Add Maven nature and Java nature
-                description.setNatureIds(new String[] {
-                    "org.eclipse.jdt.core.javanature",
-                    "org.eclipse.m2e.core.maven2Nature"
-                });
-                
-                // Add Maven and Java builders
-                org.eclipse.core.resources.ICommand javaBuilder = description.newCommand();
-                javaBuilder.setBuilderName("org.eclipse.jdt.core.javabuilder");
-                
-                org.eclipse.core.resources.ICommand mavenBuilder = description.newCommand();
-                mavenBuilder.setBuilderName("org.eclipse.m2e.core.maven2Builder");
-                
-                description.setBuildSpec(new org.eclipse.core.resources.ICommand[] {
-                    javaBuilder,
-                    mavenBuilder
-                });
-            } else if (Files.exists(projectPath.resolve("build.gradle")) || 
+            // Check if build.gradle exists to determine if it's a Gradle project
+            if (Files.exists(projectPath.resolve("build.gradle")) || 
                        Files.exists(projectPath.resolve("build.gradle.kts"))) {
                 // Add Gradle nature and Java nature
                 description.setNatureIds(new String[] {
