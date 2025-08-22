@@ -173,10 +173,58 @@ public class HotswapAgentManager {
     }
 
     /**
+     * Get the JVM arguments needed for Hotswap Agent. Returns a formatted string ready for Eclipse VM arguments.
+     *
+     * @return VM arguments as a single formatted string
+     */
+    public String getHotswapJvmArgsString() throws IOException {
+        File agentJar = getHotswapAgentJar();
+
+        StringBuilder args = new StringBuilder();
+
+        // Add javaagent
+        args.append("-javaagent:").append(agentJar.getAbsolutePath()).append(" ");
+
+        // Add JBR-specific flags
+        args.append("-XX:+AllowEnhancedClassRedefinition ");
+        args.append("-XX:+ClassUnloading ");
+        args.append("-XX:HotswapAgent=external ");
+
+        // Add module opens for Java 9+ using space-separated format
+        // Eclipse handles this format better than the equals syntax
+        args.append("--add-opens java.base/java.lang=ALL-UNNAMED ");
+        args.append("--add-opens java.base/java.lang.reflect=ALL-UNNAMED ");
+        args.append("--add-opens java.base/java.util=ALL-UNNAMED ");
+        args.append("--add-opens java.base/java.util.concurrent=ALL-UNNAMED ");
+        args.append("--add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED ");
+        args.append("--add-opens java.base/java.io=ALL-UNNAMED ");
+        args.append("--add-opens java.base/java.nio=ALL-UNNAMED ");
+        args.append("--add-opens java.base/java.nio.file=ALL-UNNAMED ");
+        args.append("--add-opens java.base/sun.nio.ch=ALL-UNNAMED ");
+        args.append("--add-opens java.base/sun.nio.fs=ALL-UNNAMED ");
+        args.append("--add-opens java.base/sun.net.www.protocol.http=ALL-UNNAMED ");
+        args.append("--add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED ");
+        args.append("--add-opens java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED ");
+        args.append("--add-opens java.base/java.time=ALL-UNNAMED ");
+        args.append("--add-opens java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED ");
+        args.append("--add-opens java.management/sun.management=ALL-UNNAMED ");
+        args.append("--add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED ");
+
+        // Spring Boot specific
+        args.append("-Dspring.devtools.restart.enabled=false ");
+        args.append("-Dspring.devtools.restart.quiet-period=0 ");
+        args.append("-Dspring.context.lazy-init.enabled=false");
+
+        return args.toString().trim();
+    }
+
+    /**
      * Get the JVM arguments needed for Hotswap Agent.
      *
      * @return Array of JVM arguments
+     * @deprecated Use getHotswapJvmArgsString() instead for better Eclipse compatibility
      */
+    @Deprecated
     public String[] getHotswapJvmArgs() throws IOException {
         File agentJar = getHotswapAgentJar();
 

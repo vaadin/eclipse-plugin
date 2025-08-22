@@ -1,8 +1,6 @@
 package com.vaadin.plugin.hotswap;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
@@ -84,33 +82,35 @@ public class HotswapLaunchConfigurationDelegate extends JavaLaunchDelegate {
     private ILaunchConfiguration addHotswapArguments(ILaunchConfiguration configuration) throws CoreException {
         ILaunchConfigurationWorkingCopy wc = configuration.getWorkingCopy();
 
-        // Get existing VM arguments
+        // Get existing VM arguments as a single string
         String existingArgs = wc.getAttribute(IJavaLaunchConfigurationConstants.ATTR_VM_ARGUMENTS, "");
-        List<String> argsList = new ArrayList<>();
-        if (!existingArgs.isEmpty()) {
-            argsList.addAll(Arrays.asList(existingArgs.split("\\s+")));
-        }
 
         // Get Hotswap Agent JVM arguments
         HotswapAgentManager agentManager = HotswapAgentManager.getInstance();
         try {
-            String[] hotswapArgs = agentManager.getHotswapJvmArgs();
+            // Get the formatted string of Hotswap arguments
+            String hotswapArgs = agentManager.getHotswapJvmArgsString();
 
-            // Add Hotswap arguments if not already present
-            for (String arg : hotswapArgs) {
-                if (!containsArgument(argsList, arg)) {
-                    argsList.add(arg);
+            // Build new arguments string
+            String newArgs;
+            if (!existingArgs.trim().isEmpty()) {
+                // Check if hotswap args are already present
+                if (!existingArgs.contains("-javaagent:") || !existingArgs.contains("HotswapAgent")) {
+                    newArgs = existingArgs.trim() + " " + hotswapArgs;
+                } else {
+                    // Hotswap args already present, don't add again
+                    newArgs = existingArgs.trim();
                 }
+            } else {
+                newArgs = hotswapArgs;
             }
+
+            wc.setAttribute(IJavaLaunchConfigurationConstants.ATTR_VM_ARGUMENTS, newArgs);
 
         } catch (IOException e) {
             throw new CoreException(new Status(IStatus.ERROR, "vaadin-eclipse-plugin",
                     "Failed to configure Hotswap Agent: " + e.getMessage(), e));
         }
-
-        // Join arguments back into a string
-        String newArgs = String.join(" ", argsList);
-        wc.setAttribute(IJavaLaunchConfigurationConstants.ATTR_VM_ARGUMENTS, newArgs);
 
         return wc.doSave();
     }

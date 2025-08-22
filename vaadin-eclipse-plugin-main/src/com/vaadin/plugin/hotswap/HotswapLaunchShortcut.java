@@ -262,8 +262,7 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
 
         // Add Hotswap Agent JVM arguments
         HotswapAgentManager agentManager = HotswapAgentManager.getInstance();
-        String[] hotswapArgs = agentManager.getHotswapJvmArgs();
-        String vmArgs = String.join(" ", hotswapArgs);
+        String vmArgs = agentManager.getHotswapJvmArgsString();
         wc.setAttribute(IJavaLaunchConfigurationConstants.ATTR_VM_ARGUMENTS, vmArgs);
 
         // Set source locator
