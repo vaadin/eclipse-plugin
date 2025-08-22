@@ -192,23 +192,23 @@ public class HotswapAgentManager {
 
         // Add module opens for Java 9+ using space-separated format
         // Eclipse handles this format better than the equals syntax
-        args.append("--add-opens java.base/java.lang=ALL-UNNAMED ");
-        args.append("--add-opens java.base/java.lang.reflect=ALL-UNNAMED ");
-        args.append("--add-opens java.base/java.util=ALL-UNNAMED ");
-        args.append("--add-opens java.base/java.util.concurrent=ALL-UNNAMED ");
-        args.append("--add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED ");
-        args.append("--add-opens java.base/java.io=ALL-UNNAMED ");
-        args.append("--add-opens java.base/java.nio=ALL-UNNAMED ");
-        args.append("--add-opens java.base/java.nio.file=ALL-UNNAMED ");
-        args.append("--add-opens java.base/sun.nio.ch=ALL-UNNAMED ");
-        args.append("--add-opens java.base/sun.nio.fs=ALL-UNNAMED ");
-        args.append("--add-opens java.base/sun.net.www.protocol.http=ALL-UNNAMED ");
-        args.append("--add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED ");
-        args.append("--add-opens java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED ");
-        args.append("--add-opens java.base/java.time=ALL-UNNAMED ");
-        args.append("--add-opens java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED ");
-        args.append("--add-opens java.management/sun.management=ALL-UNNAMED ");
-        args.append("--add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.base/java.lang=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.base/java.lang.reflect=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.base/java.util=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.base/java.util.concurrent=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.base/java.util.concurrent.atomic=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.base/java.io=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.base/java.nio=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.base/java.nio.file=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.base/sun.nio.ch=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.base/sun.nio.fs=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.base/sun.net.www.protocol.http=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.base/sun.net.www.protocol.https=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.base/java.time=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED ");
+        args.append("--add-opens").append("java.management/sun.management=ALL-UNNAMED ");
+        args.append("--add-opens").append("jdk.management/com.sun.management.internal=ALL-UNNAMED ");
 
         // Spring Boot specific
         args.append("-Dspring.devtools.restart.enabled=false ");
