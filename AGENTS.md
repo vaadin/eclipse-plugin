@@ -333,3 +333,10 @@ This AGENTS.md file is automatically updated when:
 - New features are implemented
 - Important issues are identified or resolved
 - Development practices change
+
+### Code Verification
+**CRITICAL**: Always verify changes by compiling the project after making modifications:
+1. Run `mvn clean compile` to ensure the code compiles
+2. Fix any compilation errors before committing
+3. Run tests with `mvn clean install` when appropriate
+4. Never commit code that doesn't compile
