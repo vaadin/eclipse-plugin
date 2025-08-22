@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.debug.core.ILaunch;
@@ -101,19 +100,6 @@ public class ServerLaunchListener implements ILaunchListener {
      */
     private void addFileToDeployment(IProject project, File helloFile, IServer server) {
         try {
-            // Get the project's web content directory (usually WebContent or
-            // src/main/webapp)
-            IResource webContent = project.findMember("WebContent");
-            if (webContent == null) {
-                webContent = project.findMember("src/main/webapp");
-            }
-
-            if (webContent == null) {
-                // Try to find any web content directory
-                webContent = project.findMember("webapp");
-            }
-
-            // Instead of modifying the project, we'll use the server's publish directory
             // Get the server's runtime location for deployment
             IPath serverPath = server.getRuntime().getLocation();
             if (serverPath != null) {
@@ -126,12 +112,19 @@ public class ServerLaunchListener implements ILaunchListener {
                     String contextRoot = project.getName(); // Simple assumption
                     Path appDir = webappsDir.resolve(contextRoot);
 
-                    if (!Files.exists(appDir)) {
-                        Files.createDirectories(appDir);
+                    // Create WEB-INF/classes directory structure
+                    Path webInfDir = appDir.resolve("WEB-INF");
+                    Path classesDir = webInfDir.resolve("classes");
+
+                    if (!Files.exists(classesDir)) {
+                        Files.createDirectories(classesDir);
                     }
 
-                    Path targetFile = appDir.resolve(HELLO_FILE_NAME);
+                    // Place hello.txt in WEB-INF/classes so it's available as a classpath resource
+                    Path targetFile = classesDir.resolve(HELLO_FILE_NAME);
                     Files.copy(helloFile.toPath(), targetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+                    System.out.println("Added " + HELLO_FILE_NAME + " as classpath resource at: " + targetFile);
                 }
             }
         } catch (Exception e) {
