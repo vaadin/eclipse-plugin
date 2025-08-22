@@ -12,6 +12,7 @@ import com.vaadin.plugin.launch.ServerLaunchListener;
 public class Activator implements BundleActivator {
     private CopilotRestService restService;
     private ServerLaunchListener serverLaunchListener;
+    private CopilotDotfileManager dotfileManager;
 
     @Override
     public void start(BundleContext context) throws Exception {
@@ -22,10 +23,22 @@ public class Activator implements BundleActivator {
         // Register the server launch listener
         serverLaunchListener = new ServerLaunchListener();
         DebugPlugin.getDefault().getLaunchManager().addLaunchListener(serverLaunchListener);
+        
+        // Initialize dotfile manager
+        dotfileManager = CopilotDotfileManager.getInstance();
+        dotfileManager.initialize();
+        // Update all dotfiles with the current endpoint
+        dotfileManager.updateAllDotfiles();
     }
 
     @Override
     public void stop(BundleContext context) throws Exception {
+        // Cleanup dotfile manager
+        if (dotfileManager != null) {
+            dotfileManager.shutdown();
+            dotfileManager = null;
+        }
+        
         // Unregister the server launch listener
         if (serverLaunchListener != null) {
             DebugPlugin.getDefault().getLaunchManager().removeLaunchListener(serverLaunchListener);
