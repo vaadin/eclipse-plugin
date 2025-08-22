@@ -92,30 +92,6 @@
      </wizard>
   </extension>
   
-  <!-- Hotswap Agent actions -->
-  <extension
-        point="org.eclipse.ui.popupMenus">
-     <objectContribution
-           id="com.vaadin.plugin.hotswap.contribution"
-           objectClass="org.eclipse.core.resources.IProject"
-           adaptable="true">
-        <menu
-              id="com.vaadin.plugin.menu"
-              label="Vaadin"
-              path="additions">
-           <separator name="group1"/>
-        </menu>
-        <action
-              class="com.vaadin.plugin.actions.DebugWithHotswapAction"
-              enablesFor="1"
-              id="com.vaadin.plugin.actions.debugWithHotswap"
-              label="Debug with Hotswap Agent"
-              menubarPath="com.vaadin.plugin.menu/group1"
-              tooltip="Debug this project with Hotswap Agent for enhanced class reloading">
-        </action>
-     </objectContribution>
-  </extension>
-  
   <!-- Launch configuration type for Hotswap -->
   <extension
         point="org.eclipse.debug.core.launchDelegates">
@@ -126,34 +102,6 @@
            modes="debug"
            name="Hotswap Agent Debug">
      </launchDelegate>
-  </extension>
-  
-  <!-- Run/Debug toolbar actions -->
-  <extension
-        point="org.eclipse.ui.commands">
-     <command
-           id="com.vaadin.plugin.commands.debugWithHotswap"
-           name="Debug with Hotswap Agent"
-           description="Debug the selected project with Hotswap Agent">
-     </command>
-  </extension>
-  
-  <extension
-        point="org.eclipse.ui.handlers">
-     <handler
-           class="com.vaadin.plugin.actions.DebugWithHotswapAction"
-           commandId="com.vaadin.plugin.commands.debugWithHotswap">
-        <activeWhen>
-           <with variable="selection">
-              <iterate ifEmpty="false">
-                 <adapt type="org.eclipse.core.resources.IProject">
-                    <test property="org.eclipse.core.resources.projectNature"
-                          value="org.eclipse.jdt.core.javanature"/>
-                 </adapt>
-              </iterate>
-           </with>
-        </activeWhen>
-     </handler>
   </extension>
   
   <!-- Launch shortcut for Debug As menu -->
