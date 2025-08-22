@@ -182,19 +182,20 @@ public class HotswapAgentManager {
 
         return new String[] { "-javaagent:" + agentJar.getAbsolutePath(), "-XX:+AllowEnhancedClassRedefinition",
                 "-XX:+ClassUnloading", "-XX:HotswapAgent=external",
-                // Add module opens for Java 9+
-                "--add-opens", "java.base/java.lang=ALL-UNNAMED", "--add-opens",
-                "java.base/java.lang.reflect=ALL-UNNAMED", "--add-opens", "java.base/java.util=ALL-UNNAMED",
-                "--add-opens", "java.base/java.util.concurrent=ALL-UNNAMED", "--add-opens",
-                "java.base/java.util.concurrent.atomic=ALL-UNNAMED", "--add-opens", "java.base/java.io=ALL-UNNAMED",
-                "--add-opens", "java.base/java.nio=ALL-UNNAMED", "--add-opens", "java.base/java.nio.file=ALL-UNNAMED",
-                "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED", "--add-opens", "java.base/sun.nio.fs=ALL-UNNAMED",
-                "--add-opens", "java.base/sun.net.www.protocol.http=ALL-UNNAMED", "--add-opens",
-                "java.base/sun.net.www.protocol.https=ALL-UNNAMED", "--add-opens",
-                "java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED", "--add-opens",
-                "java.base/java.time=ALL-UNNAMED", "--add-opens", "java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED",
-                "--add-opens", "java.management/sun.management=ALL-UNNAMED", "--add-opens",
-                "jdk.management/com.sun.management.internal=ALL-UNNAMED",
+                // Add module opens for Java 9+ - use = syntax to keep as single arguments
+                "--add-opens=java.base/java.lang=ALL-UNNAMED", "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+                "--add-opens=java.base/java.util=ALL-UNNAMED", "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
+                "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
+                "--add-opens=java.base/java.io=ALL-UNNAMED", "--add-opens=java.base/java.nio=ALL-UNNAMED",
+                "--add-opens=java.base/java.nio.file=ALL-UNNAMED", "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+                "--add-opens=java.base/sun.nio.fs=ALL-UNNAMED",
+                "--add-opens=java.base/sun.net.www.protocol.http=ALL-UNNAMED",
+                "--add-opens=java.base/sun.net.www.protocol.https=ALL-UNNAMED",
+                "--add-opens=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED",
+                "--add-opens=java.base/java.time=ALL-UNNAMED",
+                "--add-opens=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED",
+                "--add-opens=java.management/sun.management=ALL-UNNAMED",
+                "--add-opens=jdk.management/com.sun.management.internal=ALL-UNNAMED",
                 // Spring Boot specific
                 "-Dspring.devtools.restart.enabled=false", "-Dspring.devtools.restart.quiet-period=0",
                 "-Dspring.context.lazy-init.enabled=false" };

@@ -116,7 +116,8 @@ public class HotswapLaunchConfigurationDelegate extends JavaLaunchDelegate {
     }
 
     /**
-     * Check if an argument list contains a specific argument. Handles arguments with values (e.g., -javaagent:path).
+     * Check if an argument list contains a specific argument. Handles arguments with values (e.g., -javaagent:path,
+     * --add-opens=module/package=ALL-UNNAMED).
      *
      * @param argsList
      *            The list of arguments
@@ -125,8 +126,14 @@ public class HotswapLaunchConfigurationDelegate extends JavaLaunchDelegate {
      * @return true if the argument is present
      */
     private boolean containsArgument(List<String> argsList, String arg) {
+        // For --add-opens, check exact match since each one is unique
+        if (arg.startsWith("--add-opens=")) {
+            return argsList.contains(arg);
+        }
+        // For other arguments with values, check prefix
         if (arg.contains("=") || arg.contains(":")) {
-            String prefix = arg.substring(0, arg.indexOf(arg.contains("=") ? "=" : ":") + 1);
+            int separatorIndex = arg.indexOf(arg.contains(":") ? ":" : "=");
+            String prefix = arg.substring(0, separatorIndex + 1);
             return argsList.stream().anyMatch(a -> a.startsWith(prefix));
         }
         return argsList.contains(arg);
