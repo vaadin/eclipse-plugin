@@ -1,6 +1,7 @@
 package com.vaadin.plugin.builder;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 import org.eclipse.core.resources.IFile;
@@ -15,6 +16,11 @@ import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 /**
  * Build participant that generates files in the output folder during compilation. These files will be automatically
  * included by WTP in the deployment. Only activates for projects with Vaadin dependencies.
@@ -22,7 +28,7 @@ import org.eclipse.jdt.core.JavaCore;
 public class VaadinBuildParticipant extends IncrementalProjectBuilder {
 
     public static final String BUILDER_ID = "vaadin-eclipse-plugin.vaadinBuilder";
-    private static final String HELLO_FILE_NAME = "hello.txt";
+    private static final String FLOW_BUILD_INFO_PATH = "META-INF/VAADIN/config/flow-build-info.json";
 
     @Override
     protected IProject[] build(int kind, java.util.Map<String, String> args, IProgressMonitor monitor)
@@ -51,8 +57,8 @@ public class VaadinBuildParticipant extends IncrementalProjectBuilder {
             return null;
         }
 
-        // Generate the hello.txt file in the output folder
-        generateHelloFile(project, monitor);
+        // Update or create the flow-build-info.json file in the output folder
+        updateFlowBuildInfo(project, monitor);
 
         return null;
     }
@@ -84,10 +90,10 @@ public class VaadinBuildParticipant extends IncrementalProjectBuilder {
     }
 
     /**
-     * Generates hello.txt in the project's output folder (target/classes or bin). This file will be automatically
-     * included in WTP deployment.
+     * Updates or creates flow-build-info.json in the project's output folder. This file will be automatically included
+     * in WTP deployment.
      */
-    private void generateHelloFile(IProject project, IProgressMonitor monitor) {
+    private void updateFlowBuildInfo(IProject project, IProgressMonitor monitor) {
         try {
             IJavaProject javaProject = JavaCore.create(project);
             if (javaProject == null) {
@@ -103,28 +109,64 @@ public class VaadinBuildParticipant extends IncrementalProjectBuilder {
                 return; // Output folder doesn't exist yet, will be created by Java builder
             }
 
-            // Create the hello.txt file in the output folder
-            IFile helloFile = outputFolder.getFile(HELLO_FILE_NAME);
+            // Create the META-INF/VAADIN/config directory structure
+            IFolder metaInfFolder = outputFolder.getFolder("META-INF");
+            IFolder vaadinFolder = metaInfFolder.getFolder("VAADIN");
+            IFolder configFolder = vaadinFolder.getFolder("config");
 
-            // Content: the absolute path of the project
-            String content = project.getLocation().toOSString();
-            ByteArrayInputStream contentStream = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+            // Create directories if they don't exist
+            if (!metaInfFolder.exists()) {
+                metaInfFolder.create(IResource.FORCE | IResource.DERIVED, true, monitor);
+            }
+            if (!vaadinFolder.exists()) {
+                vaadinFolder.create(IResource.FORCE | IResource.DERIVED, true, monitor);
+            }
+            if (!configFolder.exists()) {
+                configFolder.create(IResource.FORCE | IResource.DERIVED, true, monitor);
+            }
 
-            if (helloFile.exists()) {
+            // Get or create the flow-build-info.json file
+            IFile flowBuildInfoFile = configFolder.getFile("flow-build-info.json");
+
+            // Read existing JSON or create new one
+            JsonObject json;
+            if (flowBuildInfoFile.exists()) {
+                try (InputStreamReader reader = new InputStreamReader(flowBuildInfoFile.getContents(),
+                        StandardCharsets.UTF_8)) {
+                    json = JsonParser.parseReader(reader).getAsJsonObject();
+                }
+            } else {
+                json = new JsonObject();
+            }
+
+            // Add or update npmFolder
+            String projectPath = project.getLocation().toOSString();
+            json.addProperty("npmFolder", projectPath);
+
+            // Convert to formatted JSON string
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            String updatedContent = gson.toJson(json);
+            ByteArrayInputStream contentStream = new ByteArrayInputStream(
+                    updatedContent.getBytes(StandardCharsets.UTF_8));
+
+            if (flowBuildInfoFile.exists()) {
                 // Update existing file
-                helloFile.setContents(contentStream, IResource.FORCE, monitor);
+                flowBuildInfoFile.setContents(contentStream, IResource.FORCE, monitor);
             } else {
                 // Create new file
-                helloFile.create(contentStream, IResource.FORCE, monitor);
+                flowBuildInfoFile.create(contentStream, IResource.FORCE, monitor);
             }
 
             // Mark as derived so it won't be committed to version control
-            helloFile.setDerived(true, monitor);
+            flowBuildInfoFile.setDerived(true, monitor);
+            metaInfFolder.setDerived(true, monitor);
+            vaadinFolder.setDerived(true, monitor);
+            configFolder.setDerived(true, monitor);
 
-            System.out.println("Generated " + HELLO_FILE_NAME + " in output folder: " + outputFolder.getFullPath());
+            System.out.println("Updated flow-build-info.json in output folder: " + configFolder.getFullPath());
 
-        } catch (CoreException e) {
-            System.err.println("Failed to generate hello.txt: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Failed to update flow-build-info.json: " + e.getMessage());
         }
     }
 
@@ -143,9 +185,29 @@ public class VaadinBuildParticipant extends IncrementalProjectBuilder {
                 IFolder outputFolder = project.getWorkspace().getRoot().getFolder(outputLocation);
 
                 if (outputFolder.exists()) {
-                    IFile helloFile = outputFolder.getFile(HELLO_FILE_NAME);
-                    if (helloFile.exists()) {
-                        helloFile.delete(true, monitor);
+                    // Navigate to META-INF/VAADIN/config
+                    IFolder metaInfFolder = outputFolder.getFolder("META-INF");
+                    if (metaInfFolder.exists()) {
+                        IFolder vaadinFolder = metaInfFolder.getFolder("VAADIN");
+                        if (vaadinFolder.exists()) {
+                            IFolder configFolder = vaadinFolder.getFolder("config");
+                            if (configFolder.exists()) {
+                                IFile flowBuildInfoFile = configFolder.getFile("flow-build-info.json");
+                                if (flowBuildInfoFile.exists()) {
+                                    flowBuildInfoFile.delete(true, monitor);
+                                }
+                                // Clean up empty directories
+                                if (configFolder.members().length == 0) {
+                                    configFolder.delete(true, monitor);
+                                }
+                            }
+                            if (vaadinFolder.exists() && vaadinFolder.members().length == 0) {
+                                vaadinFolder.delete(true, monitor);
+                            }
+                        }
+                        if (metaInfFolder.exists() && metaInfFolder.members().length == 0) {
+                            metaInfFolder.delete(true, monitor);
+                        }
                     }
                 }
             }
