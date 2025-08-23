@@ -73,7 +73,7 @@
      <wizard
            category="com.vaadin.plugin.wizards"
            class="com.vaadin.plugin.wizards.NewVaadinProjectWizard"
-           icon="icons/vaadin-icon.png"
+           icon="icons/vaadin.png"
            id="com.vaadin.plugin.wizards.NewVaadinProjectWizard"
            name="Vaadin Project"
            project="true">
@@ -102,7 +102,7 @@
            id="com.vaadin.plugin.hotswap.launchShortcut"
            class="com.vaadin.plugin.hotswap.HotswapLaunchShortcut"
            label="Java Application using Hotswap Agent"
-           icon="icons/vaadin-icon.png"
+           icon="icons/vaadin.png"
            modes="debug">
         <contextualLaunch>
            <enablement>
