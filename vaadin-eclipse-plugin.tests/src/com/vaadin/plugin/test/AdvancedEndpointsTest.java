@@ -6,6 +6,9 @@ import java.net.http.HttpResponse;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IProjectDescription;
+import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
@@ -54,6 +57,17 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 		if (restService != null) {
 			restService.stop();
 		}
+
+		// Clean up any nested projects that might have been created
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		org.eclipse.core.resources.IProject moduleA = workspace.getRoot().getProject("module-a");
+		if (moduleA.exists()) {
+			moduleA.delete(true, null);
+		}
+		org.eclipse.core.resources.IProject moduleB = workspace.getRoot().getProject("module-b");
+		if (moduleB.exists()) {
+			moduleB.delete(true, null);
+		}
 	}
 
 	@Test
@@ -99,6 +113,139 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 		assertTrue("Should have javaSourcePaths", module.has("javaSourcePaths"));
 		assertTrue("Should have javaTestSourcePaths", module.has("javaTestSourcePaths"));
 		assertTrue("Should have resourcePaths", module.has("resourcePaths"));
+	}
+
+	@Test
+	public void testGetModulePathsWithMultiModuleMavenProject() throws Exception {
+		// Create a parent project structure
+		IFolder parentPom = testProject.getFolder("pom.xml");
+		String parentPomContent = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+				+ "<project xmlns=\"http://maven.apache.org/POM/4.0.0\">\n" + "    <modelVersion>4.0.0</modelVersion>\n"
+				+ "    <groupId>com.example</groupId>\n" + "    <artifactId>parent-project</artifactId>\n"
+				+ "    <version>1.0.0</version>\n" + "    <packaging>pom</packaging>\n" + "    <modules>\n"
+				+ "        <module>module-a</module>\n" + "        <module>module-b</module>\n" + "    </modules>\n"
+				+ "</project>";
+		createFile(testProject, "pom.xml", parentPomContent);
+
+		// Create module-a as a nested Eclipse project
+		String moduleALocation = testProject.getLocation().append("module-a").toString();
+		org.eclipse.core.resources.IProject moduleA = createNestedProject("module-a", moduleALocation);
+
+		// Add Java nature to module-a
+		addJavaNature(moduleA);
+		IJavaProject javaModuleA = JavaCore.create(moduleA);
+
+		// Create module-a structure
+		IFolder srcMainA = moduleA.getFolder("src/main/java");
+		createFolderHierarchy(srcMainA);
+		IFolder srcTestA = moduleA.getFolder("src/test/java");
+		createFolderHierarchy(srcTestA);
+		IFolder resourcesA = moduleA.getFolder("src/main/resources");
+		createFolderHierarchy(resourcesA);
+
+		// Set classpath for module-a
+		IClasspathEntry containerEntryA = JavaCore.newContainerEntry(
+				org.eclipse.core.runtime.Path.fromPortableString("org.eclipse.jdt.launching.JRE_CONTAINER"));
+		IClasspathEntry[] entriesA = new IClasspathEntry[]{JavaCore.newSourceEntry(srcMainA.getFullPath()),
+				JavaCore.newSourceEntry(srcTestA.getFullPath()), JavaCore.newSourceEntry(resourcesA.getFullPath()),
+				containerEntryA};
+		javaModuleA.setRawClasspath(entriesA, null);
+
+		// Create module-a pom.xml
+		String moduleAPomContent = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+				+ "<project xmlns=\"http://maven.apache.org/POM/4.0.0\">\n" + "    <modelVersion>4.0.0</modelVersion>\n"
+				+ "    <parent>\n" + "        <groupId>com.example</groupId>\n"
+				+ "        <artifactId>parent-project</artifactId>\n" + "        <version>1.0.0</version>\n"
+				+ "    </parent>\n" + "    <artifactId>module-a</artifactId>\n" + "</project>";
+		createFile(moduleA, "pom.xml", moduleAPomContent);
+
+		// Create module-b as another nested Eclipse project
+		String moduleBLocation = testProject.getLocation().append("module-b").toString();
+		org.eclipse.core.resources.IProject moduleB = createNestedProject("module-b", moduleBLocation);
+
+		// Add Java nature to module-b
+		addJavaNature(moduleB);
+		IJavaProject javaModuleB = JavaCore.create(moduleB);
+
+		// Create module-b structure
+		IFolder srcMainB = moduleB.getFolder("src/main/java");
+		createFolderHierarchy(srcMainB);
+		IFolder srcTestB = moduleB.getFolder("src/test/java");
+		createFolderHierarchy(srcTestB);
+
+		// Set classpath for module-b (simpler, without resources)
+		IClasspathEntry containerEntryB = JavaCore.newContainerEntry(
+				org.eclipse.core.runtime.Path.fromPortableString("org.eclipse.jdt.launching.JRE_CONTAINER"));
+		IClasspathEntry[] entriesB = new IClasspathEntry[]{JavaCore.newSourceEntry(srcMainB.getFullPath()),
+				JavaCore.newSourceEntry(srcTestB.getFullPath()), containerEntryB};
+		javaModuleB.setRawClasspath(entriesB, null);
+
+		// Create module-b pom.xml
+		String moduleBPomContent = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+				+ "<project xmlns=\"http://maven.apache.org/POM/4.0.0\">\n" + "    <modelVersion>4.0.0</modelVersion>\n"
+				+ "    <parent>\n" + "        <groupId>com.example</groupId>\n"
+				+ "        <artifactId>parent-project</artifactId>\n" + "        <version>1.0.0</version>\n"
+				+ "    </parent>\n" + "    <artifactId>module-b</artifactId>\n" + "</project>";
+		createFile(moduleB, "pom.xml", moduleBPomContent);
+
+		// Test the endpoint - request module paths for the parent project
+		JsonObject data = new JsonObject();
+		HttpResponse<String> response = client.sendCommand("getModulePaths", data);
+
+		assertEquals("Should return 200", 200, response.statusCode());
+
+		JsonObject responseObj = gson.fromJson(response.body(), JsonObject.class);
+		assertTrue("Should have project key", responseObj.has("project"));
+
+		JsonObject project = responseObj.getAsJsonObject("project");
+		assertTrue("Should have basePath", project.has("basePath"));
+		assertTrue("Should have modules", project.has("modules"));
+
+		String basePath = project.get("basePath").getAsString();
+		assertEquals("Base path should be parent project", testProject.getLocation().toString(), basePath);
+
+		// Verify multi-module structure
+		var modules = project.getAsJsonArray("modules");
+		assertNotNull("Modules should not be null", modules);
+		assertEquals("Should have 3 modules (parent + 2 children)", 3, modules.size());
+
+		// Check parent module
+		var parentModule = modules.get(0).getAsJsonObject();
+		assertEquals("First module should be parent", testProject.getName(), parentModule.get("name").getAsString());
+
+		// Check module-a
+		boolean foundModuleA = false;
+		boolean foundModuleB = false;
+
+		for (int i = 1; i < modules.size(); i++) {
+			var module = modules.get(i).getAsJsonObject();
+			String moduleName = module.get("name").getAsString();
+
+			if ("module-a".equals(moduleName)) {
+				foundModuleA = true;
+				assertTrue("Module A should have contentRoots", module.has("contentRoots"));
+				var contentRoots = module.getAsJsonArray("contentRoots");
+				assertEquals("Module A should have one content root", 1, contentRoots.size());
+				String contentRoot = contentRoots.get(0).getAsString();
+				assertTrue("Module A content root should be nested in parent",
+						contentRoot.contains(testProject.getName() + "/module-a"));
+			} else if ("module-b".equals(moduleName)) {
+				foundModuleB = true;
+				assertTrue("Module B should have contentRoots", module.has("contentRoots"));
+				var contentRoots = module.getAsJsonArray("contentRoots");
+				assertEquals("Module B should have one content root", 1, contentRoots.size());
+				String contentRoot = contentRoots.get(0).getAsString();
+				assertTrue("Module B content root should be nested in parent",
+						contentRoot.contains(testProject.getName() + "/module-b"));
+			}
+		}
+
+		assertTrue("Should find module-a in response", foundModuleA);
+		assertTrue("Should find module-b in response", foundModuleB);
+
+		// Clean up nested projects
+		moduleA.delete(true, null);
+		moduleB.delete(true, null);
 	}
 
 	@Test
@@ -330,6 +477,43 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 	/**
 	 * Helper to create folder hierarchy.
 	 */
+	/**
+	 * Creates a file with the given content in the specified project.
+	 */
+	private void createFile(org.eclipse.core.resources.IProject project, String fileName, String content)
+			throws CoreException {
+		IFile file = project.getFile(fileName);
+		if (!file.exists()) {
+			java.io.ByteArrayInputStream stream = new java.io.ByteArrayInputStream(
+					content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+			file.create(stream, true, null);
+		}
+	}
+
+	/**
+	 * Creates a nested Eclipse project at the specified location. This simulates a
+	 * Maven multi-module project structure where child modules are Eclipse projects
+	 * nested within the parent project's file system.
+	 */
+	private org.eclipse.core.resources.IProject createNestedProject(String projectName, String location)
+			throws CoreException {
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		org.eclipse.core.resources.IProject nestedProject = workspace.getRoot().getProject(projectName);
+
+		if (!nestedProject.exists()) {
+			IProjectDescription description = workspace.newProjectDescription(projectName);
+			// Set the location to be nested inside the parent project
+			description.setLocation(new org.eclipse.core.runtime.Path(location));
+			nestedProject.create(description, null);
+		}
+
+		if (!nestedProject.isOpen()) {
+			nestedProject.open(null);
+		}
+
+		return nestedProject;
+	}
+
 	private void createFolderHierarchy(IFolder folder) throws CoreException {
 		if (!folder.exists()) {
 			org.eclipse.core.resources.IContainer parent = folder.getParent();
