@@ -120,6 +120,41 @@ public class CopilotRestService {
     private static class Handler implements HttpHandler {
         private final Gson gson = new Gson();
 
+        /**
+         * Creates a JSON error response with the given error message.
+         *
+         * @param errorMessage
+         *            The error message to include in the response
+         * @return JSON string representing the error response
+         */
+        private String createErrorResponse(String errorMessage) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", errorMessage);
+            return gson.toJson(errorResponse);
+        }
+
+        /**
+         * Creates a JSON success response with status "ok".
+         *
+         * @return JSON string representing the success response
+         */
+        private String createSuccessResponse() {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "ok");
+            return createResponse(response);
+        }
+
+        /**
+         * Creates a JSON response with custom key-value pairs.
+         *
+         * @param responseData
+         *            The data to include in the response
+         * @return JSON string representing the response
+         */
+        private String createResponse(Map<String, Object> responseData) {
+            return gson.toJson(responseData);
+        }
+
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
@@ -150,9 +185,7 @@ public class CopilotRestService {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                Map<String, Object> errorMap = new HashMap<>();
-                errorMap.put("error", e.getMessage());
-                byte[] errorBytes = gson.toJson(errorMap).getBytes(StandardCharsets.UTF_8);
+                byte[] errorBytes = createErrorResponse(e.getMessage()).getBytes(StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
                 exchange.sendResponseHeaders(500, errorBytes.length);
                 try (OutputStream os = exchange.getResponseBody()) {
@@ -167,9 +200,7 @@ public class CopilotRestService {
             // Find the Eclipse project
             IProject project = findProject(projectBasePath);
             if (project == null) {
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", "Project not found: " + projectBasePath);
-                return gson.toJson(errorResponse);
+                return createErrorResponse("Project not found: " + projectBasePath);
             }
 
             switch (command) {
@@ -208,9 +239,7 @@ public class CopilotRestService {
             case "heartbeat":
                 return handleHeartbeat(project);
             default:
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", "Unknown command: " + command);
-                return gson.toJson(errorResponse);
+                return createErrorResponse("Unknown command: " + command);
             }
         }
 
@@ -246,9 +275,7 @@ public class CopilotRestService {
                 }
 
                 if (file == null) {
-                    Map<String, Object> errorResponse = new HashMap<>();
-                    errorResponse.put("error", "File not found in project: " + fileName);
-                    return gson.toJson(errorResponse);
+                    return createErrorResponse("File not found in project: " + fileName);
                 }
 
                 final IFile finalFile = file;
@@ -285,21 +312,15 @@ public class CopilotRestService {
                 } catch (Exception e) {
                     System.err.println("Error writing file: " + e.getMessage());
                     e.printStackTrace();
-                    Map<String, Object> errorResponse = new HashMap<>();
-                    errorResponse.put("error", e.getMessage());
-                    return gson.toJson(errorResponse);
+                    return createErrorResponse(e.getMessage());
                 }
 
-                Map<String, Object> response = new HashMap<>();
-                response.put("status", "ok");
-                return gson.toJson(response);
+                return createSuccessResponse();
 
             } catch (Exception e) {
                 System.err.println("Error in write handler: " + e.getMessage());
                 e.printStackTrace();
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", e.getMessage());
-                return gson.toJson(errorResponse);
+                return createErrorResponse(e.getMessage());
             }
         }
 
@@ -325,9 +346,7 @@ public class CopilotRestService {
                 }
 
                 if (file == null) {
-                    Map<String, Object> errorResponse = new HashMap<>();
-                    errorResponse.put("error", "File not found in project: " + fileName);
-                    return gson.toJson(errorResponse);
+                    return createErrorResponse("File not found in project: " + fileName);
                 }
 
                 final IFile finalFile = file;
@@ -367,21 +386,15 @@ public class CopilotRestService {
                 } catch (Exception e) {
                     System.err.println("Error writing base64 file: " + e.getMessage());
                     e.printStackTrace();
-                    Map<String, Object> errorResponse = new HashMap<>();
-                    errorResponse.put("error", e.getMessage());
-                    return gson.toJson(errorResponse);
+                    return createErrorResponse(e.getMessage());
                 }
 
-                Map<String, Object> response = new HashMap<>();
-                response.put("status", "ok");
-                return gson.toJson(response);
+                return createSuccessResponse();
 
             } catch (Exception e) {
                 System.err.println("Error in writeBase64 handler: " + e.getMessage());
                 e.printStackTrace();
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", e.getMessage());
-                return gson.toJson(errorResponse);
+                return createErrorResponse(e.getMessage());
             }
         }
 
@@ -405,15 +418,11 @@ public class CopilotRestService {
                 }
 
                 if (file == null) {
-                    Map<String, Object> errorResponse = new HashMap<>();
-                    errorResponse.put("error", "File not found in project: " + fileName);
-                    return gson.toJson(errorResponse);
+                    return createErrorResponse("File not found in project: " + fileName);
                 }
 
                 if (!file.exists()) {
-                    Map<String, Object> errorResponse = new HashMap<>();
-                    errorResponse.put("error", "File does not exist: " + fileName);
-                    return gson.toJson(errorResponse);
+                    return createErrorResponse("File does not exist: " + fileName);
                 }
 
                 final IFile finalFile = file;
@@ -436,21 +445,15 @@ public class CopilotRestService {
                 } catch (Exception e) {
                     System.err.println("Error deleting file: " + e.getMessage());
                     e.printStackTrace();
-                    Map<String, Object> errorResponse = new HashMap<>();
-                    errorResponse.put("error", e.getMessage());
-                    return gson.toJson(errorResponse);
+                    return createErrorResponse(e.getMessage());
                 }
 
-                Map<String, Object> response = new HashMap<>();
-                response.put("status", "ok");
-                return gson.toJson(response);
+                return createSuccessResponse();
 
             } catch (Exception e) {
                 System.err.println("Error in delete handler: " + e.getMessage());
                 e.printStackTrace();
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", e.getMessage());
-                return gson.toJson(errorResponse);
+                return createErrorResponse(e.getMessage());
             }
         }
 
@@ -473,7 +476,7 @@ public class CopilotRestService {
                 if (!performed) {
                     response.put("message", "No undo operations available for specified files");
                 }
-                return gson.toJson(response);
+                return createResponse(response);
 
             } catch (Exception e) {
                 System.err.println("Error performing undo: " + e.getMessage());
@@ -481,7 +484,7 @@ public class CopilotRestService {
                 Map<String, Object> response = new HashMap<>();
                 response.put("performed", false);
                 response.put("error", e.getMessage());
-                return gson.toJson(response);
+                return createResponse(response);
             }
         }
 
@@ -504,7 +507,7 @@ public class CopilotRestService {
                 if (!performed) {
                     response.put("message", "No redo operations available for specified files");
                 }
-                return gson.toJson(response);
+                return createResponse(response);
 
             } catch (Exception e) {
                 System.err.println("Error performing redo: " + e.getMessage());
@@ -512,7 +515,7 @@ public class CopilotRestService {
                 Map<String, Object> response = new HashMap<>();
                 response.put("performed", false);
                 response.put("error", e.getMessage());
-                return gson.toJson(response);
+                return createResponse(response);
             }
         }
 
@@ -529,21 +532,15 @@ public class CopilotRestService {
                 } catch (Exception e) {
                     System.err.println("Error refreshing project: " + e.getMessage());
                     e.printStackTrace();
-                    Map<String, Object> errorResponse = new HashMap<>();
-                    errorResponse.put("error", e.getMessage());
-                    return gson.toJson(errorResponse);
+                    return createErrorResponse(e.getMessage());
                 }
 
-                Map<String, Object> response = new HashMap<>();
-                response.put("status", "ok");
-                return gson.toJson(response);
+                return createSuccessResponse();
 
             } catch (Exception e) {
                 System.err.println("Error in refresh handler: " + e.getMessage());
                 e.printStackTrace();
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", e.getMessage());
-                return gson.toJson(errorResponse);
+                return createErrorResponse(e.getMessage());
             }
         }
 
@@ -557,9 +554,7 @@ public class CopilotRestService {
                         + ", line: " + line + ", column: " + column);
 
                 if (line < 0 || column < 0) {
-                    Map<String, Object> errorResponse = new HashMap<>();
-                    errorResponse.put("error", "Invalid line or column number (" + line + ":" + column + ")");
-                    return gson.toJson(errorResponse);
+                    return createErrorResponse("Invalid line or column number (" + line + ":" + column + ")");
                 }
 
                 // Convert absolute path to workspace-relative path
@@ -576,9 +571,7 @@ public class CopilotRestService {
                 }
 
                 if (file == null || !file.exists()) {
-                    Map<String, Object> errorResponse = new HashMap<>();
-                    errorResponse.put("error", "File not found: " + fileName);
-                    return gson.toJson(errorResponse);
+                    return createErrorResponse("File not found: " + fileName);
                 }
 
                 final IFile finalFile = file;
@@ -592,7 +585,7 @@ public class CopilotRestService {
                     Map<String, Object> response = new HashMap<>();
                     response.put("status", "ok"); // Still return success for testing
                     response.put("message", "Operation would open " + fileName + " at line " + finalLine);
-                    return gson.toJson(response);
+                    return createResponse(response);
                 }
 
                 PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
@@ -634,16 +627,12 @@ public class CopilotRestService {
                     }
                 });
 
-                Map<String, Object> response = new HashMap<>();
-                response.put("status", "ok");
-                return gson.toJson(response);
+                return createSuccessResponse();
 
             } catch (Exception e) {
                 System.err.println("Error in showInIde handler: " + e.getMessage());
                 e.printStackTrace();
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", e.getMessage());
-                return gson.toJson(errorResponse);
+                return createErrorResponse(e.getMessage());
             }
         }
 
@@ -741,7 +730,7 @@ public class CopilotRestService {
             projectInfo.put("modules", modules);
             response.put("project", projectInfo);
 
-            return gson.toJson(response);
+            return createResponse(response);
         }
 
         private String handleCompileFiles(IProject project, JsonObject data) {
@@ -757,16 +746,12 @@ public class CopilotRestService {
                     System.out.println("Triggered incremental build for project: " + project.getName());
                 }
 
-                Map<String, Object> response = new HashMap<>();
-                response.put("status", "ok");
-                return gson.toJson(response);
+                return createSuccessResponse();
 
             } catch (Exception e) {
                 System.err.println("Error compiling files: " + e.getMessage());
                 e.printStackTrace();
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", e.getMessage());
-                return gson.toJson(errorResponse);
+                return createErrorResponse(e.getMessage());
             }
         }
 
@@ -865,7 +850,7 @@ public class CopilotRestService {
                     Map<String, Object> response = new HashMap<>();
                     response.put("status", "ok");
                     response.put("message", "Application restarted");
-                    return gson.toJson(response);
+                    return createResponse(response);
                 } else {
                     // No configuration found - this is OK, just log it
                     System.out.println("No launch configuration found for project: " + project.getName());
@@ -873,15 +858,13 @@ public class CopilotRestService {
                     Map<String, Object> response = new HashMap<>();
                     response.put("status", "ok");
                     response.put("message", "No launch configuration found to restart");
-                    return gson.toJson(response);
+                    return createResponse(response);
                 }
 
             } catch (Exception e) {
                 System.err.println("Error restarting application: " + e.getMessage());
                 e.printStackTrace();
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", e.getMessage());
-                return gson.toJson(errorResponse);
+                return createErrorResponse(e.getMessage());
             }
         }
 
@@ -904,7 +887,7 @@ public class CopilotRestService {
 
             Map<String, Object> response = new HashMap<>();
             response.put("routes", routes);
-            return gson.toJson(response);
+            return createResponse(response);
         }
 
         private String handleGetVaadinVersion(IProject project) {
@@ -915,7 +898,7 @@ public class CopilotRestService {
                 if (!project.hasNature(JavaCore.NATURE_ID)) {
                     Map<String, Object> response = new HashMap<>();
                     response.put("version", "N/A");
-                    return gson.toJson(response);
+                    return createResponse(response);
                 }
 
                 IJavaProject javaProject = JavaCore.create(project);
@@ -956,14 +939,14 @@ public class CopilotRestService {
 
                 Map<String, Object> response = new HashMap<>();
                 response.put("version", vaadinVersion != null ? vaadinVersion : "N/A");
-                return gson.toJson(response);
+                return createResponse(response);
 
             } catch (Exception e) {
                 System.err.println("Error getting Vaadin version: " + e.getMessage());
                 e.printStackTrace();
                 Map<String, Object> response = new HashMap<>();
                 response.put("version", "N/A");
-                return gson.toJson(response);
+                return createResponse(response);
             }
         }
 
@@ -987,7 +970,7 @@ public class CopilotRestService {
 
             Map<String, Object> response = new HashMap<>();
             response.put("components", components);
-            return gson.toJson(response);
+            return createResponse(response);
         }
 
         private String handleGetVaadinEntities(IProject project, JsonObject data) {
@@ -1010,7 +993,7 @@ public class CopilotRestService {
 
             Map<String, Object> response = new HashMap<>();
             response.put("entities", entities);
-            return gson.toJson(response);
+            return createResponse(response);
         }
 
         private String handleGetVaadinSecurity(IProject project) {
@@ -1036,7 +1019,7 @@ public class CopilotRestService {
             Map<String, Object> response = new HashMap<>();
             response.put("security", security);
             response.put("userDetails", userDetails);
-            return gson.toJson(response);
+            return createResponse(response);
         }
 
         private String handleReloadMavenModule(IProject project, JsonObject data) {
@@ -1062,16 +1045,12 @@ public class CopilotRestService {
                     System.out.println("Refreshed Maven project: " + project.getName());
                 }
 
-                Map<String, Object> response = new HashMap<>();
-                response.put("status", "ok");
-                return gson.toJson(response);
+                return createSuccessResponse();
 
             } catch (Exception e) {
                 System.err.println("Error reloading Maven module: " + e.getMessage());
                 e.printStackTrace();
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", e.getMessage());
-                return gson.toJson(errorResponse);
+                return createErrorResponse(e.getMessage());
             }
         }
 
@@ -1081,7 +1060,7 @@ public class CopilotRestService {
             response.put("status", "alive");
             response.put("version", "1.0.0");
             response.put("ide", "eclipse");
-            return gson.toJson(response);
+            return createResponse(response);
         }
 
         private void createParentFolders(IFile file) throws Exception {
