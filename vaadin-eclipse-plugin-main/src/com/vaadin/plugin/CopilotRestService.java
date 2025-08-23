@@ -3,7 +3,6 @@ package com.vaadin.plugin;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -59,7 +58,7 @@ public class CopilotRestService {
             server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
             String contextPath = "/vaadin/" + CopilotUtil.getServiceName();
             server.createContext(contextPath, new Handler());
-            
+
             // Add a simple health check endpoint for testing
             server.createContext("/health", exchange -> {
                 String response = "OK";
@@ -68,10 +67,10 @@ public class CopilotRestService {
                     os.write(response.getBytes());
                 }
             });
-            
+
             server.setExecutor(null); // creates a default executor
             server.start();
-            
+
             // Get the actual port after binding
             int actualPort = server.getAddress().getPort();
             endpoint = "http://localhost:" + actualPort + contextPath;

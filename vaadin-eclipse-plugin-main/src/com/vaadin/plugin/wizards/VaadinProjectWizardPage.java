@@ -119,13 +119,13 @@ public class VaadinProjectWizardPage extends WizardPage {
 
         // Project type selection
         createProjectTypeSection(container);
-        
+
         // Add separator
         Label separator = new Label(container, SWT.SEPARATOR | SWT.HORIZONTAL);
         gd = new GridData(GridData.FILL_HORIZONTAL);
         gd.horizontalSpan = 3;
         separator.setLayoutData(gd);
-        
+
         // Add help sections
         createHelpSections(container);
 
@@ -147,17 +147,18 @@ public class VaadinProjectWizardPage extends WizardPage {
         GridData gd = new GridData();
         gd.horizontalSpan = 3;
         gettingStartedLabel.setLayoutData(gd);
-        
+
         Label gettingStartedText = new Label(parent, SWT.WRAP);
-        gettingStartedText.setText("The Getting Started guide will quickly familiarize you with your new Walking Skeleton " +
-                "implementation. You'll learn how to set up your development environment, understand the project " +
-                "structure, and find resources to help you add muscles to your skeleton—transforming it into a " +
-                "fully-featured application.");
+        gettingStartedText
+                .setText("The Getting Started guide will quickly familiarize you with your new Walking Skeleton "
+                        + "implementation. You'll learn how to set up your development environment, understand the project "
+                        + "structure, and find resources to help you add muscles to your skeleton—transforming it into a "
+                        + "fully-featured application.");
         gd = new GridData(GridData.FILL_HORIZONTAL);
         gd.horizontalSpan = 3;
         gd.widthHint = 500;
         gettingStartedText.setLayoutData(gd);
-        
+
         // Flow and Hilla section
         Label flowHillaLabel = new Label(parent, SWT.NONE);
         flowHillaLabel.setText("Flow and Hilla");
@@ -166,17 +167,17 @@ public class VaadinProjectWizardPage extends WizardPage {
         gd.horizontalSpan = 3;
         gd.verticalIndent = 10;
         flowHillaLabel.setLayoutData(gd);
-        
+
         Label flowHillaText = new Label(parent, SWT.WRAP);
-        flowHillaText.setText("Flow framework is the most productive choice, allowing 100% of the user interface to be " +
-                "coded in server-side Java. Hilla framework, on the other hand, enables implementation of your user " +
-                "interface with React while automatically connecting it to your Java backend.");
+        flowHillaText.setText("Flow framework is the most productive choice, allowing 100% of the user interface to be "
+                + "coded in server-side Java. Hilla framework, on the other hand, enables implementation of your user "
+                + "interface with React while automatically connecting it to your Java backend.");
         gd = new GridData(GridData.FILL_HORIZONTAL);
         gd.horizontalSpan = 3;
         gd.widthHint = 500;
         flowHillaText.setLayoutData(gd);
     }
-    
+
     private void createProjectTypeSection(Composite parent) {
         // Starter Project Section
         Group starterGroup = new Group(parent, SWT.NONE);
@@ -208,11 +209,11 @@ public class VaadinProjectWizardPage extends WizardPage {
         gd = new GridData();
         gd.horizontalSpan = 2;
         skeletonLabel.setLayoutData(gd);
-        
+
         Label descLabel = new Label(starterGroup, SWT.WRAP);
-        descLabel.setText("A walking skeleton is a minimal application that includes a fully-functional " +
-                "end-to-end workflow. All major building blocks are included, but it does not yet " +
-                "perform any meaningful tasks.");
+        descLabel.setText("A walking skeleton is a minimal application that includes a fully-functional "
+                + "end-to-end workflow. All major building blocks are included, but it does not yet "
+                + "perform any meaningful tasks.");
         gd = new GridData(GridData.FILL_HORIZONTAL);
         gd.horizontalSpan = 2;
         gd.widthHint = 400;
@@ -277,7 +278,7 @@ public class VaadinProjectWizardPage extends WizardPage {
         architectureCombo.setItems("Spring Boot", "Quarkus", "Jakarta EE", "Servlet");
         architectureCombo.select(0);
         architectureCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        
+
         // Add note label for Kotlin (initially hidden)
         kotlinNote = new Label(helloWorldGroup, SWT.WRAP | SWT.ITALIC);
         kotlinNote.setText("Kotlin support uses a community add-on.");
