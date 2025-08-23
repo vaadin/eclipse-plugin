@@ -65,12 +65,12 @@ mvn clean install -DskipTests
 - Build-time flow-build-info.json generation
 
 ### ⚠️ Limitations vs IntelliJ Plugin
-1. Monolithic service vs handler-based architecture
-2. Basic undo/redo vs advanced batching system
-3. Simple build trigger vs status tracking service
-4. Basic annotation scanning vs advanced endpoint discovery
-5. No project lifecycle listeners
-6. No Hilla endpoint support
+1. **Architecture**: Monolithic switch-based handler vs individual handler classes
+2. **Undo/Redo**: Simple per-file tracking vs IntelliJ's UndoManager integration
+3. **Compilation**: No error tracking service (IntelliJ has CompilationStatusManagerService)
+4. **Endpoint Discovery**: Basic annotation scanning vs microservices framework integration
+5. **Project Events**: Basic open/close listeners vs comprehensive ProjectManagerListener
+6. **Hilla Support**: No @Endpoint/@BrowserCallable detection (IntelliJ has VaadinHillaEndpointsProvider)
 
 ## Known Issues
 
