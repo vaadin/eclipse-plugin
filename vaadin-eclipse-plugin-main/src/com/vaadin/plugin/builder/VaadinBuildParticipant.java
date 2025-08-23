@@ -58,51 +58,23 @@ public class VaadinBuildParticipant extends IncrementalProjectBuilder {
     }
 
     /**
-     * Checks if the project has Vaadin dependencies. Looks for Vaadin in classpath entries, pom.xml, or build.gradle.
+     * Checks if the project has Vaadin dependencies by examining the resolved classpath.
      */
     private boolean hasVaadinDependency(IProject project) {
         try {
-            // Check for pom.xml (Maven project)
-            IFile pomFile = project.getFile("pom.xml");
-            if (pomFile.exists()) {
-                // Simple text search for Vaadin in pom.xml
-                java.io.InputStream contents = pomFile.getContents();
-                java.util.Scanner scanner = new java.util.Scanner(contents, "UTF-8");
-                scanner.useDelimiter("\\A");
-                String pomContent = scanner.hasNext() ? scanner.next() : "";
-                scanner.close();
-
-                if (pomContent.contains("com.vaadin") || pomContent.contains("vaadin-")) {
-                    return true;
-                }
-            }
-
-            // Check for build.gradle (Gradle project)
-            IFile gradleFile = project.getFile("build.gradle");
-            if (gradleFile.exists()) {
-                java.io.InputStream contents = gradleFile.getContents();
-                java.util.Scanner scanner = new java.util.Scanner(contents, "UTF-8");
-                scanner.useDelimiter("\\A");
-                String gradleContent = scanner.hasNext() ? scanner.next() : "";
-                scanner.close();
-
-                if (gradleContent.contains("com.vaadin") || gradleContent.contains("vaadin-")) {
-                    return true;
-                }
-            }
-
-            // Check Java classpath for Vaadin JARs
             IJavaProject javaProject = JavaCore.create(project);
             if (javaProject != null) {
-                IClasspathEntry[] classpath = javaProject.getRawClasspath();
+                // Check the resolved classpath entries (includes Maven/Gradle dependencies)
+                IClasspathEntry[] classpath = javaProject.getResolvedClasspath(true);
                 for (IClasspathEntry entry : classpath) {
                     String path = entry.getPath().toString().toLowerCase();
+                    // Check for Vaadin in the path (covers JARs, Maven dependencies, etc.)
                     if (path.contains("vaadin")) {
+                        System.out.println("    Found Vaadin dependency: " + entry.getPath());
                         return true;
                     }
                 }
             }
-
         } catch (Exception e) {
             // If we can't determine, assume no Vaadin dependency
             System.err.println("Error checking for Vaadin dependencies: " + e.getMessage());
