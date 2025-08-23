@@ -24,7 +24,7 @@ public class Activator implements BundleActivator {
             // Register the server launch listener
             serverLaunchListener = new ServerLaunchListener();
             DebugPlugin.getDefault().getLaunchManager().addLaunchListener(serverLaunchListener);
-            
+
             // Initialize dotfile manager
             dotfileManager = CopilotDotfileManager.getInstance();
             dotfileManager.initialize();
@@ -46,7 +46,7 @@ public class Activator implements BundleActivator {
             dotfileManager.shutdown();
             dotfileManager = null;
         }
-        
+
         // Unregister the server launch listener
         if (serverLaunchListener != null) {
             DebugPlugin.getDefault().getLaunchManager().removeLaunchListener(serverLaunchListener);

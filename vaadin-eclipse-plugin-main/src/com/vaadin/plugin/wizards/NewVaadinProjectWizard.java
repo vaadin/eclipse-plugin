@@ -22,11 +22,7 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubMonitor;
-import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -108,19 +104,19 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
         // Step 3: Import project based on type
         subMonitor.subTask("Importing project...");
         IProject project = null;
-        
+
         if (Files.exists(projectPath.resolve("pom.xml"))) {
             // Import as Maven project directly
             project = importMavenProject(projectPath, model.getProjectName(), subMonitor.split(25));
-        } else if (Files.exists(projectPath.resolve("build.gradle")) || 
-                   Files.exists(projectPath.resolve("build.gradle.kts"))) {
+        } else if (Files.exists(projectPath.resolve("build.gradle"))
+                || Files.exists(projectPath.resolve("build.gradle.kts"))) {
             // Import as Gradle project
             project = importProject(projectPath, model.getProjectName(), subMonitor.split(25));
         } else {
             // Import as generic Eclipse project
             project = importProject(projectPath, model.getProjectName(), subMonitor.split(25));
         }
-        
+
         // Step 4: Open README
         subMonitor.subTask("Opening README...");
         openReadme(project, subMonitor.split(5));
@@ -216,40 +212,38 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             throws CoreException {
         // Use the regular import and then configure as Maven
         System.out.println("=== Creating project and configuring Maven ===");
-        
+
         // First create the project normally
         IProject project = importProject(projectPath, projectName, monitor);
-        
+
         try {
             // Then configure it as a Maven project
-            org.eclipse.m2e.core.project.IProjectConfigurationManager configManager = 
-                org.eclipse.m2e.core.MavenPlugin.getProjectConfigurationManager();
-            
+            org.eclipse.m2e.core.project.IProjectConfigurationManager configManager = org.eclipse.m2e.core.MavenPlugin
+                    .getProjectConfigurationManager();
+
             // Enable Maven nature on the project
-            configManager.enableMavenNature(project, 
-                new org.eclipse.m2e.core.project.ResolverConfiguration(), 
-                monitor);
-            
+            configManager.enableMavenNature(project, new org.eclipse.m2e.core.project.ResolverConfiguration(), monitor);
+
             // Update project configuration
             configManager.updateProjectConfiguration(project, monitor);
-            
+
             System.out.println("Maven nature enabled and project configured");
             System.out.println("Has Maven nature: " + project.hasNature("org.eclipse.m2e.core.maven2Nature"));
-            
+
         } catch (Exception e) {
             System.err.println("Failed to configure Maven nature: " + e.getMessage());
             e.printStackTrace();
         }
-        
+
         return project;
     }
-    
+
     private IProject importProject(Path projectPath, String projectName, IProgressMonitor monitor)
             throws CoreException {
         System.out.println("=== Using regular Eclipse project import ===");
         System.out.println("Project path: " + projectPath);
         System.out.println("Project name: " + projectName);
-        
+
         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
         IProject project = root.getProject(projectName);
 
@@ -259,25 +253,20 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             description.setLocation(null); // Use default location
 
             // Check if build.gradle exists to determine if it's a Gradle project
-            if (Files.exists(projectPath.resolve("build.gradle")) || 
-                       Files.exists(projectPath.resolve("build.gradle.kts"))) {
+            if (Files.exists(projectPath.resolve("build.gradle"))
+                    || Files.exists(projectPath.resolve("build.gradle.kts"))) {
                 // Add Gradle nature and Java nature
-                description.setNatureIds(new String[] {
-                    "org.eclipse.jdt.core.javanature",
-                    "org.eclipse.buildship.core.gradleprojectnature"
-                });
-                
+                description.setNatureIds(new String[] { "org.eclipse.jdt.core.javanature",
+                        "org.eclipse.buildship.core.gradleprojectnature" });
+
                 // Add Gradle and Java builders
                 org.eclipse.core.resources.ICommand javaBuilder = description.newCommand();
                 javaBuilder.setBuilderName("org.eclipse.jdt.core.javabuilder");
-                
+
                 org.eclipse.core.resources.ICommand gradleBuilder = description.newCommand();
                 gradleBuilder.setBuilderName("org.eclipse.buildship.core.gradleprojectbuilder");
-                
-                description.setBuildSpec(new org.eclipse.core.resources.ICommand[] {
-                    javaBuilder,
-                    gradleBuilder
-                });
+
+                description.setBuildSpec(new org.eclipse.core.resources.ICommand[] { javaBuilder, gradleBuilder });
             }
 
             // Create and open project

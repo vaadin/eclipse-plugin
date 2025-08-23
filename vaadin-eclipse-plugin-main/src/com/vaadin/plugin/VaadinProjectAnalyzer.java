@@ -124,7 +124,7 @@ public class VaadinProjectAnalyzer {
                 continue;
             }
             processedTypes.add(fullyQualifiedName);
-            
+
             Map<String, Object> entity = new HashMap<>();
             entity.put("classname", fullyQualifiedName);
 
