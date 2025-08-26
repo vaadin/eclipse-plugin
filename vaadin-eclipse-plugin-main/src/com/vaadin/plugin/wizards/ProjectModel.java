@@ -43,26 +43,26 @@ public class ProjectModel {
 
         // Add project name as group and artifact ID
         String artifactId = toArtifactId(projectName);
-        url.append("groupId=com.example.application");
-        url.append("&artifactId=").append(encode(artifactId));
-        url.append("&name=").append(encode(projectName));
+        url.append("artifactId=").append(encode(artifactId));
+
+        // Add framework selection using the 'frameworks' parameter
+        if (includeFlow && includeHilla) {
+            url.append("&frameworks=flow,hilla");
+        } else if (includeHilla) {
+            url.append("&frameworks=hilla");
+        } else {
+            url.append("&frameworks=flow");
+        }
 
         // Add version selection
         if (prerelease) {
-            url.append("&preset=prerelease");
-        }
-
-        // Add framework selection
-        if (includeFlow && includeHilla) {
-            url.append("&projectType=fusion");
-        } else if (includeHilla) {
-            url.append("&projectType=hilla");
+            url.append("&platformVersion=pre");
         } else {
-            url.append("&projectType=flow");
+            url.append("&platformVersion=latest");
         }
 
-        // Always download as ZIP
-        url.append("&download=true");
+        // Add reference for tracking
+        url.append("&ref=eclipse-plugin");
 
         return url.toString();
     }
@@ -70,26 +70,20 @@ public class ProjectModel {
     private String buildHelloWorldUrl() {
         StringBuilder url = new StringBuilder("https://start.vaadin.com/helloworld?");
 
-        // Add project name
-        String artifactId = toArtifactId(projectName);
-        url.append("groupId=com.example.application");
-        url.append("&artifactId=").append(encode(artifactId));
-        url.append("&name=").append(encode(projectName));
-
         // Add framework
-        url.append("&framework=").append(framework);
+        url.append("framework=").append(framework);
 
         // Add language
         url.append("&language=").append(language);
 
-        // Add build tool
-        url.append("&buildTool=").append(buildTool);
+        // Add build tool (note: parameter name is 'buildtool' not 'buildTool')
+        url.append("&buildtool=").append(buildTool);
 
-        // Add architecture
-        url.append("&architecture=").append(architecture);
+        // Add architecture (note: parameter name is 'stack' not 'architecture')
+        url.append("&stack=").append(architecture);
 
-        // Always download as ZIP
-        url.append("&download=true");
+        // Add reference for tracking
+        url.append("&ref=eclipse-plugin");
 
         return url.toString();
     }
