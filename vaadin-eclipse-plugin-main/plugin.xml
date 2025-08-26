@@ -26,18 +26,6 @@
      </wizard>
   </extension>
   
-  <!-- Launch configuration type for Hotswap -->
-  <extension
-        point="org.eclipse.debug.core.launchDelegates">
-     <launchDelegate
-           id="com.vaadin.plugin.hotswap.launchDelegate"
-           type="org.eclipse.jdt.launching.localJavaApplication"
-           delegate="com.vaadin.plugin.hotswap.HotswapLaunchConfigurationDelegate"
-           modes="debug"
-           name="Hotswap Agent Debug">
-     </launchDelegate>
-  </extension>
-  
   <!-- Launch shortcut for Debug As menu -->
   <extension
         point="org.eclipse.debug.ui.launchShortcuts">
