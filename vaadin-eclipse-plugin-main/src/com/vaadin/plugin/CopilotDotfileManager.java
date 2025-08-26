@@ -16,6 +16,7 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 
@@ -206,7 +207,19 @@ public class CopilotDotfileManager implements IResourceChangeListener {
             Files.writeString(dotfilePath, stringWriter.toString());
 
             // Refresh the project to show the new file
-            project.refreshLocal(IResource.DEPTH_INFINITE, null);
+            // Schedule refresh as a workspace job to avoid resource tree lock issues
+            Job refreshJob = Job.create("Refresh project " + project.getName(), monitor -> {
+                try {
+                    if (project.exists() && project.isOpen()) {
+                        project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+                    }
+                } catch (CoreException e) {
+                    // Log but don't fail - refresh is not critical
+                    System.err.println("Failed to refresh project " + project.getName() + ": " + e.getMessage());
+                }
+            });
+            refreshJob.setRule(project);
+            refreshJob.schedule(100); // Small delay to ensure resource tree is unlocked
 
             System.out.println("Created .copilot-plugin dotfile for project: " + project.getName());
 
