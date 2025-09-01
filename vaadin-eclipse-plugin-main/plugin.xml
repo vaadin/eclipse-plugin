@@ -32,7 +32,7 @@
      <shortcut
            id="com.vaadin.plugin.hotswap.launchShortcut"
            class="com.vaadin.plugin.hotswap.HotswapLaunchShortcut"
-           label="Java Application using Hotswap Agent"
+           label="Vaadin Application"
            icon="icons/vaadin.png"
            modes="debug">
         <contextualLaunch>
@@ -41,14 +41,16 @@
                  <count value="1"/>
                  <iterate>
                     <or>
-                       <!-- Java files -->
+                       <!-- Java files (any Java file in project) -->
                        <adapt type="org.eclipse.jdt.core.ICompilationUnit">
-                          <test property="org.eclipse.jdt.core.hasMain"/>
+                          <test property="org.eclipse.jdt.core.isInJavaProject"/>
                        </adapt>
-                       <!-- Java types -->
+                       <!-- Java types (any type in project) -->
                        <adapt type="org.eclipse.jdt.core.IType">
-                          <test property="org.eclipse.jdt.core.hasMain"/>
+                          <test property="org.eclipse.jdt.core.isInJavaProject"/>
                        </adapt>
+                       <!-- Java project -->
+                       <adapt type="org.eclipse.jdt.core.IJavaProject"/>
                        <!-- Java elements in general -->
                        <adapt type="org.eclipse.jdt.core.IJavaElement">
                           <test property="org.eclipse.jdt.core.isInJavaProject"/>
