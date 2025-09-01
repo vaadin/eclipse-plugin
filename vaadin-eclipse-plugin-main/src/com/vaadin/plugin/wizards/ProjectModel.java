@@ -25,7 +25,7 @@ public class ProjectModel {
     private String framework = "flow"; // flow or hilla
     private String language = "java"; // java or kotlin
     private String buildTool = "maven"; // maven or gradle
-    private String architecture = "spring-boot"; // spring-boot, quarkus, jakartaee, servlet
+    private String architecture = "springboot"; // springboot, quarkus, jakartaee, servlet
 
     public ProjectModel() {
     }
