@@ -31,12 +31,14 @@ public class VaadinProjectWizardPage extends WizardPage {
 
     // Starter project options
     private Button starterProjectRadio;
+    private Group starterGroup;
     private Button flowCheckbox;
     private Button hillaCheckbox;
     private Combo vaadinVersionCombo;
 
     // Hello World options
     private Button helloWorldRadio;
+    private Group helloWorldGroup;
     private Combo frameworkCombo;
     private Combo languageCombo;
     private Combo buildToolCombo;
@@ -198,7 +200,7 @@ public class VaadinProjectWizardPage extends WizardPage {
         helloWorldRadio.setText("Hello World Project - Minimal project to get started quickly");
         
         // Starter Project Section
-        Group starterGroup = new Group(parent, SWT.NONE);
+        starterGroup = new Group(parent, SWT.NONE);
         starterGroup.setText("Starter Project Options");
         gd = new GridData(GridData.FILL_HORIZONTAL);
         gd.horizontalSpan = 3;
@@ -245,7 +247,7 @@ public class VaadinProjectWizardPage extends WizardPage {
         hillaCheckbox.setLayoutData(gd);
 
         // Hello World Projects Section
-        Group helloWorldGroup = new Group(parent, SWT.NONE);
+        helloWorldGroup = new Group(parent, SWT.NONE);
         helloWorldGroup.setText("Hello World Project Options");
         gd = new GridData(GridData.FILL_HORIZONTAL);
         gd.horizontalSpan = 3;
@@ -333,16 +335,15 @@ public class VaadinProjectWizardPage extends WizardPage {
         boolean isStarter = starterProjectRadio.getSelection();
         boolean isHelloWorld = helloWorldRadio.getSelection();
 
-        // Starter options
-        vaadinVersionCombo.setEnabled(isStarter);
-        flowCheckbox.setEnabled(isStarter);
-        hillaCheckbox.setEnabled(isStarter);
-
-        // Hello World options
-        frameworkCombo.setEnabled(isHelloWorld);
-        languageCombo.setEnabled(isHelloWorld);
-        buildToolCombo.setEnabled(isHelloWorld);
-        architectureCombo.setEnabled(isHelloWorld);
+        // Show/hide entire groups
+        starterGroup.setVisible(isStarter);
+        ((GridData) starterGroup.getLayoutData()).exclude = !isStarter;
+        
+        helloWorldGroup.setVisible(isHelloWorld);
+        ((GridData) helloWorldGroup.getLayoutData()).exclude = !isHelloWorld;
+        
+        // Request layout update to adjust spacing
+        starterGroup.getParent().layout(true, true);
     }
 
     private void validateAndUpdateOptions() {
