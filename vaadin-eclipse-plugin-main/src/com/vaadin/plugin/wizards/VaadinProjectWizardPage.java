@@ -475,7 +475,7 @@ public class VaadinProjectWizardPage extends WizardPage {
             model.setLanguage(languageCombo.getSelectionIndex() == 0 ? "java" : "kotlin");
             model.setBuildTool(buildToolCombo.getSelectionIndex() == 0 ? "maven" : "gradle");
 
-            String[] architectures = { "spring-boot", "quarkus", "jakartaee", "servlet" };
+            String[] architectures = { "springboot", "quarkus", "jakartaee", "servlet" };
             model.setArchitecture(architectures[architectureCombo.getSelectionIndex()]);
         }
 
