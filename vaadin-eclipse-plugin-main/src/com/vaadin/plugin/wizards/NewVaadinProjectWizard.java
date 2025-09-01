@@ -111,7 +111,7 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
         } else if (Files.exists(projectPath.resolve("build.gradle"))
                 || Files.exists(projectPath.resolve("build.gradle.kts"))) {
             // Import as Gradle project
-            project = importProject(projectPath, model.getProjectName(), subMonitor.split(25));
+            project = importGradleProject(projectPath, model.getProjectName(), subMonitor.split(25));
         } else {
             // Import as generic Eclipse project
             project = importProject(projectPath, model.getProjectName(), subMonitor.split(25));
@@ -238,6 +238,107 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
         return project;
     }
 
+    private IProject importGradleProject(Path projectPath, String projectName, IProgressMonitor monitor)
+            throws CoreException {
+        System.out.println("=== Importing Gradle project ===");
+        System.out.println("Project path: " + projectPath);
+        System.out.println("Project name: " + projectName);
+
+        // First create the basic project
+        IProject project = importProject(projectPath, projectName, monitor);
+
+        // Try to use Buildship if available
+        if (isBuildshipAvailable()) {
+            try {
+                configureBuildshipProject(project, projectPath, monitor);
+                System.out.println("Gradle project configured with Buildship successfully");
+            } catch (Exception e) {
+                System.err.println("Failed to configure Gradle project with Buildship: " + e.getMessage());
+                e.printStackTrace();
+                // Fall back to basic Gradle configuration
+                configureBasicGradleProject(project, monitor);
+            }
+        } else {
+            System.out.println("Buildship not available, using basic Gradle configuration");
+            configureBasicGradleProject(project, monitor);
+        }
+
+        return project;
+    }
+    
+    private boolean isBuildshipAvailable() {
+        try {
+            Class.forName("org.eclipse.buildship.core.GradleCore");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+    
+    private void configureBuildshipProject(IProject project, Path projectPath, IProgressMonitor monitor) throws Exception {
+        // Use reflection to avoid compile-time dependency on Buildship
+        Class<?> gradleCoreClass = Class.forName("org.eclipse.buildship.core.GradleCore");
+        Object gradleCore = gradleCoreClass.getMethod("getWorkspace").invoke(null);
+        
+        Class<?> buildConfigClass = Class.forName("org.eclipse.buildship.core.BuildConfiguration");
+        Object buildConfigBuilder = buildConfigClass.getMethod("forRootProjectDirectory", java.io.File.class)
+                .invoke(null, projectPath.toFile());
+        buildConfigBuilder = buildConfigBuilder.getClass().getMethod("overrideWorkspaceConfiguration", boolean.class)
+                .invoke(buildConfigBuilder, true);
+        Object buildConfig = buildConfigBuilder.getClass().getMethod("build").invoke(buildConfigBuilder);
+        
+        Object gradleBuild = gradleCore.getClass().getMethod("getGradleBuild", buildConfigClass)
+                .invoke(gradleCore, buildConfig);
+        
+        gradleBuild.getClass().getMethod("synchronize", IProgressMonitor.class)
+                .invoke(gradleBuild, monitor);
+        
+        project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+    }
+    
+    private void configureBasicGradleProject(IProject project, IProgressMonitor monitor) throws CoreException {
+        // Add Gradle nature and Java nature if not already present
+        IProjectDescription description = project.getDescription();
+        String[] natures = description.getNatureIds();
+        
+        boolean hasJavaNature = false;
+        boolean hasGradleNature = false;
+        
+        for (String nature : natures) {
+            if ("org.eclipse.jdt.core.javanature".equals(nature)) {
+                hasJavaNature = true;
+            }
+            if ("org.eclipse.buildship.core.gradleprojectnature".equals(nature)) {
+                hasGradleNature = true;
+            }
+        }
+        
+        java.util.List<String> newNatures = new java.util.ArrayList<>(java.util.Arrays.asList(natures));
+        if (!hasJavaNature) {
+            newNatures.add("org.eclipse.jdt.core.javanature");
+        }
+        if (!hasGradleNature) {
+            newNatures.add("org.eclipse.buildship.core.gradleprojectnature");
+        }
+        
+        if (!hasJavaNature || !hasGradleNature) {
+            description.setNatureIds(newNatures.toArray(new String[0]));
+            
+            // Add builders
+            org.eclipse.core.resources.ICommand javaBuilder = description.newCommand();
+            javaBuilder.setBuilderName("org.eclipse.jdt.core.javabuilder");
+            
+            org.eclipse.core.resources.ICommand gradleBuilder = description.newCommand();
+            gradleBuilder.setBuilderName("org.eclipse.buildship.core.gradleprojectbuilder");
+            
+            description.setBuildSpec(new org.eclipse.core.resources.ICommand[] { javaBuilder, gradleBuilder });
+            
+            project.setDescription(description, monitor);
+        }
+        
+        project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+    }
+
     private IProject importProject(Path projectPath, String projectName, IProgressMonitor monitor)
             throws CoreException {
         System.out.println("=== Using regular Eclipse project import ===");
@@ -251,23 +352,6 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             // Create project description
             IProjectDescription description = ResourcesPlugin.getWorkspace().newProjectDescription(projectName);
             description.setLocation(null); // Use default location
-
-            // Check if build.gradle exists to determine if it's a Gradle project
-            if (Files.exists(projectPath.resolve("build.gradle"))
-                    || Files.exists(projectPath.resolve("build.gradle.kts"))) {
-                // Add Gradle nature and Java nature
-                description.setNatureIds(new String[] { "org.eclipse.jdt.core.javanature",
-                        "org.eclipse.buildship.core.gradleprojectnature" });
-
-                // Add Gradle and Java builders
-                org.eclipse.core.resources.ICommand javaBuilder = description.newCommand();
-                javaBuilder.setBuilderName("org.eclipse.jdt.core.javabuilder");
-
-                org.eclipse.core.resources.ICommand gradleBuilder = description.newCommand();
-                gradleBuilder.setBuilderName("org.eclipse.buildship.core.gradleprojectbuilder");
-
-                description.setBuildSpec(new org.eclipse.core.resources.ICommand[] { javaBuilder, gradleBuilder });
-            }
 
             // Create and open project
             project.create(description, monitor);
