@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
@@ -14,9 +15,14 @@ import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.ui.DebugUITools;
 import org.eclipse.debug.ui.ILaunchShortcut2;
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IPackageFragment;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.launching.IVMInstall;
@@ -49,11 +55,24 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
             } else if (element instanceof IType) {
                 IType type = (IType) element;
                 launchJavaElement(type, mode);
+            } else if (element instanceof IJavaProject) {
+                IJavaProject javaProject = (IJavaProject) element;
+                launchJavaProject(javaProject, mode);
+            } else if (element instanceof IProject) {
+                IProject project = (IProject) element;
+                IJavaProject javaProject = JavaCore.create(project);
+                if (javaProject != null && javaProject.exists()) {
+                    launchJavaProject(javaProject, mode);
+                }
             } else if (element instanceof IAdaptable) {
                 IAdaptable adaptable = (IAdaptable) element;
                 IJavaElement javaElement = adaptable.getAdapter(IJavaElement.class);
                 if (javaElement != null) {
-                    launchJavaElement(javaElement, mode);
+                    if (javaElement instanceof IJavaProject) {
+                        launchJavaProject((IJavaProject) javaElement, mode);
+                    } else {
+                        launchJavaElement(javaElement, mode);
+                    }
                 }
             }
         }
@@ -86,7 +105,79 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
             // Find the main type
             IType mainType = findMainType(element);
             if (mainType == null) {
-                MessageDialog.openError(getShell(), "No Main Method", "No main method found in the selected class.");
+                // If no main type found, show more helpful error message
+                if (element instanceof IType) {
+                    IType selectedType = (IType) element;
+                    MessageDialog.openError(getShell(), "No Main Method",
+                            "The selected class '" + selectedType.getElementName() + 
+                            "' does not have a main method and no main class was found in the project.\n\n" +
+                            "Please select a class with a main method or the project itself.");
+                } else {
+                    MessageDialog.openError(getShell(), "No Main Method", 
+                            "No main method found in the selected element or project.");
+                }
+                return;
+            }
+
+            // Check for Hotswap Agent
+            HotswapAgentManager agentManager = HotswapAgentManager.getInstance();
+            if (!agentManager.isInstalled()) {
+                String version = agentManager.installHotswapAgent();
+                if (version == null) {
+                    MessageDialog.openError(getShell(), "Hotswap Agent Error", "Failed to install Hotswap Agent.");
+                    return;
+                }
+            }
+
+            // Check for JBR
+            JetBrainsRuntimeManager jbrManager = JetBrainsRuntimeManager.getInstance();
+            IVMInstall jbr = jbrManager.findInstalledJBR();
+
+            if (jbr == null) {
+                boolean install = MessageDialog.openQuestion(getShell(), "JetBrains Runtime Required",
+                        "Hotswap Agent requires JetBrains Runtime (JBR) for enhanced class redefinition.\n\n"
+                                + "JBR is not currently installed. Would you like to continue anyway?\n\n"
+                                + "Note: Hotswap Agent may not work properly without JBR.");
+
+                if (!install) {
+                    return;
+                }
+            }
+
+            // Create or find launch configuration
+            ILaunchConfiguration config = findOrCreateLaunchConfiguration(mainType, jbr);
+            if (config != null) {
+                DebugUITools.launch(config, mode);
+            }
+
+        } catch (Exception e) {
+            MessageDialog.openError(getShell(), "Launch Error",
+                    "Failed to launch with Hotswap Agent: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Launch a Java project (find main class automatically).
+     *
+     * @param javaProject
+     *            The Java project to launch
+     * @param mode
+     *            The launch mode (should be "debug")
+     */
+    private void launchJavaProject(IJavaProject javaProject, String mode) {
+        // Only support debug mode
+        if (!"debug".equals(mode)) {
+            MessageDialog.openError(getShell(), "Hotswap Agent", "Hotswap Agent can only be used in debug mode.");
+            return;
+        }
+
+        try {
+            // Find main class in the project
+            IType mainType = findMainTypeInProject(javaProject);
+            if (mainType == null) {
+                MessageDialog.openError(getShell(), "No Main Class",
+                        "Could not find a main class in the project. Please select a specific class with a main method.");
                 return;
             }
 
@@ -163,14 +254,24 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
                     type = mainTypes.get(0);
                 } else if (mainTypes.size() > 1) {
                     type = chooseMainType(mainTypes);
-                } else if (types.length == 1) {
-                    // No main method found, but only one type - check if it's a test or has other
-                    // entry point
-                    type = types[0];
+                } else {
+                    // No main method found in this file, try to find it in the project
+                    IJavaProject javaProject = cu.getJavaProject();
+                    type = findMainTypeInProject(javaProject);
                 }
             }
         } else if (element instanceof IType) {
             type = (IType) element;
+            // If the selected type doesn't have a main method, find one in the project
+            if (!hasMainMethod(type)) {
+                IJavaProject javaProject = type.getJavaProject();
+                IType projectMainType = findMainTypeInProject(javaProject);
+                if (projectMainType != null) {
+                    type = projectMainType;
+                }
+            }
+        } else if (element instanceof IJavaProject) {
+            type = findMainTypeInProject((IJavaProject) element);
         }
 
         return type;
@@ -270,6 +371,88 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
                 "org.eclipse.jdt.launching.sourceLocator.JavaSourceLookupDirector");
 
         return wc.doSave();
+    }
+
+    /**
+     * Find a main type in the project (looking for Application classes or classes with main method).
+     *
+     * @param javaProject
+     *            The Java project to search
+     * @return The main type, or null if not found
+     */
+    private IType findMainTypeInProject(IJavaProject javaProject) throws JavaModelException {
+        // First look for Spring Boot Application classes
+        try {
+            IType springBootApp = findSpringBootApplication(javaProject);
+            if (springBootApp != null) {
+                return springBootApp;
+            }
+        } catch (Exception e) {
+            // Ignore and continue
+        }
+
+        // Look for any class with main method
+        List<IType> mainTypes = new ArrayList<>();
+        IPackageFragment[] packages = javaProject.getPackageFragments();
+        for (IPackageFragment pkg : packages) {
+            if (pkg.getKind() == IPackageFragmentRoot.K_SOURCE) {
+                ICompilationUnit[] units = pkg.getCompilationUnits();
+                for (ICompilationUnit unit : units) {
+                    IType[] types = unit.getTypes();
+                    for (IType type : types) {
+                        if (hasMainMethod(type)) {
+                            // If it's named Application or contains Application, prefer it
+                            if (type.getElementName().contains("Application")) {
+                                return type;
+                            }
+                            mainTypes.add(type);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (mainTypes.size() == 1) {
+            return mainTypes.get(0);
+        } else if (mainTypes.size() > 1) {
+            // Let user choose
+            return chooseMainType(mainTypes);
+        }
+
+        return null;
+    }
+
+    /**
+     * Find a Spring Boot application class in the project.
+     *
+     * @param javaProject
+     *            The Java project to search
+     * @return The Spring Boot application type, or null if not found
+     */
+    private IType findSpringBootApplication(IJavaProject javaProject) throws JavaModelException {
+        IPackageFragment[] packages = javaProject.getPackageFragments();
+        for (IPackageFragment pkg : packages) {
+            if (pkg.getKind() == IPackageFragmentRoot.K_SOURCE) {
+                ICompilationUnit[] units = pkg.getCompilationUnits();
+                for (ICompilationUnit unit : units) {
+                    IType[] types = unit.getTypes();
+                    for (IType type : types) {
+                        // Check for @SpringBootApplication annotation
+                        IAnnotation[] annotations = type.getAnnotations();
+                        for (IAnnotation annotation : annotations) {
+                            String annotationName = annotation.getElementName();
+                            if ("SpringBootApplication".equals(annotationName) ||
+                                "org.springframework.boot.autoconfigure.SpringBootApplication".equals(annotationName)) {
+                                if (hasMainMethod(type)) {
+                                    return type;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /**
