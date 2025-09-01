@@ -179,20 +179,31 @@ public class VaadinProjectWizardPage extends WizardPage {
     }
 
     private void createProjectTypeSection(Composite parent) {
+        // Project Type Selection - Radio buttons in same parent for mutual exclusivity
+        Composite radioContainer = new Composite(parent, SWT.NONE);
+        GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+        gd.horizontalSpan = 3;
+        radioContainer.setLayoutData(gd);
+        radioContainer.setLayout(new GridLayout(1, false));
+        
+        Label projectTypeLabel = new Label(radioContainer, SWT.NONE);
+        projectTypeLabel.setText("Project Type:");
+        projectTypeLabel.setFont(JFaceResources.getFontRegistry().getBold(JFaceResources.DEFAULT_FONT));
+        
+        starterProjectRadio = new Button(radioContainer, SWT.RADIO);
+        starterProjectRadio.setText("Starter Project - Full-featured application skeleton with user management and security");
+        starterProjectRadio.setSelection(true);
+        
+        helloWorldRadio = new Button(radioContainer, SWT.RADIO);
+        helloWorldRadio.setText("Hello World Project - Minimal project to get started quickly");
+        
         // Starter Project Section
         Group starterGroup = new Group(parent, SWT.NONE);
-        starterGroup.setText("Starter Project");
-        GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+        starterGroup.setText("Starter Project Options");
+        gd = new GridData(GridData.FILL_HORIZONTAL);
         gd.horizontalSpan = 3;
         starterGroup.setLayoutData(gd);
         starterGroup.setLayout(new GridLayout(2, false));
-
-        starterProjectRadio = new Button(starterGroup, SWT.RADIO);
-        starterProjectRadio.setText("Create starter project");
-        starterProjectRadio.setSelection(true);
-        gd = new GridData();
-        gd.horizontalSpan = 2;
-        starterProjectRadio.setLayoutData(gd);
 
         Label label = new Label(starterGroup, SWT.NONE);
         label.setText("Vaadin Version:");
@@ -235,17 +246,11 @@ public class VaadinProjectWizardPage extends WizardPage {
 
         // Hello World Projects Section
         Group helloWorldGroup = new Group(parent, SWT.NONE);
-        helloWorldGroup.setText("Hello World Projects");
+        helloWorldGroup.setText("Hello World Project Options");
         gd = new GridData(GridData.FILL_HORIZONTAL);
         gd.horizontalSpan = 3;
         helloWorldGroup.setLayoutData(gd);
         helloWorldGroup.setLayout(new GridLayout(2, false));
-
-        helloWorldRadio = new Button(helloWorldGroup, SWT.RADIO);
-        helloWorldRadio.setText("Create hello world project");
-        gd = new GridData();
-        gd.horizontalSpan = 2;
-        helloWorldRadio.setLayoutData(gd);
 
         label = new Label(helloWorldGroup, SWT.NONE);
         label.setText("Framework:");
