@@ -258,96 +258,75 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
         System.out.println("Project path: " + projectPath);
         System.out.println("Project name: " + projectName);
 
-        // First create the basic project
-        IProject project = importProject(projectPath, projectName, monitor);
-
-        // Try to use Buildship if available
-        if (isBuildshipAvailable()) {
-            try {
-                configureBuildshipProject(project, projectPath, monitor);
-                System.out.println("Gradle project configured with Buildship successfully");
-            } catch (Exception e) {
-                System.err.println("Failed to configure Gradle project with Buildship: " + e.getMessage());
-                e.printStackTrace();
-                // Fall back to basic Gradle configuration
-                configureBasicGradleProject(project, monitor);
+        IProject project = null;
+        
+        // Try to use Buildship's import mechanism if available
+        try {
+            // This will throw NoClassDefFoundError if Buildship is not available
+            project = importGradleProjectWithBuildship(projectPath, projectName, monitor);
+            if (project != null) {
+                System.out.println("Gradle project imported with Buildship successfully");
+                return project;
             }
-        } else {
+        } catch (NoClassDefFoundError | ClassNotFoundException e) {
             System.out.println("Buildship not available, using basic Gradle configuration");
-            configureBasicGradleProject(project, monitor);
+        } catch (Exception e) {
+            System.err.println("Failed to import Gradle project with Buildship: " + e.getMessage());
+            e.printStackTrace();
         }
-
+        
+        // Fall back to basic import
+        project = importProject(projectPath, projectName, monitor);
+        configureBasicGradleProject(project, monitor);
+        
         return project;
     }
     
-    private boolean isBuildshipAvailable() {
-        try {
-            Class.forName("org.eclipse.buildship.core.GradleCore");
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
-    
-    private void configureBuildshipProject(IProject project, Path projectPath, IProgressMonitor monitor) throws Exception {
-        // Use reflection to avoid compile-time dependency on Buildship
-        Class<?> gradleCoreClass = Class.forName("org.eclipse.buildship.core.GradleCore");
-        Object gradleCore = gradleCoreClass.getMethod("getWorkspace").invoke(null);
+    /**
+     * Import a Gradle project using Buildship API directly.
+     * This method will fail with NoClassDefFoundError if Buildship is not available,
+     * which is caught by the caller.
+     */
+    private IProject importGradleProjectWithBuildship(Path projectPath, String projectName, IProgressMonitor monitor) 
+            throws Exception {
+        // Direct API calls - will fail if Buildship is not available
+        org.eclipse.buildship.core.GradleWorkspace workspace = org.eclipse.buildship.core.GradleCore.getWorkspace();
         
-        // Create build configuration with proper settings
-        Class<?> buildConfigClass = Class.forName("org.eclipse.buildship.core.BuildConfiguration");
-        Object buildConfigBuilder = buildConfigClass.getMethod("forRootProjectDirectory", java.io.File.class)
-                .invoke(null, projectPath.toFile());
+        // Create build configuration
+        org.eclipse.buildship.core.BuildConfiguration buildConfig = org.eclipse.buildship.core.BuildConfiguration
+                .forRootProjectDirectory(projectPath.toFile())
+                .overrideWorkspaceConfiguration(true)
+                .build();
         
-        // Override workspace configuration to use project-specific settings
-        buildConfigBuilder = buildConfigBuilder.getClass().getMethod("overrideWorkspaceConfiguration", boolean.class)
-                .invoke(buildConfigBuilder, true);
+        // Create a new Gradle build for this configuration
+        org.eclipse.buildship.core.GradleBuild gradleBuild = workspace.createBuild(buildConfig);
         
-        // Set offline mode to false to ensure dependencies are downloaded
-        try {
-            buildConfigBuilder = buildConfigBuilder.getClass().getMethod("offlineMode", boolean.class)
-                    .invoke(buildConfigBuilder, false);
-        } catch (NoSuchMethodException e) {
-            // Method might not exist in older versions
-        }
+        // Synchronize the project - this will import it and set up everything
+        gradleBuild.synchronize(monitor);
         
-        // Build the configuration
-        Object buildConfig = buildConfigBuilder.getClass().getMethod("build").invoke(buildConfigBuilder);
+        // The project should now exist in the workspace
+        IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+        IProject project = root.getProject(projectName);
         
-        // Get the Gradle build
-        Object gradleBuild = gradleCore.getClass().getMethod("getGradleBuild", buildConfigClass)
-                .invoke(gradleCore, buildConfig);
-        
-        // Create a synchronization request with proper settings
-        try {
-            // Try to create a NewProjectHandler for better initial import
-            Class<?> newProjectHandlerClass = Class.forName("org.eclipse.buildship.core.NewProjectHandler");
-            Object newProjectHandler = newProjectHandlerClass.getEnumConstants()[0]; // IMPORT
-            
-            // Synchronize with the new project handler
-            gradleBuild.getClass().getMethod("synchronize", newProjectHandlerClass, IProgressMonitor.class)
-                    .invoke(gradleBuild, newProjectHandler, monitor);
-        } catch (Exception e) {
-            // Fall back to simple synchronize if NewProjectHandler is not available
-            gradleBuild.getClass().getMethod("synchronize", IProgressMonitor.class)
-                    .invoke(gradleBuild, monitor);
-        }
-        
-        // Wait a bit for Gradle to finish background tasks
-        Thread.sleep(1000);
-        
-        // Refresh the project multiple times to ensure all resources are visible
-        project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
-        
-        // Trigger another refresh after a short delay
-        PlatformUI.getWorkbench().getDisplay().asyncExec(() -> {
-            try {
-                Thread.sleep(2000);
-                project.refreshLocal(IResource.DEPTH_INFINITE, null);
-            } catch (Exception e) {
-                // Ignore refresh errors
+        // Ensure the project is open and refreshed
+        if (project != null && project.exists()) {
+            if (!project.isOpen()) {
+                project.open(monitor);
             }
-        });
+            project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+            
+            // Give Buildship a moment to finish background tasks
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                // Ignore
+            }
+            
+            // One more refresh to be sure
+            project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+        }
+        
+        return project;
     }
     
     private void configureBasicGradleProject(IProject project, IProgressMonitor monitor) throws CoreException {
