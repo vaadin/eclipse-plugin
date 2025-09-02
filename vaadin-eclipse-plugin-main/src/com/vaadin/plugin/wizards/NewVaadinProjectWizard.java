@@ -40,7 +40,6 @@ import org.eclipse.ui.ide.IDE;
 public class NewVaadinProjectWizard extends Wizard implements INewWizard {
 
     private VaadinProjectWizardPage mainPage;
-    private IWorkbench workbench;
 
     public NewVaadinProjectWizard() {
         super();
@@ -50,7 +49,6 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
 
     @Override
     public void init(IWorkbench workbench, IStructuredSelection selection) {
-        this.workbench = workbench;
     }
 
     @Override
@@ -228,20 +226,13 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             // Enable Maven nature on the project
             configManager.enableMavenNature(project, resolverConfig, monitor);
 
-            // Force update project configuration - this is important for Kotlin projects
-            // and ensures all dependencies are downloaded and configured
-            org.eclipse.m2e.core.project.MavenUpdateRequest updateRequest = new org.eclipse.m2e.core.project.MavenUpdateRequest(
-                    java.util.Collections.singletonList(project), // projects to update
-                    false, // offline
-                    true   // force update snapshots
-            );
-            
-            configManager.updateProjectConfiguration(updateRequest, monitor);
+            // Update project configuration (non-deprecated method)
+            configManager.updateProjectConfiguration(project, monitor);
 
             // Additional refresh to ensure all resources are visible
             project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
 
-            System.out.println("Maven nature enabled and project configured with forced update");
+            System.out.println("Maven nature enabled and project configured");
             System.out.println("Has Maven nature: " + project.hasNature("org.eclipse.m2e.core.maven2Nature"));
 
         } catch (Exception e) {
@@ -279,7 +270,7 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
 
         return project;
     }
-    
+
     private boolean isBuildshipAvailable() {
         try {
             Class.forName("org.eclipse.buildship.core.GradleCore");
@@ -288,58 +279,67 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             return false;
         }
     }
-    
+
     private void configureBuildshipProject(IProject project, Path projectPath, IProgressMonitor monitor) throws Exception {
-        // Use reflection to avoid compile-time dependency on Buildship
-        Class<?> gradleCoreClass = Class.forName("org.eclipse.buildship.core.GradleCore");
-        Object gradleCore = gradleCoreClass.getMethod("getWorkspace").invoke(null);
-        
-        // Create build configuration with proper settings
-        Class<?> buildConfigClass = Class.forName("org.eclipse.buildship.core.BuildConfiguration");
-        Object buildConfigBuilder = buildConfigClass.getMethod("forRootProjectDirectory", java.io.File.class)
-                .invoke(null, projectPath.toFile());
-        
-        // Override workspace configuration to use project-specific settings
-        buildConfigBuilder = buildConfigBuilder.getClass().getMethod("overrideWorkspaceConfiguration", boolean.class)
-                .invoke(buildConfigBuilder, true);
-        
-        // Set offline mode to false to ensure dependencies are downloaded
         try {
-            buildConfigBuilder = buildConfigBuilder.getClass().getMethod("offlineMode", boolean.class)
-                    .invoke(buildConfigBuilder, false);
-        } catch (NoSuchMethodException e) {
-            // Method might not exist in older versions
-        }
-        
-        // Build the configuration
-        Object buildConfig = buildConfigBuilder.getClass().getMethod("build").invoke(buildConfigBuilder);
-        
-        // Get the Gradle build
-        Object gradleBuild = gradleCore.getClass().getMethod("getGradleBuild", buildConfigClass)
-                .invoke(gradleCore, buildConfig);
-        
-        // Create a synchronization request with proper settings
-        try {
-            // Try to create a NewProjectHandler for better initial import
-            Class<?> newProjectHandlerClass = Class.forName("org.eclipse.buildship.core.NewProjectHandler");
-            Object newProjectHandler = newProjectHandlerClass.getEnumConstants()[0]; // IMPORT
-            
-            // Synchronize with the new project handler
-            gradleBuild.getClass().getMethod("synchronize", newProjectHandlerClass, IProgressMonitor.class)
-                    .invoke(gradleBuild, newProjectHandler, monitor);
+            Class<?> gradleCoreClass = Class.forName("org.eclipse.buildship.core.GradleCore");
+            Object gradleWorkspace = gradleCoreClass.getMethod("getWorkspace").invoke(null);
+
+            // Build BuildConfiguration using reflection
+            Class<?> buildConfigClass = Class.forName("org.eclipse.buildship.core.BuildConfiguration");
+            Object buildConfigBuilder = buildConfigClass.getMethod("forRootProjectDirectory", java.io.File.class)
+                    .invoke(null, projectPath.toFile());
+            buildConfigBuilder = buildConfigBuilder.getClass().getMethod("overrideWorkspaceConfiguration", boolean.class)
+                    .invoke(buildConfigBuilder, true);
+            try {
+                buildConfigBuilder = buildConfigBuilder.getClass().getMethod("offlineMode", boolean.class)
+                        .invoke(buildConfigBuilder, false);
+            } catch (NoSuchMethodException ex) {
+                // ignore
+            }
+            Object buildConfig = buildConfigBuilder.getClass().getMethod("build").invoke(buildConfigBuilder);
+
+            // Use createBuild(BuildConfiguration) to get GradleBuild
+            Object gradleBuild = gradleWorkspace.getClass()
+                .getMethod("createBuild", buildConfig.getClass())
+                .invoke(gradleWorkspace, buildConfig);
+
+            // Try to synchronize using NewProjectHandler if available
+            try {
+                Class<?> newProjectHandlerClass = null;
+                Object newProjectHandler = null;
+                try {
+                    newProjectHandlerClass = Class.forName("org.eclipse.buildship.core.workspace.NewProjectHandler");
+                    newProjectHandler = newProjectHandlerClass.getEnumConstants()[0]; // IMPORT
+                } catch (ClassNotFoundException e) {
+                    newProjectHandlerClass = Class.forName("org.eclipse.buildship.core.NewProjectHandler");
+                    newProjectHandler = newProjectHandlerClass.getEnumConstants()[0]; // IMPORT
+                }
+                gradleBuild.getClass().getMethod("synchronize", newProjectHandlerClass, IProgressMonitor.class)
+                        .invoke(gradleBuild, newProjectHandler, monitor);
+            } catch (Exception ex) {
+                gradleBuild.getClass().getMethod("synchronize", IProgressMonitor.class)
+                        .invoke(gradleBuild, monitor);
+            }
+
+            // Refresh project with delay
+            refreshProjectWithDelay(project, monitor);
         } catch (Exception e) {
-            // Fall back to simple synchronize if NewProjectHandler is not available
-            gradleBuild.getClass().getMethod("synchronize", IProgressMonitor.class)
-                    .invoke(gradleBuild, monitor);
+            throw new Exception("Buildship Gradle import failed: " + e.getMessage(), e);
         }
-        
-        // Wait a bit for Gradle to finish background tasks
-        Thread.sleep(1000);
-        
-        // Refresh the project multiple times to ensure all resources are visible
-        project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
-        
-        // Trigger another refresh after a short delay
+    }
+
+    /**
+     * Refreshes the project after a short delay, both synchronously and asynchronously,
+     * to ensure Gradle background tasks have completed and Eclipse picks up all changes.
+     */
+    private void refreshProjectWithDelay(IProject project, IProgressMonitor monitor) {
+        try {
+            Thread.sleep(1000);
+            project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+        } catch (Exception e) {
+            // Ignore refresh errors
+        }
         PlatformUI.getWorkbench().getDisplay().asyncExec(() -> {
             try {
                 Thread.sleep(2000);
@@ -349,15 +349,15 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             }
         });
     }
-    
+
     private void configureBasicGradleProject(IProject project, IProgressMonitor monitor) throws CoreException {
         // Add Gradle nature and Java nature if not already present
         IProjectDescription description = project.getDescription();
         String[] natures = description.getNatureIds();
-        
+
         boolean hasJavaNature = false;
         boolean hasGradleNature = false;
-        
+
         for (String nature : natures) {
             if ("org.eclipse.jdt.core.javanature".equals(nature)) {
                 hasJavaNature = true;
@@ -366,7 +366,7 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
                 hasGradleNature = true;
             }
         }
-        
+
         java.util.List<String> newNatures = new java.util.ArrayList<>(java.util.Arrays.asList(natures));
         if (!hasJavaNature) {
             newNatures.add("org.eclipse.jdt.core.javanature");
@@ -374,22 +374,22 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
         if (!hasGradleNature) {
             newNatures.add("org.eclipse.buildship.core.gradleprojectnature");
         }
-        
+
         if (!hasJavaNature || !hasGradleNature) {
             description.setNatureIds(newNatures.toArray(new String[0]));
-            
+
             // Add builders
             org.eclipse.core.resources.ICommand javaBuilder = description.newCommand();
             javaBuilder.setBuilderName("org.eclipse.jdt.core.javabuilder");
-            
+
             org.eclipse.core.resources.ICommand gradleBuilder = description.newCommand();
             gradleBuilder.setBuilderName("org.eclipse.buildship.core.gradleprojectbuilder");
-            
+
             description.setBuildSpec(new org.eclipse.core.resources.ICommand[] { javaBuilder, gradleBuilder });
-            
+
             project.setDescription(description, monitor);
         }
-        
+
         project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
     }
 
