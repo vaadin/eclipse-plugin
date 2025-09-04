@@ -187,18 +187,19 @@ public class VaadinProjectWizardPage extends WizardPage {
         gd.horizontalSpan = 3;
         radioContainer.setLayoutData(gd);
         radioContainer.setLayout(new GridLayout(1, false));
-        
+
         Label projectTypeLabel = new Label(radioContainer, SWT.NONE);
         projectTypeLabel.setText("Project Type:");
         projectTypeLabel.setFont(JFaceResources.getFontRegistry().getBold(JFaceResources.DEFAULT_FONT));
-        
+
         starterProjectRadio = new Button(radioContainer, SWT.RADIO);
-        starterProjectRadio.setText("Starter Project - Full-featured application skeleton with user management and security");
+        starterProjectRadio
+                .setText("Starter Project - Full-featured application skeleton with user management and security");
         starterProjectRadio.setSelection(true);
-        
+
         helloWorldRadio = new Button(radioContainer, SWT.RADIO);
         helloWorldRadio.setText("Hello World Project - Minimal project to get started quickly");
-        
+
         // Starter Project Section
         starterGroup = new Group(parent, SWT.NONE);
         starterGroup.setText("Starter Project Options");
@@ -338,10 +339,10 @@ public class VaadinProjectWizardPage extends WizardPage {
         // Show/hide entire groups
         starterGroup.setVisible(isStarter);
         ((GridData) starterGroup.getLayoutData()).exclude = !isStarter;
-        
+
         helloWorldGroup.setVisible(isHelloWorld);
         ((GridData) helloWorldGroup.getLayoutData()).exclude = !isHelloWorld;
-        
+
         // Request layout update to adjust spacing
         starterGroup.getParent().layout(true, true);
     }
