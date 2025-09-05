@@ -105,6 +105,9 @@ public class ProjectModel {
             return "my-app";
         }
         // Convert project name to valid Maven artifact ID
+        if (projectName == null || projectName.isEmpty()) {
+            return "my-app";
+        }
         return projectName.toLowerCase().replaceAll("[^a-z0-9-]", "-").replaceAll("-+", "-").replaceAll("^-|-$", "");
     }
 
