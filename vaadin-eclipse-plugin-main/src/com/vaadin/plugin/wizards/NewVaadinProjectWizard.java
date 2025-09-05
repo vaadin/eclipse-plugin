@@ -34,6 +34,8 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
 
+import com.vaadin.plugin.CopilotDotfileManager;
+
 /**
  * New Vaadin Project creation wizard.
  */
@@ -117,7 +119,11 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             project = importProject(projectPath, model.getProjectName(), subMonitor.split(25));
         }
 
-        // Step 4: Open README
+        // Step 4: Create .copilot-plugin dotfile immediately
+        subMonitor.subTask("Configuring Copilot integration...");
+        CopilotDotfileManager.getInstance().updateDotfile(project);
+
+        // Step 5: Open README
         subMonitor.subTask("Opening README...");
         openReadme(project, subMonitor.split(5));
 
