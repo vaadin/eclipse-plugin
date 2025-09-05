@@ -271,6 +271,9 @@ public class VaadinProjectWizardPage extends WizardPage {
         languageCombo.select(0);
         languageCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
+        // Kotlin plugin for Eclipse is not maintained and broken
+        languageCombo.setEnabled(false);
+
         label = new Label(helloWorldGroup, SWT.NONE);
         label.setText("Build tool:");
 
