@@ -50,8 +50,10 @@ public class VaadinBuilderConfigurator implements IResourceChangeListener {
             if (child.getResource() instanceof IProject) {
                 IProject project = (IProject) child.getResource();
 
-                // Check if this is a new or opened project
-                if ((child.getFlags() & IResourceDelta.OPEN) != 0 || child.getKind() == IResourceDelta.ADDED) {
+                // Check if this is a new or opened project, or if description changed (nature
+                // added)
+                if ((child.getFlags() & IResourceDelta.OPEN) != 0 || child.getKind() == IResourceDelta.ADDED
+                        || (child.getFlags() & IResourceDelta.DESCRIPTION) != 0) {
                     configureProject(project);
                 }
             }
@@ -98,6 +100,15 @@ public class VaadinBuilderConfigurator implements IResourceChangeListener {
 
         } catch (CoreException e) {
             System.out.println("  - Error configuring project: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Manually configure a specific project (useful for testing).
+     */
+    public static void configureProjectManually(IProject project) {
+        if (instance != null) {
+            instance.configureProject(project);
         }
     }
 
