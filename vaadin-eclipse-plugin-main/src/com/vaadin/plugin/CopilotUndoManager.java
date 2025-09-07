@@ -28,6 +28,7 @@ import org.eclipse.ui.texteditor.ITextEditor;
 public class CopilotUndoManager {
 
     private static CopilotUndoManager instance;
+    private static final IUndoContext WORKSPACE_CONTEXT = new WorkspaceUndoContext();
     private IOperationHistory operationHistory;
     private Map<String, List<IUndoableOperation>> fileOperations;
 
@@ -54,11 +55,19 @@ public class CopilotUndoManager {
      * Record a file modification operation for undo/redo with binary flag.
      */
     public void recordOperation(IFile file, String oldContent, String newContent, String label, boolean isBase64) {
+        // Create operation but don't execute it since content was already changed
         CopilotFileEditOperation operation = new CopilotFileEditOperation(file, oldContent, newContent, label,
                 isBase64);
 
         try {
-            operationHistory.execute(operation, null, null);
+            // The file content has already been changed externally
+            // We add the operation to the history in executed state
+            IUndoContext context = getOrCreateWorkspaceContext();
+
+            if (context != null) {
+                operation.addContext(context);
+            }
+            operationHistory.add(operation);
 
             // Track operation for this file
             String filePath = file.getFullPath().toString();
@@ -68,6 +77,22 @@ public class CopilotUndoManager {
             System.err.println("Failed to record operation: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Get or create a workspace undo context. This handles cases where the workspace adapter might not be available.
+     */
+    private IUndoContext getOrCreateWorkspaceContext() {
+        // First try to get the workspace context
+        IUndoContext context = ResourcesPlugin.getWorkspace().getAdapter(IUndoContext.class);
+
+        if (context == null) {
+            // If no workspace context, use our singleton custom context
+            // This ensures tests can run even without full workspace setup
+            context = WORKSPACE_CONTEXT;
+        }
+
+        return context;
     }
 
     /**
@@ -81,18 +106,11 @@ public class CopilotUndoManager {
                 IFile file = findFile(filePath);
                 if (file != null) {
                     // Get the workspace context which our operations use
-                    IUndoContext context = ResourcesPlugin.getWorkspace().getAdapter(IUndoContext.class);
-                    System.out.println("Undo attempt for: " + filePath + ", context: " + context);
-                    if (context != null) {
-                        boolean canUndo = operationHistory.canUndo(context);
-                        System.out.println("Can undo: " + canUndo);
-                        if (canUndo) {
-                            IStatus status = operationHistory.undo(context, null, null);
-                            System.out.println("Undo status: " + status.isOK() + ", message: " + status.getMessage());
-                            if (status.isOK()) {
-                                performed = true;
-                                System.out.println("Undo performed for: " + filePath);
-                            }
+                    IUndoContext context = getOrCreateWorkspaceContext();
+                    if (context != null && operationHistory.canUndo(context)) {
+                        IStatus status = operationHistory.undo(context, null, null);
+                        if (status.isOK()) {
+                            performed = true;
                         }
                     }
                 }
@@ -116,18 +134,11 @@ public class CopilotUndoManager {
                 IFile file = findFile(filePath);
                 if (file != null) {
                     // Get the workspace context which our operations use
-                    IUndoContext context = ResourcesPlugin.getWorkspace().getAdapter(IUndoContext.class);
-                    System.out.println("Redo attempt for: " + filePath + ", context: " + context);
-                    if (context != null) {
-                        boolean canRedo = operationHistory.canRedo(context);
-                        System.out.println("Can redo: " + canRedo);
-                        if (canRedo) {
-                            IStatus status = operationHistory.redo(context, null, null);
-                            System.out.println("Redo status: " + status.isOK() + ", message: " + status.getMessage());
-                            if (status.isOK()) {
-                                performed = true;
-                                System.out.println("Redo performed for: " + filePath);
-                            }
+                    IUndoContext context = getOrCreateWorkspaceContext();
+                    if (context != null && operationHistory.canRedo(context)) {
+                        IStatus status = operationHistory.redo(context, null, null);
+                        if (status.isOK()) {
+                            performed = true;
                         }
                     }
                 }
@@ -185,6 +196,26 @@ public class CopilotUndoManager {
     }
 
     /**
+     * Custom workspace undo context for when the default one isn't available. This is primarily for test environments
+     * where the workspace might not be fully initialized.
+     */
+    private static class WorkspaceUndoContext implements IUndoContext {
+        private static final String LABEL = "Copilot Workspace Context";
+
+        @Override
+        public String getLabel() {
+            return LABEL;
+        }
+
+        @Override
+        public boolean matches(IUndoContext context) {
+            // Match with itself or other workspace contexts
+            return context == this || context instanceof WorkspaceUndoContext
+                    || (context != null && LABEL.equals(context.getLabel()));
+        }
+    }
+
+    /**
      * Custom undoable operation for Copilot file edits.
      */
     private static class CopilotFileEditOperation implements IUndoableOperation {
@@ -194,6 +225,7 @@ public class CopilotUndoManager {
         private final String newContent;
         private final String label;
         private final boolean isBase64;
+        private IUndoContext[] contexts;
 
         public CopilotFileEditOperation(IFile file, String oldContent, String newContent, String label) {
             this(file, oldContent, newContent, label, false);
@@ -206,10 +238,14 @@ public class CopilotUndoManager {
             this.newContent = newContent;
             this.label = label != null ? label : "Copilot Edit";
             this.isBase64 = isBase64;
+            // Initialize with empty contexts, will be added during recordOperation
+            this.contexts = new IUndoContext[0];
         }
 
         @Override
         public IStatus execute(IProgressMonitor monitor, IAdaptable info) {
+            // Should not be called since content is already applied
+            // But if it is called, apply the new content
             return setFileContent(newContent);
         }
 
@@ -270,13 +306,11 @@ public class CopilotUndoManager {
 
         @Override
         public IUndoContext[] getContexts() {
-            IUndoContext context = ResourcesPlugin.getWorkspace().getAdapter(IUndoContext.class);
-            return context != null ? new IUndoContext[] { context } : new IUndoContext[0];
+            return contexts;
         }
 
         @Override
         public boolean hasContext(IUndoContext context) {
-            IUndoContext[] contexts = getContexts();
             for (IUndoContext c : contexts) {
                 if (c.matches(context)) {
                     return true;
@@ -287,12 +321,29 @@ public class CopilotUndoManager {
 
         @Override
         public void addContext(IUndoContext context) {
-            // Not needed for our use case
+            // Add context if not already present
+            for (IUndoContext c : contexts) {
+                if (c.matches(context)) {
+                    return; // Already has this context
+                }
+            }
+            // Create new array with added context
+            IUndoContext[] newContexts = new IUndoContext[contexts.length + 1];
+            System.arraycopy(contexts, 0, newContexts, 0, contexts.length);
+            newContexts[contexts.length] = context;
+            contexts = newContexts;
         }
 
         @Override
         public void removeContext(IUndoContext context) {
-            // Not needed for our use case
+            // Not needed for our use case but implemented for completeness
+            List<IUndoContext> remaining = new ArrayList<>();
+            for (IUndoContext c : contexts) {
+                if (!c.matches(context)) {
+                    remaining.add(c);
+                }
+            }
+            contexts = remaining.toArray(new IUndoContext[0]);
         }
 
         @Override

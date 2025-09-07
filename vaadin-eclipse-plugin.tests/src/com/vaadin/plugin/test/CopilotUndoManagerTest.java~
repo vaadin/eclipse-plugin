@@ -169,7 +169,7 @@ public class CopilotUndoManagerTest extends BaseIntegrationTest {
 		List<String> filePaths = Arrays.asList(file.getLocation().toString());
 		boolean undone = undoManager.performUndo(filePaths);
 
-		assertTrue("CUndo should be performed", undone);
+		assertTrue("BUndo should be performed", undone);
 		assertEquals("File content should be empty after undo", "", readFileContent(file));
 	}
 
