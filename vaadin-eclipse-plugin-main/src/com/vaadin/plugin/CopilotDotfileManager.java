@@ -86,7 +86,15 @@ public class CopilotDotfileManager implements IResourceChangeListener {
                         IResource resource = delta.getResource();
                         if (resource instanceof IProject) {
                             IProject project = (IProject) resource;
-                            if (delta.getKind() == IResourceDelta.CHANGED
+
+                            // Handle newly added projects (imported or created)
+                            if (delta.getKind() == IResourceDelta.ADDED) {
+                                if (project.isOpen() && isVaadinProject(project)) {
+                                    createDotfile(project);
+                                }
+                            }
+                            // Handle project open/close state changes
+                            else if (delta.getKind() == IResourceDelta.CHANGED
                                     && (delta.getFlags() & IResourceDelta.OPEN) != 0) {
                                 if (project.isOpen() && isVaadinProject(project)) {
                                     createDotfile(project);
