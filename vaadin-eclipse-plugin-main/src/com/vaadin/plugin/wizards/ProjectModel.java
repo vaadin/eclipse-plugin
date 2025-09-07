@@ -43,7 +43,9 @@ public class ProjectModel {
 
         // Add project name as group and artifact ID
         String artifactId = toArtifactId(projectName);
-        url.append("artifactId=").append(encode(artifactId));
+        url.append("name=").append(encode(artifactId));
+        url.append("&artifactId=").append(encode(artifactId));
+        url.append("&groupId=com.example.application");
 
         // Add framework selection using the 'frameworks' parameter
         if (includeFlow && includeHilla) {
@@ -56,10 +58,11 @@ public class ProjectModel {
 
         // Add version selection
         if (prerelease) {
-            url.append("&platformVersion=pre");
-        } else {
-            url.append("&platformVersion=latest");
+            url.append("&preset=prerelease");
         }
+
+        // Add download parameter
+        url.append("&download=true");
 
         // Add reference for tracking
         url.append("&ref=eclipse-plugin");
@@ -70,8 +73,14 @@ public class ProjectModel {
     private String buildHelloWorldUrl() {
         StringBuilder url = new StringBuilder("https://start.vaadin.com/helloworld?");
 
+        // Add project name and IDs
+        String artifactId = toArtifactId(projectName);
+        url.append("name=").append(encode(artifactId));
+        url.append("&artifactId=").append(encode(artifactId));
+        url.append("&groupId=com.example.application");
+
         // Add framework
-        url.append("framework=").append(framework);
+        url.append("&framework=").append(framework);
 
         // Add language
         url.append("&language=").append(language);
@@ -82,6 +91,9 @@ public class ProjectModel {
         // Add architecture (note: parameter name is 'stack' not 'architecture')
         url.append("&stack=").append(architecture);
 
+        // Add download parameter
+        url.append("&download=true");
+
         // Add reference for tracking
         url.append("&ref=eclipse-plugin");
 
@@ -89,6 +101,9 @@ public class ProjectModel {
     }
 
     private String toArtifactId(String projectName) {
+        if (projectName == null || projectName.isEmpty()) {
+            return "my-app";
+        }
         // Convert project name to valid Maven artifact ID
         return projectName.toLowerCase().replaceAll("[^a-z0-9-]", "-").replaceAll("-+", "-").replaceAll("^-|-$", "");
     }
