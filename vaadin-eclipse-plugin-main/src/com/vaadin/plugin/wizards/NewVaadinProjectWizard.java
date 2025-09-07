@@ -233,9 +233,9 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             org.eclipse.m2e.core.project.MavenUpdateRequest updateRequest = new org.eclipse.m2e.core.project.MavenUpdateRequest(
                     java.util.Collections.singletonList(project), // projects to update
                     false, // offline
-                    true   // force update snapshots
+                    true // force update snapshots
             );
-            
+
             configManager.updateProjectConfiguration(updateRequest, monitor);
 
             // Additional refresh to ensure all resources are visible
@@ -259,7 +259,7 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
         System.out.println("Project name: " + projectName);
 
         IProject project = null;
-        
+
         // Try to use Buildship's import mechanism if available
         try {
             // This will throw NoClassDefFoundError if Buildship is not available
@@ -274,69 +274,66 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             System.err.println("Failed to import Gradle project with Buildship: " + e.getMessage());
             e.printStackTrace();
         }
-        
+
         // Fall back to basic import
         project = importProject(projectPath, projectName, monitor);
         configureBasicGradleProject(project, monitor);
-        
+
         return project;
     }
-    
+
     /**
-     * Import a Gradle project using Buildship API directly.
-     * This method will fail with NoClassDefFoundError if Buildship is not available,
-     * which is caught by the caller.
+     * Import a Gradle project using Buildship API directly. This method will fail with NoClassDefFoundError if
+     * Buildship is not available, which is caught by the caller.
      */
-    private IProject importGradleProjectWithBuildship(Path projectPath, String projectName, IProgressMonitor monitor) 
+    private IProject importGradleProjectWithBuildship(Path projectPath, String projectName, IProgressMonitor monitor)
             throws Exception {
         // Direct API calls - will fail if Buildship is not available
         org.eclipse.buildship.core.GradleWorkspace workspace = org.eclipse.buildship.core.GradleCore.getWorkspace();
-        
+
         // Create build configuration
         org.eclipse.buildship.core.BuildConfiguration buildConfig = org.eclipse.buildship.core.BuildConfiguration
-                .forRootProjectDirectory(projectPath.toFile())
-                .overrideWorkspaceConfiguration(true)
-                .build();
-        
+                .forRootProjectDirectory(projectPath.toFile()).overrideWorkspaceConfiguration(true).build();
+
         // Create a new Gradle build for this configuration
         org.eclipse.buildship.core.GradleBuild gradleBuild = workspace.createBuild(buildConfig);
-        
+
         // Synchronize the project - this will import it and set up everything
         gradleBuild.synchronize(monitor);
-        
+
         // The project should now exist in the workspace
         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
         IProject project = root.getProject(projectName);
-        
+
         // Ensure the project is open and refreshed
         if (project != null && project.exists()) {
             if (!project.isOpen()) {
                 project.open(monitor);
             }
             project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
-            
+
             // Give Buildship a moment to finish background tasks
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 // Ignore
             }
-            
+
             // One more refresh to be sure
             project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
         }
-        
+
         return project;
     }
-    
+
     private void configureBasicGradleProject(IProject project, IProgressMonitor monitor) throws CoreException {
         // Add Gradle nature and Java nature if not already present
         IProjectDescription description = project.getDescription();
         String[] natures = description.getNatureIds();
-        
+
         boolean hasJavaNature = false;
         boolean hasGradleNature = false;
-        
+
         for (String nature : natures) {
             if ("org.eclipse.jdt.core.javanature".equals(nature)) {
                 hasJavaNature = true;
@@ -345,7 +342,7 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
                 hasGradleNature = true;
             }
         }
-        
+
         java.util.List<String> newNatures = new java.util.ArrayList<>(java.util.Arrays.asList(natures));
         if (!hasJavaNature) {
             newNatures.add("org.eclipse.jdt.core.javanature");
@@ -353,22 +350,22 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
         if (!hasGradleNature) {
             newNatures.add("org.eclipse.buildship.core.gradleprojectnature");
         }
-        
+
         if (!hasJavaNature || !hasGradleNature) {
             description.setNatureIds(newNatures.toArray(new String[0]));
-            
+
             // Add builders
             org.eclipse.core.resources.ICommand javaBuilder = description.newCommand();
             javaBuilder.setBuilderName("org.eclipse.jdt.core.javabuilder");
-            
+
             org.eclipse.core.resources.ICommand gradleBuilder = description.newCommand();
             gradleBuilder.setBuilderName("org.eclipse.buildship.core.gradleprojectbuilder");
-            
+
             description.setBuildSpec(new org.eclipse.core.resources.ICommand[] { javaBuilder, gradleBuilder });
-            
+
             project.setDescription(description, monitor);
         }
-        
+
         project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
     }
 
