@@ -4,6 +4,7 @@ import org.eclipse.debug.core.DebugPlugin;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
+import com.vaadin.plugin.debug.SilentExceptionFilter;
 import com.vaadin.plugin.launch.ServerLaunchListener;
 
 /**
@@ -13,6 +14,7 @@ public class Activator implements BundleActivator {
     private CopilotRestService restService;
     private ServerLaunchListener serverLaunchListener;
     private CopilotDotfileManager dotfileManager;
+    private SilentExceptionFilter silentExceptionFilter;
 
     @Override
     public void start(BundleContext context) throws Exception {
@@ -24,6 +26,10 @@ public class Activator implements BundleActivator {
             // Register the server launch listener
             serverLaunchListener = new ServerLaunchListener();
             DebugPlugin.getDefault().getLaunchManager().addLaunchListener(serverLaunchListener);
+
+            // Register the silent exception filter
+            silentExceptionFilter = new SilentExceptionFilter();
+            silentExceptionFilter.register();
 
             // Initialize dotfile manager
             dotfileManager = CopilotDotfileManager.getInstance();
@@ -45,6 +51,12 @@ public class Activator implements BundleActivator {
         if (dotfileManager != null) {
             dotfileManager.shutdown();
             dotfileManager = null;
+        }
+
+        // Unregister the silent exception filter
+        if (silentExceptionFilter != null) {
+            silentExceptionFilter.unregister();
+            silentExceptionFilter = null;
         }
 
         // Unregister the server launch listener

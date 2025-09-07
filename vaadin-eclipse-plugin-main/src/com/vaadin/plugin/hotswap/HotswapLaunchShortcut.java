@@ -109,11 +109,11 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
                 if (element instanceof IType) {
                     IType selectedType = (IType) element;
                     MessageDialog.openError(getShell(), "No Main Method",
-                            "The selected class '" + selectedType.getElementName() + 
-                            "' does not have a main method and no main class was found in the project.\n\n" +
-                            "Please select a class with a main method or the project itself.");
+                            "The selected class '" + selectedType.getElementName()
+                                    + "' does not have a main method and no main class was found in the project.\n\n"
+                                    + "Please select a class with a main method or the project itself.");
                 } else {
-                    MessageDialog.openError(getShell(), "No Main Method", 
+                    MessageDialog.openError(getShell(), "No Main Method",
                             "No main method found in the selected element or project.");
                 }
                 return;
@@ -441,8 +441,9 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
                         IAnnotation[] annotations = type.getAnnotations();
                         for (IAnnotation annotation : annotations) {
                             String annotationName = annotation.getElementName();
-                            if ("SpringBootApplication".equals(annotationName) ||
-                                "org.springframework.boot.autoconfigure.SpringBootApplication".equals(annotationName)) {
+                            if ("SpringBootApplication".equals(annotationName)
+                                    || "org.springframework.boot.autoconfigure.SpringBootApplication"
+                                            .equals(annotationName)) {
                                 if (hasMainMethod(type)) {
                                     return type;
                                 }
