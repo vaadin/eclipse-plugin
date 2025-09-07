@@ -34,7 +34,7 @@ public class ProjectModelTest {
 		assertEquals("Default framework should be flow", "flow", model.getFramework());
 		assertEquals("Default language should be java", "java", model.getLanguage());
 		assertEquals("Default build tool should be maven", "maven", model.getBuildTool());
-		assertEquals("Default architecture should be spring-boot", "spring-boot", model.getArchitecture());
+		assertEquals("Default architecture should be springboot", "springboot", model.getArchitecture());
 	}
 
 	@Test
@@ -88,8 +88,8 @@ public class ProjectModelTest {
 		assertTrue("URL should be for helloworld endpoint", urlString.contains("/helloworld?"));
 		assertTrue("URL should contain framework", urlString.contains("framework=hilla"));
 		assertTrue("URL should contain language", urlString.contains("language=kotlin"));
-		assertTrue("URL should contain build tool", urlString.contains("buildTool=gradle"));
-		assertTrue("URL should contain architecture", urlString.contains("architecture=quarkus"));
+		assertTrue("URL should contain build tool", urlString.contains("buildtool=gradle"));
+		assertTrue("URL should contain stack", urlString.contains("stack=quarkus"));
 	}
 
 	@Test
@@ -99,9 +99,8 @@ public class ProjectModelTest {
 
 		String urlString = model.getDownloadUrl();
 
-		// Spaces should be encoded
-		assertTrue("Spaces should be encoded in URL",
-				urlString.contains("test+project+with+spaces") || urlString.contains("test%20project%20with%20spaces"));
+		// Spaces should be converted to hyphens in artifact ID
+		assertTrue("Spaces should be converted to hyphens in URL", urlString.contains("test-project-with-spaces"));
 	}
 
 	@Test
@@ -123,19 +122,19 @@ public class ProjectModelTest {
 		model.setIncludeFlow(true);
 		model.setIncludeHilla(false);
 		String url = model.getDownloadUrl();
-		assertTrue("Should have projectType=flow", url.contains("projectType=flow"));
+		assertTrue("Should have frameworks=flow", url.contains("frameworks=flow"));
 
 		// Test Hilla only
 		model.setIncludeFlow(false);
 		model.setIncludeHilla(true);
 		url = model.getDownloadUrl();
-		assertTrue("Should have projectType=hilla", url.contains("projectType=hilla"));
+		assertTrue("Should have frameworks=hilla", url.contains("frameworks=hilla"));
 
 		// Test both (Fusion)
 		model.setIncludeFlow(true);
 		model.setIncludeHilla(true);
 		url = model.getDownloadUrl();
-		assertTrue("Should have projectType=fusion", url.contains("projectType=fusion"));
+		assertTrue("Should have frameworks=flow,hilla", url.contains("frameworks=flow,hilla"));
 	}
 
 	@Test
@@ -217,7 +216,7 @@ public class ProjectModelTest {
 		model.setProjectName(longName);
 
 		String url = model.getDownloadUrl();
-		assertTrue("Should handle long project names", url.contains("name="));
+		assertTrue("Should handle long project names", url.contains("artifactId="));
 	}
 
 	@Test
@@ -247,7 +246,7 @@ public class ProjectModelTest {
 		assertTrue("Should contain groupId parameter", url.contains("groupId="));
 		assertTrue("Should contain artifactId parameter", url.contains("artifactId="));
 		assertTrue("Should contain preset parameter", url.contains("preset="));
-		assertTrue("Should contain projectType parameter", url.contains("projectType="));
+		assertTrue("Should contain frameworks parameter", url.contains("frameworks="));
 		assertTrue("Should contain download parameter", url.contains("download="));
 	}
 
@@ -268,8 +267,8 @@ public class ProjectModelTest {
 		assertTrue("Should contain artifactId parameter", url.contains("artifactId="));
 		assertTrue("Should contain framework parameter", url.contains("framework="));
 		assertTrue("Should contain language parameter", url.contains("language="));
-		assertTrue("Should contain buildTool parameter", url.contains("buildTool="));
-		assertTrue("Should contain architecture parameter", url.contains("architecture="));
+		assertTrue("Should contain buildTool parameter", url.contains("buildtool="));
+		assertTrue("Should contain stack parameter", url.contains("stack="));
 		assertTrue("Should contain download parameter", url.contains("download="));
 	}
 }
