@@ -24,11 +24,14 @@
                 <artifactId>tycho-surefire-plugin</artifactId>
                 <version>${tycho-version}</version>
                 <configuration>
-                    <useUIHarness>false</useUIHarness>
+                    <useUIHarness>true</useUIHarness>
+                    <useUIThread>true</useUIThread>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/AllTests.java</include>
                     </includes>
+                    <!-- Don't specify product/application, let Eclipse use defaults -->
+                    <argLine>-XstartOnFirstThread</argLine>
                 </configuration>
             </plugin>
         </plugins>

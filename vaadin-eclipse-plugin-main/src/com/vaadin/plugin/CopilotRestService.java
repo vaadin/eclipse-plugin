@@ -588,7 +588,7 @@ public class CopilotRestService {
                     return createResponse(response);
                 }
 
-                PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
+                PlatformUI.getWorkbench().getDisplay().asyncExec(() -> {
                     try {
                         IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
                         if (window != null) {
