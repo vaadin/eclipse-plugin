@@ -247,7 +247,6 @@ public class ProjectModelTest {
 
 		// Verify all parameters are present
 		assertTrue("Should contain artifactId parameter", url.contains("artifactId="));
-		assertTrue("Should contain preset parameter", url.contains("preset="));
 		assertTrue("Should contain frameworks parameter", url.contains("frameworks="));
 		assertTrue("Should contain platformVersion parameter", url.contains("platformVersion="));
 		assertTrue("Should contain ref parameter", url.contains("ref=eclipse-plugin"));

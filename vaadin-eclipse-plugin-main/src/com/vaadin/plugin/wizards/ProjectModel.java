@@ -56,10 +56,9 @@ public class ProjectModel {
             url.append("&frameworks=flow");
         }
 
-        // Add version selection
-        if (prerelease) {
-            url.append("&preset=prerelease");
-        }
+        // Add platform version selection (always include, defaults to "latest")
+        String platformVersion = prerelease ? "pre" : "latest";
+        url.append("&platformVersion=").append(platformVersion);
 
         // Add download parameter
         url.append("&download=true");
