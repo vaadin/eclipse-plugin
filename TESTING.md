@@ -39,6 +39,29 @@ For manual validation of REST endpoints:
 3. Use REST client tools to test endpoints
 4. Verify operations in Eclipse workspace
 
+### Running CI Workflow Locally with act
+
+You can run the GitHub Actions CI workflow locally using the [act](https://github.com/nektos/act) tool. This simulates the CI build and test steps on your machine.
+
+#### Install act
+```bash
+brew install act # macOS
+# or see https://github.com/nektos/act for other platforms
+```
+
+#### Run the workflow
+```bash
+act pull_request -W .github/workflows/build.yml --artifact-server-path /tmp/artifacts --container-architecture linux/amd64
+```
+
+This command:
+- Uses the workflow in `.github/workflows/build.yml`
+- Stores workflow artifacts in `/tmp/artifacts`
+- Uses the `linux/amd64` container architecture (recommended for Tycho/Eclipse builds)
+
+**Note:**
+- The act tool is for local simulation only; actual CI runs on GitHub Actions.
+
 ## Test Coverage Areas
 
 ### Core Functionality
