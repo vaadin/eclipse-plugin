@@ -145,7 +145,8 @@ public class ProjectModelTest {
 
 		String url = model.getDownloadUrl();
 
-		// The current implementation doesn't include download=true, so we check that the URL is valid
+		// The current implementation doesn't include download=true, so we check that
+		// the URL is valid
 		assertNotNull("URL should be generated", url);
 		assertTrue("URL should start with https", url.startsWith("https://"));
 	}
