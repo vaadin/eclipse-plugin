@@ -73,9 +73,13 @@ public class VaadinBuildParticipant extends IncrementalProjectBuilder {
                 // Check the resolved classpath entries (includes Maven/Gradle dependencies)
                 IClasspathEntry[] classpath = javaProject.getResolvedClasspath(true);
                 for (IClasspathEntry entry : classpath) {
-                    String path = entry.getPath().toString().toLowerCase();
-                    // Check for Vaadin in the path (covers JARs, Maven dependencies, etc.)
-                    if (path.contains("vaadin")) {
+                    String fullPath = entry.getPath().toString();
+                    // Extract just the filename from the path
+                    String filename = fullPath.substring(fullPath.lastIndexOf('/') + 1).toLowerCase();
+
+                    // Check for Vaadin in the filename only (not the full path)
+                    // This avoids false positives from temp directories containing "vaadin"
+                    if (filename.contains("vaadin")) {
                         System.out.println("    Found Vaadin dependency: " + entry.getPath());
                         return true;
                     }
