@@ -12,5 +12,27 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+          cache: maven
+      
+      - name: Cache Tycho/P2 dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository/.cache/tycho
+          key: ${{ runner.os }}-tycho-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-tycho-
+      
       - name: Build and Test with Maven
-        run: mvn -B verify
+        run: |
+          export DISPLAY=:99
+          xvfb-run -a mvn -B verify
+      
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-logs
+          path: |
+            vaadin-eclipse-plugin.tests/target/work/data/.metadata/.log
+            vaadin-eclipse-plugin.tests/target/surefire-reports/
+            vaadin-eclipse-plugin.tests/target/*.log

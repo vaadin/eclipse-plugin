@@ -75,7 +75,10 @@
                         <artifactId>tycho-surefire-plugin</artifactId>
                         <version>${tycho-version}</version>
                         <configuration>
-                            <argLine></argLine>
+                            <argLine>-Djava.awt.headless=true</argLine>
+                            <environmentVariables>
+                                <DISPLAY>:99</DISPLAY>
+                            </environmentVariables>
                         </configuration>
                     </plugin>
                 </plugins>
