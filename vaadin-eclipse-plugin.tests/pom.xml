@@ -31,9 +31,55 @@
                         <include>**/AllTests.java</include>
                     </includes>
                     <!-- Don't specify product/application, let Eclipse use defaults -->
-                    <argLine>-XstartOnFirstThread</argLine>
+                    <!-- argLine is set by profiles based on OS -->
                 </configuration>
             </plugin>
         </plugins>
     </build>
+    
+    <profiles>
+        <!-- Profile for macOS - needs XstartOnFirstThread -->
+        <profile>
+            <id>macos</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                </os>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.eclipse.tycho</groupId>
+                        <artifactId>tycho-surefire-plugin</artifactId>
+                        <version>${tycho-version}</version>
+                        <configuration>
+                            <argLine>-XstartOnFirstThread</argLine>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        
+        <!-- Profile for Linux/Windows - no XstartOnFirstThread -->
+        <profile>
+            <id>non-macos</id>
+            <activation>
+                <os>
+                    <family>!mac</family>
+                </os>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.eclipse.tycho</groupId>
+                        <artifactId>tycho-surefire-plugin</artifactId>
+                        <version>${tycho-version}</version>
+                        <configuration>
+                            <argLine></argLine>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
