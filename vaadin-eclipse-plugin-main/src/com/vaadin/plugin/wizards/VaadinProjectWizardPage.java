@@ -476,10 +476,15 @@ public class VaadinProjectWizardPage extends WizardPage {
     }
 
     public AbstractProjectModel getProjectModel() {
+        // If UI controls haven't been created yet, return the current model
+        if (projectNameText == null) {
+            return model;
+        }
+        
         model.setProjectName(projectNameText.getText());
         model.setLocation(locationText.getText());
 
-        if (starterProjectRadio.getSelection()) {
+        if (starterProjectRadio != null && starterProjectRadio.getSelection()) {
             starterModel.setProjectName(projectNameText.getText());
             starterModel.setLocation(locationText.getText());
             starterModel.setPrerelease(vaadinVersionCombo.getSelectionIndex() == 1);
