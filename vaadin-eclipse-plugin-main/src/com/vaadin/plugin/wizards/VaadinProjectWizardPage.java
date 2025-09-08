@@ -45,13 +45,17 @@ public class VaadinProjectWizardPage extends WizardPage {
     private Combo architectureCombo;
     private Label kotlinNote;
 
-    private ProjectModel model;
+    private AbstractProjectModel model;
+    private StarterProjectModel starterModel;
+    private HelloWorldProjectModel helloWorldModel;
 
     public VaadinProjectWizardPage() {
         super("vaadinProjectPage");
         setTitle("Vaadin");
         setDescription("Create a new Vaadin project");
-        model = new ProjectModel();
+        starterModel = new StarterProjectModel();
+        helloWorldModel = new HelloWorldProjectModel();
+        model = starterModel; // Default to starter project
     }
 
     @Override
@@ -339,6 +343,13 @@ public class VaadinProjectWizardPage extends WizardPage {
         boolean isStarter = starterProjectRadio.getSelection();
         boolean isHelloWorld = helloWorldRadio.getSelection();
 
+        // Switch model based on selection
+        if (isStarter) {
+            model = starterModel;
+        } else {
+            model = helloWorldModel;
+        }
+
         // Show/hide entire groups
         starterGroup.setVisible(isStarter);
         ((GridData) starterGroup.getLayoutData()).exclude = !isStarter;
@@ -464,25 +475,32 @@ public class VaadinProjectWizardPage extends WizardPage {
         setPageComplete(message == null);
     }
 
-    public ProjectModel getProjectModel() {
+    public AbstractProjectModel getProjectModel() {
+        // If UI controls haven't been created yet, return the current model
+        if (projectNameText == null) {
+            return model;
+        }
+        
         model.setProjectName(projectNameText.getText());
         model.setLocation(locationText.getText());
 
-        if (starterProjectRadio.getSelection()) {
-            model.setProjectType(ProjectModel.ProjectType.STARTER);
-            model.setPrerelease(vaadinVersionCombo.getSelectionIndex() == 1);
-            model.setIncludeFlow(flowCheckbox.getSelection());
-            model.setIncludeHilla(hillaCheckbox.getSelection());
+        if (starterProjectRadio != null && starterProjectRadio.getSelection()) {
+            starterModel.setProjectName(projectNameText.getText());
+            starterModel.setLocation(locationText.getText());
+            starterModel.setPrerelease(vaadinVersionCombo.getSelectionIndex() == 1);
+            starterModel.setIncludeFlow(flowCheckbox.getSelection());
+            starterModel.setIncludeHilla(hillaCheckbox.getSelection());
+            return starterModel;
         } else {
-            model.setProjectType(ProjectModel.ProjectType.HELLO_WORLD);
-            model.setFramework(frameworkCombo.getSelectionIndex() == 0 ? "flow" : "hilla");
-            model.setLanguage(languageCombo.getSelectionIndex() == 0 ? "java" : "kotlin");
-            model.setBuildTool(buildToolCombo.getSelectionIndex() == 0 ? "maven" : "gradle");
+            helloWorldModel.setProjectName(projectNameText.getText());
+            helloWorldModel.setLocation(locationText.getText());
+            helloWorldModel.setFramework(frameworkCombo.getSelectionIndex() == 0 ? "flow" : "hilla");
+            helloWorldModel.setLanguage(languageCombo.getSelectionIndex() == 0 ? "java" : "kotlin");
+            helloWorldModel.setBuildTool(buildToolCombo.getSelectionIndex() == 0 ? "maven" : "gradle");
 
             String[] architectures = { "springboot", "quarkus", "jakartaee", "servlet" };
-            model.setArchitecture(architectures[architectureCombo.getSelectionIndex()]);
+            helloWorldModel.setArchitecture(architectures[architectureCombo.getSelectionIndex()]);
+            return helloWorldModel;
         }
-
-        return model;
     }
 }

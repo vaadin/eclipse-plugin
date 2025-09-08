@@ -5,8 +5,6 @@ import static org.junit.Assert.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -27,8 +25,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.vaadin.plugin.wizards.AbstractProjectModel;
 import com.vaadin.plugin.wizards.NewVaadinProjectWizard;
-import com.vaadin.plugin.wizards.ProjectModel;
+import com.vaadin.plugin.wizards.StarterProjectModel;
 import com.vaadin.plugin.wizards.VaadinProjectWizardPage;
 
 /**
@@ -97,12 +96,11 @@ public class NewVaadinProjectWizardTest {
 		VaadinProjectWizardPage page = (VaadinProjectWizardPage) wizard.getPages()[0];
 
 		// Use reflection to access the project model
-		ProjectModel model = getProjectModel(page);
+		AbstractProjectModel model = getProjectModel(page);
 		assertNotNull("Page should have ProjectModel", model);
 
-		// Test default values
-		assertEquals("Default project type should be STARTER", ProjectModel.ProjectType.STARTER,
-				model.getProjectType());
+		// Test default values - should be StarterProjectModel by default
+		assertTrue("Default model should be StarterProjectModel", model instanceof StarterProjectModel);
 	}
 
 	@Test
@@ -256,23 +254,9 @@ public class NewVaadinProjectWizardTest {
 
 	// Helper methods
 
-	private ProjectModel getProjectModel(VaadinProjectWizardPage page) {
-		try {
-			// Use reflection to access the project model
-			Method method = VaadinProjectWizardPage.class.getDeclaredMethod("getProjectModel");
-			method.setAccessible(true);
-			return (ProjectModel) method.invoke(page);
-		} catch (Exception e) {
-			// If method doesn't exist, try field access
-			try {
-				Field field = VaadinProjectWizardPage.class.getDeclaredField("projectModel");
-				field.setAccessible(true);
-				return (ProjectModel) field.get(page);
-			} catch (Exception e2) {
-				// Create a default model for testing
-				return new ProjectModel();
-			}
-		}
+	private AbstractProjectModel getProjectModel(VaadinProjectWizardPage page) {
+		// Direct access to public method
+		return page.getProjectModel();
 	}
 
 	private boolean isValidProjectName(String name) {

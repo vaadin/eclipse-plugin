@@ -63,7 +63,7 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
 
     @Override
     public boolean performFinish() {
-        final ProjectModel model = mainPage.getProjectModel();
+        final AbstractProjectModel model = mainPage.getProjectModel();
 
         IRunnableWithProgress op = new IRunnableWithProgress() {
             @Override
@@ -91,7 +91,7 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
         return true;
     }
 
-    private void doFinish(ProjectModel model, IProgressMonitor monitor)
+    private void doFinish(AbstractProjectModel model, IProgressMonitor monitor)
             throws IOException, CoreException, InterruptedException {
         SubMonitor subMonitor = SubMonitor.convert(monitor, "Creating Vaadin project...", 100);
 
@@ -131,7 +131,7 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
         Files.deleteIfExists(tempZip);
     }
 
-    private Path downloadProject(ProjectModel model, IProgressMonitor monitor)
+    private Path downloadProject(AbstractProjectModel model, IProgressMonitor monitor)
             throws IOException, InterruptedException {
         String downloadUrl = model.getDownloadUrl();
         Path tempFile = Files.createTempFile("vaadin-project", ".zip");
