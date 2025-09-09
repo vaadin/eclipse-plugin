@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="vaadin-eclipse-plugin-feature"
+      label="Vaadin Eclipse Plugin"
+      version="1.0.0.qualifier"
+      provider-name="Vaadin">
+
+   <url>
+      <update url="https://cdn.vaadin.com/eclipse-plugin"/>
+   </url>
+
+   <plugin
+         id="vaadin-eclipse-plugin"
+         version="0.0.0"/>
+
+</feature>

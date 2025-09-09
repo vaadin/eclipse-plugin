@@ -21,6 +21,7 @@
         <module>vaadin-eclipse-plugin-main</module>
         <module>vaadin-eclipse-plugin.tests</module>
         <module>vaadin-eclipse-plugin-site</module>
+        <module>vaadin-eclipse-plugin-feature</module>
     </modules>
 
     <build>
