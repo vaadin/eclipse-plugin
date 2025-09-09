@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <bundle id="vaadin-eclipse-plugin" version="0.0.0">
+   <feature id="com.vaadin.eclipse.plugin.feature" version="0.0.0">
       <category name="vaadin"/>
-   </bundle>
+   </feature>
    <category-def name="vaadin" label="Vaadin">
       <description>
          Vaadin tools and utilities for Eclipse IDE
