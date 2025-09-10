@@ -28,6 +28,7 @@ public class VaadinProjectWizardPage extends WizardPage {
     private Text projectNameText;
     private Text locationText;
     private Button useDefaultLocationButton;
+    private Text groupIdText;
 
     // Starter project options
     private Button starterProjectRadio;
@@ -76,6 +77,22 @@ public class VaadinProjectWizardPage extends WizardPage {
         projectNameText.setLayoutData(gd);
         projectNameText.addModifyListener(new ModifyListener() {
             public void modifyText(ModifyEvent e) {
+                dialogChanged();
+            }
+        });
+
+        // Group ID
+        label = new Label(container, SWT.NULL);
+        label.setText("Group ID:");
+        groupIdText = new Text(container, SWT.BORDER | SWT.SINGLE);
+        gd = new GridData(GridData.FILL_HORIZONTAL);
+        gd.horizontalSpan = 2;
+        groupIdText.setLayoutData(gd);
+        groupIdText.setText(starterModel.getGroupId());
+        groupIdText.addModifyListener(new ModifyListener() {
+            public void modifyText(ModifyEvent e) {
+                starterModel.setGroupId(groupIdText.getText());
+                helloWorldModel.setGroupId(groupIdText.getText());
                 dialogChanged();
             }
         });
@@ -475,6 +492,7 @@ public class VaadinProjectWizardPage extends WizardPage {
 
         model.setProjectName(projectNameText.getText());
         model.setLocation(locationText.getText());
+        model.setGroupId(groupIdText.getText());
 
         if (starterProjectRadio != null && starterProjectRadio.getSelection()) {
             starterModel.setProjectName(projectNameText.getText());
