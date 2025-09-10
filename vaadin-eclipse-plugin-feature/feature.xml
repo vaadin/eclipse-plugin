@@ -11,7 +11,6 @@
         Helps to create new Vaadin projects using configurable starters.
         Boosts Vaadin Copilot experience.
         Helps to set up and run projects using HotSwap Agent.
-        Provides navigation to Flow @Route views in Endpoints tool window.
     </description>
 
    <url>
