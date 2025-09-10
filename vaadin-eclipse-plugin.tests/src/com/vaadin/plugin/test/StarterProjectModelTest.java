@@ -63,10 +63,16 @@ public class StarterProjectModelTest {
 	public void testFrameworkSelection() {
 		model.setProjectName("framework-test");
 
+		// Test Empty selection (neither Flow nor Hilla)
+		model.setIncludeFlow(false);
+		model.setIncludeHilla(false);
+		String url = model.getDownloadUrl();
+		assertTrue("Should have frameworks=flow", !url.matches(".*frameworks=.*"));
+
 		// Test Flow only
 		model.setIncludeFlow(true);
 		model.setIncludeHilla(false);
-		String url = model.getDownloadUrl();
+		url = model.getDownloadUrl();
 		assertTrue("Should have frameworks=flow", url.contains("frameworks=flow"));
 
 		// Test Hilla only
