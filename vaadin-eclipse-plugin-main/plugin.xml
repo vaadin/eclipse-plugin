@@ -32,7 +32,7 @@
      <shortcut
            id="com.vaadin.plugin.hotswap.launchShortcut"
            class="com.vaadin.plugin.hotswap.HotswapLaunchShortcut"
-           label="Vaadin Application"
+           label="Debug using Hotswap Agent"
            icon="icons/vaadin.png"
            modes="debug">
         <contextualLaunch>
