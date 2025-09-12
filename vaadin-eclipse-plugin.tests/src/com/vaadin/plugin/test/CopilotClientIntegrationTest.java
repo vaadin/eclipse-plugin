@@ -234,6 +234,87 @@ public class CopilotClientIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
+	public void testGetModulePathsWithNativePath() throws Exception {
+		// Test that getModulePaths works with native OS paths
+		// On Windows: paths with backslashes like "C:\\dev\\project"
+		// On Linux/Mac: paths with forward slashes like "/home/user/project"
+		// The Copilot JavaSourcePathDetector expects a response with a "project" field
+
+		// Get the actual project path as the OS would return it
+		String actualProjectPath = testProject.getLocation().toOSString();
+
+		// Use the native OS path format
+		String testPath = actualProjectPath;
+		if (System.getProperty("os.name").toLowerCase().contains("win")) {
+			// On Windows, verify path contains backslashes
+			assertTrue("Windows path should contain backslashes", testPath.contains("\\"));
+		} else {
+			// On Unix, verify path contains forward slashes
+			assertTrue("Unix path should contain forward slashes", testPath.contains("/"));
+		}
+
+		// Send a raw REST request simulating what Copilot sends
+		String jsonRequest = String.format("{\"command\":\"getModulePaths\",\"projectBasePath\":\"%s\",\"data\":{}}",
+				testPath.replace("\\", "\\\\") // Escape backslashes for JSON
+		);
+
+		java.net.http.HttpClient httpClient = java.net.http.HttpClient.newHttpClient();
+		java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+				.uri(java.net.URI.create(restService.getEndpoint())).header("Content-Type", "application/json")
+				.POST(java.net.http.HttpRequest.BodyPublishers.ofString(jsonRequest)).build();
+
+		java.net.http.HttpResponse<String> response = httpClient.send(request,
+				java.net.http.HttpResponse.BodyHandlers.ofString());
+
+		assertEquals("HTTP status should be 200", 200, response.statusCode());
+
+		// Parse the response
+		com.google.gson.JsonObject responseObj = new com.google.gson.Gson().fromJson(response.body(),
+				com.google.gson.JsonObject.class);
+
+		// CRITICAL: The response MUST have a "project" field, not an "error" field
+		// This is what fails without the fix - Copilot gets null for project field
+		assertFalse("Response should NOT contain error field", responseObj.has("error"));
+		assertTrue("Response MUST contain 'project' field for Copilot compatibility", responseObj.has("project"));
+
+		JsonObject project = responseObj.getAsJsonObject("project");
+		assertNotNull("Project field must not be null (causes NullPointerException in Copilot)", project);
+
+		assertTrue("Project must have basePath", project.has("basePath"));
+		assertTrue("Project must have modules array", project.has("modules"));
+
+		// The basePath in response should match the actual project location
+		String responseBasePath = project.get("basePath").getAsString();
+		// Compare normalized paths
+		String normalizedActual = actualProjectPath.replace('\\', '/');
+		String normalizedResponse = responseBasePath.replace('\\', '/');
+		assertEquals("Response basePath should match project location", normalizedActual, normalizedResponse);
+
+		// CRITICAL: Verify that the modules array contains actual data
+		// Without the fix, the project won't be found and this data won't be populated
+		com.google.gson.JsonArray modules = project.getAsJsonArray("modules");
+		assertNotNull("Modules array must not be null", modules);
+		assertTrue("At least one module should be present", modules.size() > 0);
+
+		// Check the first module has the expected fields
+		JsonObject firstModule = modules.get(0).getAsJsonObject();
+		assertTrue("Module must have name", firstModule.has("name"));
+		assertTrue("Module must have contentRoots", firstModule.has("contentRoots"));
+
+		// Since this is a test project, it should have the test project name
+		String moduleName = firstModule.get("name").getAsString();
+		assertEquals("Module name should match test project", "vaadin-test-project", moduleName);
+
+		// Verify contentRoots contains actual paths
+		com.google.gson.JsonArray contentRoots = firstModule.getAsJsonArray("contentRoots");
+		assertTrue("Content roots should not be empty", contentRoots.size() > 0);
+		String contentRoot = contentRoots.get(0).getAsString();
+		// The content root should be a valid path containing the project name
+		assertTrue("Content root should contain project name",
+				contentRoot.replace('\\', '/').contains("vaadin-test-project"));
+	}
+
+	@Test
 	public void testClientErrorHandling() throws Exception {
 		// Test with invalid project path
 		CopilotClient invalidClient = new CopilotClient(restService.getEndpoint(), "/invalid/project/path");
