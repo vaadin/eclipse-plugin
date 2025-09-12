@@ -5,6 +5,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 
 /**
  * Utility class for logging messages in the Vaadin Eclipse Plugin.
@@ -12,11 +13,16 @@ import org.osgi.framework.Bundle;
  */
 public class VaadinPluginLog {
     
-    private static final String PLUGIN_ID = "com.vaadin.eclipse.plugin";
+    private static final String PLUGIN_ID = "vaadin-eclipse-plugin";
     private static ILog log;
     
     static {
+        // Try to get the bundle using the correct plugin ID
         Bundle bundle = Platform.getBundle(PLUGIN_ID);
+        if (bundle == null) {
+            // Fallback: try to get the bundle from a class in this plugin
+            bundle = FrameworkUtil.getBundle(VaadinPluginLog.class);
+        }
         if (bundle != null) {
             log = Platform.getLog(bundle);
         }
