@@ -47,14 +47,14 @@ public abstract class BaseIntegrationTest {
 			if (testProject.isOpen()) {
 				testProject.close(null);
 			}
-			
+
 			// Add a small delay to allow file handles to be released on Windows
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
 				// Ignore
 			}
-			
+
 			// Try to delete with retry logic for Windows file locking issues
 			int retries = 3;
 			CoreException lastException = null;

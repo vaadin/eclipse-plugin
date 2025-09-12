@@ -271,8 +271,9 @@ public class VaadinBuilderConfiguratorTest {
 		// Verify content contains npmFolder
 		String content = readFileContent(flowBuildInfo);
 		assertTrue("flow-build-info.json should contain npmFolder", content.contains("npmFolder"));
+		// JSON should contain native OS paths
 		assertTrue("npmFolder should point to project location",
-				content.contains(testProject.getLocation().toPortableString()));
+				content.contains(testProject.getLocation().toOSString()));
 	}
 
 	@Test
