@@ -15,6 +15,7 @@ import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.IVMInstallType;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.launching.VMStandin;
+
 import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**

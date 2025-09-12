@@ -597,8 +597,9 @@ public class CopilotRestService {
                                             editor.selectAndReveal(offset, 0);
                                         } catch (BadLocationException e) {
                                             // If line/column is invalid, just open the file
-                                            VaadinPluginLog.warning("Invalid line/column, opening file without navigation: "
-                                                    + e.getMessage());
+                                            VaadinPluginLog
+                                                    .warning("Invalid line/column, opening file without navigation: "
+                                                            + e.getMessage());
                                         }
                                     }
                                 }
@@ -608,7 +609,8 @@ public class CopilotRestService {
                             }
                         }
 
-                        VaadinPluginLog.info("File opened in IDE: " + fileName + " at " + finalLine + ":" + finalColumn);
+                        VaadinPluginLog
+                                .info("File opened in IDE: " + fileName + " at " + finalLine + ":" + finalColumn);
 
                     } catch (PartInitException e) {
                         VaadinPluginLog.error("Error opening file in IDE: " + e.getMessage(), e);
