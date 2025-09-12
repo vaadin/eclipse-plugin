@@ -3,6 +3,7 @@ package com.vaadin.plugin;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
  * Utility class for Copilot integration.
@@ -41,10 +42,9 @@ public class CopilotUtil {
                 props.store(fos, "Vaadin Copilot Integration Runtime Properties");
             }
 
-            System.out.println("Created copilot dotfile at: " + dotFile.getAbsolutePath());
+            VaadinPluginLog.info("Created copilot dotfile at: " + dotFile.getAbsolutePath());
         } catch (Exception e) {
-            System.err.println("Failed to create copilot dotfile: " + e.getMessage());
-            e.printStackTrace();
+            VaadinPluginLog.error("Failed to create copilot dotfile: " + e.getMessage(), e);
         }
     }
 }

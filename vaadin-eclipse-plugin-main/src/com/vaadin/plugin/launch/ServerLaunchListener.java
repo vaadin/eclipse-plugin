@@ -8,6 +8,7 @@ import org.eclipse.debug.core.ILaunchListener;
 import org.eclipse.wst.server.core.IModule;
 import org.eclipse.wst.server.core.IServer;
 import org.eclipse.wst.server.core.ServerUtil;
+import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
  * Listener that hooks into server launch events to trigger a build for Vaadin projects. The Vaadin builder will
@@ -46,7 +47,7 @@ public class ServerLaunchListener implements ILaunchListener {
 
         } catch (Exception e) {
             // Log but don't fail the launch
-            System.err.println("Failed to trigger build: " + e.getMessage());
+            VaadinPluginLog.error("Failed to trigger build: " + e.getMessage());
         }
     }
 

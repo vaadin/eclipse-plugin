@@ -43,6 +43,7 @@ import com.google.gson.JsonParser;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
  * Starts a small HTTP server for Copilot integration.
@@ -74,16 +75,15 @@ public class CopilotRestService {
             // Get the actual port after binding
             int actualPort = server.getAddress().getPort();
             endpoint = "http://localhost:" + actualPort + contextPath;
-            System.out.println("Copilot REST service started successfully!");
-            System.out.println("  Main endpoint: " + endpoint);
-            System.out.println("  Health check: http://localhost:" + actualPort + "/health");
-            System.out.println("  Server is listening on port " + actualPort);
+            VaadinPluginLog.info("Copilot REST service started successfully!");
+            VaadinPluginLog.info("  Main endpoint: " + endpoint);
+            VaadinPluginLog.info("  Health check: http://localhost:" + actualPort + "/health");
+            VaadinPluginLog.info("  Server is listening on port " + actualPort);
 
             // Create dotfiles for all open projects
             createDotFilesForOpenProjects();
         } catch (IOException e) {
-            System.err.println("Failed to start Copilot REST service: " + e.getMessage());
-            e.printStackTrace();
+            VaadinPluginLog.error("Failed to start Copilot REST service: " + e.getMessage(), e);
             throw e;
         }
     }
@@ -112,8 +112,7 @@ public class CopilotRestService {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Failed to create dotfiles: " + e.getMessage());
-            e.printStackTrace();
+            VaadinPluginLog.error("Failed to create dotfiles: " + e.getMessage(), e);
         }
     }
 
@@ -165,7 +164,7 @@ public class CopilotRestService {
             InputStream is = exchange.getRequestBody();
             String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
 
-            System.out.println("Received Copilot request: " + body);
+            VaadinPluginLog.debug("Received Copilot request: " + body);
 
             try {
                 JsonObject requestJson = JsonParser.parseString(body).getAsJsonObject();
@@ -184,7 +183,7 @@ public class CopilotRestService {
                     os.write(responseBytes);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                VaadinPluginLog.error("Error in HTTP request handler", e);
                 byte[] errorBytes = createErrorResponse(e.getMessage()).getBytes(StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
                 exchange.sendResponseHeaders(500, errorBytes.length);
@@ -195,7 +194,7 @@ public class CopilotRestService {
         }
 
         private String handleCommand(String command, String projectBasePath, JsonObject data) {
-            System.out.println("Handling command: " + command + " for project: " + projectBasePath);
+            VaadinPluginLog.debug("Handling command: " + command + " for project: " + projectBasePath);
 
             // Find the Eclipse project
             IProject project = findProject(projectBasePath);
@@ -259,7 +258,7 @@ public class CopilotRestService {
                 String content = data.get("content").getAsString();
                 String undoLabel = data.has("undoLabel") ? data.get("undoLabel").getAsString() : null;
 
-                System.out.println("Write command for project: " + project.getName() + ", file: " + fileName);
+                VaadinPluginLog.debug("Write command for project: " + project.getName() + ", file: " + fileName);
 
                 // Convert absolute path to workspace-relative path
                 IPath filePath = new org.eclipse.core.runtime.Path(fileName);
@@ -310,16 +309,14 @@ public class CopilotRestService {
                     CopilotUndoManager.getInstance().recordOperation(finalFile, oldContent, finalContent, undoLabel);
 
                 } catch (Exception e) {
-                    System.err.println("Error writing file: " + e.getMessage());
-                    e.printStackTrace();
+                    VaadinPluginLog.error("Error writing file: " + e.getMessage(), e);
                     return createErrorResponse(e.getMessage());
                 }
 
                 return createSuccessResponse();
 
             } catch (Exception e) {
-                System.err.println("Error in write handler: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error in write handler: " + e.getMessage(), e);
                 return createErrorResponse(e.getMessage());
             }
         }
@@ -330,7 +327,7 @@ public class CopilotRestService {
                 String base64Content = data.get("content").getAsString();
                 String undoLabel = data.has("undoLabel") ? data.get("undoLabel").getAsString() : null;
 
-                System.out.println("WriteBase64 command for project: " + project.getName() + ", file: " + fileName);
+                VaadinPluginLog.debug("WriteBase64 command for project: " + project.getName() + ", file: " + fileName);
 
                 // Convert absolute path to workspace-relative path
                 IPath filePath = new org.eclipse.core.runtime.Path(fileName);
@@ -384,16 +381,14 @@ public class CopilotRestService {
                             undoLabel, true);
 
                 } catch (Exception e) {
-                    System.err.println("Error writing base64 file: " + e.getMessage());
-                    e.printStackTrace();
+                    VaadinPluginLog.error("Error writing base64 file: " + e.getMessage(), e);
                     return createErrorResponse(e.getMessage());
                 }
 
                 return createSuccessResponse();
 
             } catch (Exception e) {
-                System.err.println("Error in writeBase64 handler: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error in writeBase64 handler: " + e.getMessage(), e);
                 return createErrorResponse(e.getMessage());
             }
         }
@@ -402,7 +397,7 @@ public class CopilotRestService {
             try {
                 String fileName = data.get("file").getAsString();
 
-                System.out.println("Delete command for project: " + project.getName() + ", file: " + fileName);
+                VaadinPluginLog.debug("Delete command for project: " + project.getName() + ", file: " + fileName);
 
                 // Convert absolute path to workspace-relative path
                 IPath filePath = new org.eclipse.core.runtime.Path(fileName);
@@ -436,29 +431,27 @@ public class CopilotRestService {
                     }
 
                     finalFile.delete(true, null);
-                    System.out.println("File deleted: " + fileName);
+                    VaadinPluginLog.info("File deleted: " + fileName);
 
                     // Record delete as setting content to empty (can be undone by recreating with
                     // old content)
                     CopilotUndoManager.getInstance().recordOperation(finalFile, oldContent, "", "Delete " + fileName);
 
                 } catch (Exception e) {
-                    System.err.println("Error deleting file: " + e.getMessage());
-                    e.printStackTrace();
+                    VaadinPluginLog.error("Error deleting file: " + e.getMessage(), e);
                     return createErrorResponse(e.getMessage());
                 }
 
                 return createSuccessResponse();
 
             } catch (Exception e) {
-                System.err.println("Error in delete handler: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error in delete handler: " + e.getMessage(), e);
                 return createErrorResponse(e.getMessage());
             }
         }
 
         private String handleUndo(IProject project, JsonObject data) {
-            System.out.println("Undo command for project: " + project.getName());
+            VaadinPluginLog.debug("Undo command for project: " + project.getName());
 
             try {
                 List<String> filePaths = new ArrayList<>();
@@ -479,8 +472,7 @@ public class CopilotRestService {
                 return createResponse(response);
 
             } catch (Exception e) {
-                System.err.println("Error performing undo: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error performing undo: " + e.getMessage(), e);
                 Map<String, Object> response = new HashMap<>();
                 response.put("performed", false);
                 response.put("error", e.getMessage());
@@ -489,7 +481,7 @@ public class CopilotRestService {
         }
 
         private String handleRedo(IProject project, JsonObject data) {
-            System.out.println("Redo command for project: " + project.getName());
+            VaadinPluginLog.debug("Redo command for project: " + project.getName());
 
             try {
                 List<String> filePaths = new ArrayList<>();
@@ -510,8 +502,7 @@ public class CopilotRestService {
                 return createResponse(response);
 
             } catch (Exception e) {
-                System.err.println("Error performing redo: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error performing redo: " + e.getMessage(), e);
                 Map<String, Object> response = new HashMap<>();
                 response.put("performed", false);
                 response.put("error", e.getMessage());
@@ -521,25 +512,23 @@ public class CopilotRestService {
 
         private String handleRefresh(IProject project) {
             try {
-                System.out.println("Refresh command for project: " + project.getName());
+                VaadinPluginLog.debug("Refresh command for project: " + project.getName());
 
                 // Execute refresh operation - no UI thread needed
                 try {
                     // Refresh the entire project
                     project.refreshLocal(IResource.DEPTH_INFINITE, null);
-                    System.out.println("Project refreshed: " + project.getName());
+                    VaadinPluginLog.info("Project refreshed: " + project.getName());
 
                 } catch (Exception e) {
-                    System.err.println("Error refreshing project: " + e.getMessage());
-                    e.printStackTrace();
+                    VaadinPluginLog.error("Error refreshing project: " + e.getMessage(), e);
                     return createErrorResponse(e.getMessage());
                 }
 
                 return createSuccessResponse();
 
             } catch (Exception e) {
-                System.err.println("Error in refresh handler: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error in refresh handler: " + e.getMessage(), e);
                 return createErrorResponse(e.getMessage());
             }
         }
@@ -550,7 +539,7 @@ public class CopilotRestService {
                 int line = data.has("line") ? data.get("line").getAsInt() : 0;
                 int column = data.has("column") ? data.get("column").getAsInt() : 0;
 
-                System.out.println("ShowInIde command for project: " + project.getName() + ", file: " + fileName
+                VaadinPluginLog.debug("ShowInIde command for project: " + project.getName() + ", file: " + fileName
                         + ", line: " + line + ", column: " + column);
 
                 if (line < 0 || column < 0) {
@@ -581,7 +570,7 @@ public class CopilotRestService {
                 // Execute show in IDE operation in UI thread (only if workbench is available)
                 if (!PlatformUI.isWorkbenchRunning()) {
                     // In headless mode, we can't open editors
-                    System.out.println("Workbench not available for showInIde operation");
+                    VaadinPluginLog.info("Workbench not available for showInIde operation");
                     Map<String, Object> response = new HashMap<>();
                     response.put("status", "ok"); // Still return success for testing
                     response.put("message", "Operation would open " + fileName + " at line " + finalLine);
@@ -608,7 +597,7 @@ public class CopilotRestService {
                                             editor.selectAndReveal(offset, 0);
                                         } catch (BadLocationException e) {
                                             // If line/column is invalid, just open the file
-                                            System.err.println("Invalid line/column, opening file without navigation: "
+                                            VaadinPluginLog.warning("Invalid line/column, opening file without navigation: "
                                                     + e.getMessage());
                                         }
                                     }
@@ -619,25 +608,23 @@ public class CopilotRestService {
                             }
                         }
 
-                        System.out.println("File opened in IDE: " + fileName + " at " + finalLine + ":" + finalColumn);
+                        VaadinPluginLog.info("File opened in IDE: " + fileName + " at " + finalLine + ":" + finalColumn);
 
                     } catch (PartInitException e) {
-                        System.err.println("Error opening file in IDE: " + e.getMessage());
-                        e.printStackTrace();
+                        VaadinPluginLog.error("Error opening file in IDE: " + e.getMessage(), e);
                     }
                 });
 
                 return createSuccessResponse();
 
             } catch (Exception e) {
-                System.err.println("Error in showInIde handler: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error in showInIde handler: " + e.getMessage(), e);
                 return createErrorResponse(e.getMessage());
             }
         }
 
         private String handleGetModulePaths(IProject project) {
-            System.out.println("GetModulePaths command for project: " + project.getName());
+            VaadinPluginLog.debug("GetModulePaths command for project: " + project.getName());
 
             Map<String, Object> response = new HashMap<>();
             Map<String, Object> projectInfo = new HashMap<>();
@@ -722,8 +709,7 @@ public class CopilotRestService {
                 }
 
             } catch (Exception e) {
-                System.err.println("Error getting module paths: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error getting module paths: " + e.getMessage(), e);
             }
 
             projectInfo.put("basePath", project.getLocation().toString());
@@ -734,7 +720,7 @@ public class CopilotRestService {
         }
 
         private String handleCompileFiles(IProject project, JsonObject data) {
-            System.out.println("CompileFiles command for project: " + project.getName());
+            VaadinPluginLog.debug("CompileFiles command for project: " + project.getName());
 
             try {
                 // Get the list of files to compile
@@ -743,20 +729,19 @@ public class CopilotRestService {
                     // We trigger a build for the project
                     project.build(org.eclipse.core.resources.IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
 
-                    System.out.println("Triggered incremental build for project: " + project.getName());
+                    VaadinPluginLog.info("Triggered incremental build for project: " + project.getName());
                 }
 
                 return createSuccessResponse();
 
             } catch (Exception e) {
-                System.err.println("Error compiling files: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error compiling files: " + e.getMessage(), e);
                 return createErrorResponse(e.getMessage());
             }
         }
 
         private String handleRestartApplication(IProject project, JsonObject data) {
-            System.out.println("RestartApplication command for project: " + project.getName());
+            VaadinPluginLog.debug("RestartApplication command for project: " + project.getName());
 
             try {
                 String mainClass = data.has("mainClass") ? data.get("mainClass").getAsString() : null;
@@ -845,7 +830,7 @@ public class CopilotRestService {
                         finalConfig.launch(ILaunchManager.RUN_MODE, null);
                     }
 
-                    System.out.println("Restarted application for project: " + project.getName());
+                    VaadinPluginLog.info("Restarted application for project: " + project.getName());
 
                     Map<String, Object> response = new HashMap<>();
                     response.put("status", "ok");
@@ -853,7 +838,7 @@ public class CopilotRestService {
                     return createResponse(response);
                 } else {
                     // No configuration found - this is OK, just log it
-                    System.out.println("No launch configuration found for project: " + project.getName());
+                    VaadinPluginLog.info("No launch configuration found for project: " + project.getName());
 
                     Map<String, Object> response = new HashMap<>();
                     response.put("status", "ok");
@@ -862,14 +847,13 @@ public class CopilotRestService {
                 }
 
             } catch (Exception e) {
-                System.err.println("Error restarting application: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error restarting application: " + e.getMessage(), e);
                 return createErrorResponse(e.getMessage());
             }
         }
 
         private String handleGetVaadinRoutes(IProject project) {
-            System.out.println("GetVaadinRoutes command for project: " + project.getName());
+            VaadinPluginLog.debug("GetVaadinRoutes command for project: " + project.getName());
 
             List<Map<String, Object>> routes = new ArrayList<>();
 
@@ -878,11 +862,10 @@ public class CopilotRestService {
                     IJavaProject javaProject = JavaCore.create(project);
                     VaadinProjectAnalyzer analyzer = new VaadinProjectAnalyzer(javaProject);
                     routes = analyzer.findVaadinRoutes();
-                    System.out.println("Found " + routes.size() + " Vaadin routes");
+                    VaadinPluginLog.info("Found " + routes.size() + " Vaadin routes");
                 }
             } catch (Exception e) {
-                System.err.println("Error getting Vaadin routes: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error getting Vaadin routes: " + e.getMessage(), e);
             }
 
             Map<String, Object> response = new HashMap<>();
@@ -891,7 +874,7 @@ public class CopilotRestService {
         }
 
         private String handleGetVaadinVersion(IProject project) {
-            System.out.println("GetVaadinVersion command for project: " + project.getName());
+            VaadinPluginLog.debug("GetVaadinVersion command for project: " + project.getName());
 
             try {
                 // Check if it's a Java project
@@ -942,8 +925,7 @@ public class CopilotRestService {
                 return createResponse(response);
 
             } catch (Exception e) {
-                System.err.println("Error getting Vaadin version: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error getting Vaadin version: " + e.getMessage(), e);
                 Map<String, Object> response = new HashMap<>();
                 response.put("version", "N/A");
                 return createResponse(response);
@@ -951,7 +933,7 @@ public class CopilotRestService {
         }
 
         private String handleGetVaadinComponents(IProject project, JsonObject data) {
-            System.out.println("GetVaadinComponents command for project: " + project.getName());
+            VaadinPluginLog.debug("GetVaadinComponents command for project: " + project.getName());
 
             boolean includeMethods = data.has("includeMethods") && data.get("includeMethods").getAsBoolean();
             List<Map<String, Object>> components = new ArrayList<>();
@@ -961,11 +943,10 @@ public class CopilotRestService {
                     IJavaProject javaProject = JavaCore.create(project);
                     VaadinProjectAnalyzer analyzer = new VaadinProjectAnalyzer(javaProject);
                     components = analyzer.findVaadinComponents(includeMethods);
-                    System.out.println("Found " + components.size() + " Vaadin components");
+                    VaadinPluginLog.info("Found " + components.size() + " Vaadin components");
                 }
             } catch (Exception e) {
-                System.err.println("Error getting Vaadin components: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error getting Vaadin components: " + e.getMessage(), e);
             }
 
             Map<String, Object> response = new HashMap<>();
@@ -974,7 +955,7 @@ public class CopilotRestService {
         }
 
         private String handleGetVaadinEntities(IProject project, JsonObject data) {
-            System.out.println("GetVaadinEntities command for project: " + project.getName());
+            VaadinPluginLog.debug("GetVaadinEntities command for project: " + project.getName());
 
             boolean includeMethods = data.has("includeMethods") && data.get("includeMethods").getAsBoolean();
             List<Map<String, Object>> entities = new ArrayList<>();
@@ -984,11 +965,10 @@ public class CopilotRestService {
                     IJavaProject javaProject = JavaCore.create(project);
                     VaadinProjectAnalyzer analyzer = new VaadinProjectAnalyzer(javaProject);
                     entities = analyzer.findEntities(includeMethods);
-                    System.out.println("Found " + entities.size() + " JPA entities");
+                    VaadinPluginLog.info("Found " + entities.size() + " JPA entities");
                 }
             } catch (Exception e) {
-                System.err.println("Error getting Vaadin entities: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error getting Vaadin entities: " + e.getMessage(), e);
             }
 
             Map<String, Object> response = new HashMap<>();
@@ -997,7 +977,7 @@ public class CopilotRestService {
         }
 
         private String handleGetVaadinSecurity(IProject project) {
-            System.out.println("GetVaadinSecurity command for project: " + project.getName());
+            VaadinPluginLog.debug("GetVaadinSecurity command for project: " + project.getName());
 
             List<Map<String, Object>> security = new ArrayList<>();
             List<Map<String, Object>> userDetails = new ArrayList<>();
@@ -1008,12 +988,11 @@ public class CopilotRestService {
                     VaadinProjectAnalyzer analyzer = new VaadinProjectAnalyzer(javaProject);
                     security = analyzer.findSecurityConfigurations();
                     userDetails = analyzer.findUserDetailsServices();
-                    System.out.println("Found " + security.size() + " security configs and " + userDetails.size()
+                    VaadinPluginLog.info("Found " + security.size() + " security configs and " + userDetails.size()
                             + " user detail services");
                 }
             } catch (Exception e) {
-                System.err.println("Error getting Vaadin security: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error getting Vaadin security: " + e.getMessage(), e);
             }
 
             Map<String, Object> response = new HashMap<>();
@@ -1023,7 +1002,7 @@ public class CopilotRestService {
         }
 
         private String handleReloadMavenModule(IProject project, JsonObject data) {
-            System.out.println("ReloadMavenModule command for project: " + project.getName());
+            VaadinPluginLog.debug("ReloadMavenModule command for project: " + project.getName());
 
             try {
                 String moduleName = data.has("moduleName") ? data.get("moduleName").getAsString() : null;
@@ -1037,25 +1016,24 @@ public class CopilotRestService {
                     IProject moduleProject = ResourcesPlugin.getWorkspace().getRoot().getProject(moduleName);
                     if (moduleProject != null && moduleProject.exists()) {
                         moduleProject.refreshLocal(IResource.DEPTH_INFINITE, null);
-                        System.out.println("Refreshed Maven module: " + moduleName);
+                        VaadinPluginLog.info("Refreshed Maven module: " + moduleName);
                     }
                 } else {
                     // Refresh the main project
                     project.refreshLocal(IResource.DEPTH_INFINITE, null);
-                    System.out.println("Refreshed Maven project: " + project.getName());
+                    VaadinPluginLog.info("Refreshed Maven project: " + project.getName());
                 }
 
                 return createSuccessResponse();
 
             } catch (Exception e) {
-                System.err.println("Error reloading Maven module: " + e.getMessage());
-                e.printStackTrace();
+                VaadinPluginLog.error("Error reloading Maven module: " + e.getMessage(), e);
                 return createErrorResponse(e.getMessage());
             }
         }
 
         private String handleHeartbeat(IProject project) {
-            System.out.println("Heartbeat command for project: " + project.getName());
+            VaadinPluginLog.debug("Heartbeat command for project: " + project.getName());
             Map<String, Object> response = new HashMap<>();
             response.put("status", "alive");
             response.put("version", "1.0.0");

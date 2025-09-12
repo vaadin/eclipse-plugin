@@ -15,6 +15,7 @@ import java.util.jar.Manifest;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Platform;
 import org.osgi.framework.Bundle;
+import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
  * Manages the Hotswap Agent installation and updates. Handles downloading, installing, and version management of
@@ -51,7 +52,7 @@ public class HotswapAgentManager {
         try {
             Files.createDirectories(vaadinHomePath);
         } catch (IOException e) {
-            System.err.println("Failed to create Vaadin home directory: " + e.getMessage());
+            VaadinPluginLog.error("Failed to create Vaadin home directory: " + e.getMessage());
         }
     }
 
@@ -103,16 +104,15 @@ public class HotswapAgentManager {
                 try (InputStream in = fileUrl.openStream()) {
                     Files.copy(in, hotswapAgentPath, StandardCopyOption.REPLACE_EXISTING);
                 }
-                System.out.println("Installed Hotswap Agent version: " + bundledVersion);
+                VaadinPluginLog.info("Installed Hotswap Agent version: " + bundledVersion);
                 return bundledVersion;
             } else {
-                System.out.println("Hotswap Agent is up to date: " + installedVersion);
+                VaadinPluginLog.info("Hotswap Agent is up to date: " + installedVersion);
                 return installedVersion;
             }
 
         } catch (Exception e) {
-            System.err.println("Failed to install Hotswap Agent: " + e.getMessage());
-            e.printStackTrace();
+            VaadinPluginLog.error("Failed to install Hotswap Agent: " + e.getMessage(), e);
             return null;
         }
     }

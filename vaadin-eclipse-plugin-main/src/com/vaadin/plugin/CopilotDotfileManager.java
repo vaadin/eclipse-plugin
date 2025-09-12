@@ -19,6 +19,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
  * Manages the .copilot-plugin dotfile for Vaadin projects. Creates the dotfile in .eclipse folder when a Vaadin project
@@ -107,7 +108,7 @@ public class CopilotDotfileManager implements IResourceChangeListener {
                     }
                 });
             } catch (CoreException e) {
-                e.printStackTrace();
+                VaadinPluginLog.error("Error in resource change listener", e);
             }
         } else if (event.getType() == IResourceChangeEvent.PRE_CLOSE
                 || event.getType() == IResourceChangeEvent.PRE_DELETE) {
@@ -223,17 +224,16 @@ public class CopilotDotfileManager implements IResourceChangeListener {
                     }
                 } catch (CoreException e) {
                     // Log but don't fail - refresh is not critical
-                    System.err.println("Failed to refresh project " + project.getName() + ": " + e.getMessage());
+                    VaadinPluginLog.error("Failed to refresh project " + project.getName() + ": " + e.getMessage());
                 }
             });
             refreshJob.setRule(project);
             refreshJob.schedule(100); // Small delay to ensure resource tree is unlocked
 
-            System.out.println("Created .copilot-plugin dotfile for project: " + project.getName());
+            VaadinPluginLog.info("Created .copilot-plugin dotfile for project: " + project.getName());
 
         } catch (Exception e) {
-            System.err.println("Failed to create dotfile for project " + project.getName() + ": " + e.getMessage());
-            e.printStackTrace();
+            VaadinPluginLog.error("Failed to create dotfile for project " + project.getName() + ": " + e.getMessage(), e);
         }
     }
 
@@ -250,11 +250,11 @@ public class CopilotDotfileManager implements IResourceChangeListener {
             Path dotfilePath = Paths.get(projectLocation.toString(), ECLIPSE_FOLDER, DOTFILE_NAME);
             if (Files.exists(dotfilePath)) {
                 Files.delete(dotfilePath);
-                System.out.println("Removed .copilot-plugin dotfile for project: " + project.getName());
+                VaadinPluginLog.info("Removed .copilot-plugin dotfile for project: " + project.getName());
             }
 
         } catch (Exception e) {
-            System.err.println("Failed to remove dotfile for project " + project.getName() + ": " + e.getMessage());
+            VaadinPluginLog.error("Failed to remove dotfile for project " + project.getName() + ": " + e.getMessage());
         }
     }
 

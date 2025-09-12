@@ -6,6 +6,7 @@ import org.osgi.framework.BundleContext;
 
 import com.vaadin.plugin.debug.SilentExceptionFilter;
 import com.vaadin.plugin.launch.ServerLaunchListener;
+import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
  * Bundle activator that starts the REST service when the plug-in is activated and stops it on shutdown.
@@ -37,8 +38,7 @@ public class Activator implements BundleActivator {
             // Update all dotfiles with the current endpoint
             dotfileManager.updateAllDotfiles();
         } catch (Exception e) {
-            System.err.println("Failed to start Vaadin Eclipse Plugin: " + e.getMessage());
-            e.printStackTrace();
+            VaadinPluginLog.error("Failed to start Vaadin Eclipse Plugin: " + e.getMessage(), e);
             // Clean up any partially initialized resources
             stop(context);
             throw e;

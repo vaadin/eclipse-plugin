@@ -10,6 +10,8 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.JavaCore;
 
+import com.vaadin.plugin.util.VaadinPluginLog;
+
 /**
  * Automatically adds the Vaadin builder to Java projects. The builder itself will check for Vaadin dependencies.
  */
@@ -20,13 +22,13 @@ public class VaadinBuilderConfigurator implements IResourceChangeListener {
     public static void initialize() {
         if (instance == null) {
             instance = new VaadinBuilderConfigurator();
-            System.out.println("VaadinBuilderConfigurator: Initializing...");
+            VaadinPluginLog.info("VaadinBuilderConfigurator: Initializing...");
 
             ResourcesPlugin.getWorkspace().addResourceChangeListener(instance, IResourceChangeEvent.POST_CHANGE);
 
             // Configure existing projects
             IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
-            System.out.println("VaadinBuilderConfigurator: Found " + projects.length + " projects");
+            VaadinPluginLog.info("VaadinBuilderConfigurator: Found " + projects.length + " projects");
 
             for (IProject project : projects) {
                 instance.configureProject(project);
@@ -62,15 +64,15 @@ public class VaadinBuilderConfigurator implements IResourceChangeListener {
 
     private void configureProject(IProject project) {
         try {
-            System.out.println("VaadinBuilderConfigurator: Checking project " + project.getName());
+            VaadinPluginLog.debug("VaadinBuilderConfigurator: Checking project " + project.getName());
 
             if (!project.isOpen()) {
-                System.out.println("  - Project is not open");
+                VaadinPluginLog.debug("  - Project is not open");
                 return;
             }
 
             if (!project.hasNature(JavaCore.NATURE_ID)) {
-                System.out.println("  - Not a Java project");
+                VaadinPluginLog.debug("  - Not a Java project");
                 return;
             }
 
@@ -80,7 +82,7 @@ public class VaadinBuilderConfigurator implements IResourceChangeListener {
             // Check if builder is already present
             for (ICommand command : commands) {
                 if (VaadinBuildParticipant.BUILDER_ID.equals(command.getBuilderName())) {
-                    System.out.println("  - Builder already configured");
+                    VaadinPluginLog.debug("  - Builder already configured");
                     return; // Already configured
                 }
             }
@@ -96,10 +98,10 @@ public class VaadinBuilderConfigurator implements IResourceChangeListener {
             desc.setBuildSpec(newCommands);
             project.setDescription(desc, null);
 
-            System.out.println("  - Added Vaadin builder to project: " + project.getName());
+            VaadinPluginLog.info("  - Added Vaadin builder to project: " + project.getName());
 
         } catch (CoreException e) {
-            System.out.println("  - Error configuring project: " + e.getMessage());
+            VaadinPluginLog.warning("  - Error configuring project: " + e.getMessage(), e);
         }
     }
 

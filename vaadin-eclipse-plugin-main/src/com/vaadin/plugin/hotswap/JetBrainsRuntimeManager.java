@@ -15,6 +15,7 @@ import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.IVMInstallType;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.launching.VMStandin;
+import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
  * Manages JetBrains Runtime (JBR) installation and configuration. JBR is required for enhanced class redefinition
@@ -56,7 +57,7 @@ public class JetBrainsRuntimeManager {
         try {
             Files.createDirectories(jbrInstallPath);
         } catch (IOException e) {
-            System.err.println("Failed to create JBR directory: " + e.getMessage());
+            VaadinPluginLog.error("Failed to create JBR directory: " + e.getMessage());
         }
     }
 
@@ -203,7 +204,7 @@ public class JetBrainsRuntimeManager {
             monitor.subTask("Downloading JBR...");
             // Download logic would go here
             // For now, we'll just print a message
-            System.out.println("Would download JBR from: " + downloadUrl);
+            VaadinPluginLog.debug("Would download JBR from: " + downloadUrl);
 
             monitor.worked(50);
 
@@ -220,8 +221,7 @@ public class JetBrainsRuntimeManager {
             return null; // Would return the installed JBR
 
         } catch (Exception e) {
-            System.err.println("Failed to download JBR: " + e.getMessage());
-            e.printStackTrace();
+            VaadinPluginLog.error("Failed to download JBR: " + e.getMessage(), e);
             return null;
         } finally {
             monitor.done();
@@ -260,8 +260,7 @@ public class JetBrainsRuntimeManager {
             return vm;
 
         } catch (Exception e) {
-            System.err.println("Failed to register JBR: " + e.getMessage());
-            e.printStackTrace();
+            VaadinPluginLog.error("Failed to register JBR: " + e.getMessage(), e);
             return null;
         }
     }
