@@ -15,6 +15,7 @@ import java.util.jar.Manifest;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Platform;
 import org.osgi.framework.Bundle;
+
 import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**

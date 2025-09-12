@@ -37,7 +37,7 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 		try {
 			restService.start();
 			String endpoint = restService.getEndpoint();
-			String projectPath = testProject.getLocation().toString();
+			String projectPath = testProject.getLocation().toOSString();
 
 			client = new CopilotClient(endpoint, projectPath);
 
@@ -128,7 +128,7 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 		createFile(testProject, "pom.xml", parentPomContent);
 
 		// Create module-a as a nested Eclipse project
-		String moduleALocation = testProject.getLocation().append("module-a").toString();
+		String moduleALocation = testProject.getLocation().append("module-a").toOSString();
 		org.eclipse.core.resources.IProject moduleA = createNestedProject("module-a", moduleALocation);
 
 		// Add Java nature to module-a
@@ -160,7 +160,7 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 		createFile(moduleA, "pom.xml", moduleAPomContent);
 
 		// Create module-b as another nested Eclipse project
-		String moduleBLocation = testProject.getLocation().append("module-b").toString();
+		String moduleBLocation = testProject.getLocation().append("module-b").toOSString();
 		org.eclipse.core.resources.IProject moduleB = createNestedProject("module-b", moduleBLocation);
 
 		// Add Java nature to module-b
@@ -202,7 +202,7 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 		assertTrue("Should have modules", project.has("modules"));
 
 		String basePath = project.get("basePath").getAsString();
-		assertEquals("Base path should be parent project", testProject.getLocation().toString(), basePath);
+		assertEquals("Base path should be parent project", testProject.getLocation().toOSString(), basePath);
 
 		// Verify multi-module structure
 		var modules = project.getAsJsonArray("modules");
@@ -228,7 +228,7 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 				assertEquals("Module A should have one content root", 1, contentRoots.size());
 				String contentRoot = contentRoots.get(0).getAsString();
 				assertTrue("Module A content root should be nested in parent",
-						contentRoot.contains(testProject.getName() + "/module-a"));
+						contentRoot.contains(testProject.getName() + java.io.File.separator + "module-a"));
 			} else if ("module-b".equals(moduleName)) {
 				foundModuleB = true;
 				assertTrue("Module B should have contentRoots", module.has("contentRoots"));
@@ -236,7 +236,7 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 				assertEquals("Module B should have one content root", 1, contentRoots.size());
 				String contentRoot = contentRoots.get(0).getAsString();
 				assertTrue("Module B content root should be nested in parent",
-						contentRoot.contains(testProject.getName() + "/module-b"));
+						contentRoot.contains(testProject.getName() + java.io.File.separator + "module-b"));
 			}
 		}
 
@@ -276,7 +276,7 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 		// Test compile endpoint
 		JsonObject data = new JsonObject();
 		var filesArray = new com.google.gson.JsonArray();
-		filesArray.add(javaFile.getLocation().toString());
+		filesArray.add(javaFile.getLocation().toOSString());
 		data.add("files", filesArray);
 
 		HttpResponse<String> response = client.sendCommand("compileFiles", data);
@@ -431,7 +431,7 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 
 		// Modify via write endpoint to record operation
 		JsonObject writeData = new JsonObject();
-		writeData.addProperty("file", file.getLocation().toString());
+		writeData.addProperty("file", file.getLocation().toOSString());
 		writeData.addProperty("content", "Modified");
 		writeData.addProperty("undoLabel", "Test modification");
 
@@ -440,7 +440,7 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 		// Now test undo
 		JsonObject undoData = new JsonObject();
 		var filesArray = new com.google.gson.JsonArray();
-		filesArray.add(file.getLocation().toString());
+		filesArray.add(file.getLocation().toOSString());
 		undoData.add("files", filesArray);
 
 		HttpResponse<String> response = client.sendCommand("undo", undoData);

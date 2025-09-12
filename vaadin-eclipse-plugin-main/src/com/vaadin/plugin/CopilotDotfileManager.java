@@ -19,6 +19,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+
 import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
@@ -233,7 +234,8 @@ public class CopilotDotfileManager implements IResourceChangeListener {
             VaadinPluginLog.info("Created .copilot-plugin dotfile for project: " + project.getName());
 
         } catch (Exception e) {
-            VaadinPluginLog.error("Failed to create dotfile for project " + project.getName() + ": " + e.getMessage(), e);
+            VaadinPluginLog.error("Failed to create dotfile for project " + project.getName() + ": " + e.getMessage(),
+                    e);
         }
     }
 

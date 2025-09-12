@@ -70,6 +70,14 @@ vaadin-eclipse-plugin.tests/target/surefire-reports/
 - Use existing patterns and libraries
 - Run `mvn spotless:apply` to format the code
 
+## JSON Communication Convention
+- **IMPORTANT**: All JSON communication uses native OS file paths, not portable paths
+- Use `toOSString()` when writing paths to JSON (not `toPortableString()`)
+- On Windows: paths will have backslashes (e.g., `C:\Users\project`)
+- On Unix/Mac: paths will have forward slashes (e.g., `/home/user/project`)
+- When parsing JSON, backslashes are escaped in the raw JSON but parsed correctly
+- This applies to all JSON files including `flow-build-info.json` and REST API responses
+
 ## Key Test Classes
 - `ProjectModelTest` - Tests URL generation for project creation
 - `CopilotUndoManagerTest` - Tests undo/redo functionality

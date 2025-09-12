@@ -26,6 +26,7 @@
                 <configuration>
                     <useUIHarness>true</useUIHarness>
                     <useUIThread>true</useUIThread>
+                    <rerunFailingTestsCount>0</rerunFailingTestsCount>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/AllTests.java</include>
@@ -54,6 +55,7 @@
                         <version>${tycho-version}</version>
                         <configuration>
                             <argLine>-XstartOnFirstThread</argLine>
+                            <rerunFailingTestsCount>0</rerunFailingTestsCount>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -76,6 +78,7 @@
                         <version>${tycho-version}</version>
                         <configuration>
                             <argLine>-Djava.awt.headless=true</argLine>
+                            <rerunFailingTestsCount>0</rerunFailingTestsCount>
                             <environmentVariables>
                                 <DISPLAY>:99</DISPLAY>
                             </environmentVariables>

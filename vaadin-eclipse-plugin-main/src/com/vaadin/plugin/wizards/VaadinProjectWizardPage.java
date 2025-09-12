@@ -472,7 +472,7 @@ public class VaadinProjectWizardPage extends WizardPage {
         if (projectNameText == null) {
             return model;
         }
-        
+
         model.setProjectName(projectNameText.getText());
         model.setLocation(locationText.getText());
 

@@ -3,6 +3,7 @@ package com.vaadin.plugin;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
 import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**

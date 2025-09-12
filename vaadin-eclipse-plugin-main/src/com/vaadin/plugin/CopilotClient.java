@@ -129,8 +129,8 @@ public class CopilotClient {
         HttpResponse<String> response = send(command, dataCommand);
 
         if (response.statusCode() != 200) {
-            VaadinPluginLog.error("Unexpected response (" + response.statusCode() + ") communicating with the IDE plugin: "
-                    + response.body());
+            VaadinPluginLog.error("Unexpected response (" + response.statusCode()
+                    + ") communicating with the IDE plugin: " + response.body());
             return Optional.empty();
         }
 

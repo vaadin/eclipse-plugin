@@ -6,6 +6,7 @@ import org.eclipse.debug.core.IDebugEventSetListener;
 import org.eclipse.debug.core.model.IBreakpoint;
 import org.eclipse.jdt.debug.core.IJavaExceptionBreakpoint;
 import org.eclipse.jdt.debug.core.IJavaThread;
+
 import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
