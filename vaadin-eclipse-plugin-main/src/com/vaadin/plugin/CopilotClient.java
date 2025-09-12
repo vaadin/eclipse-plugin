@@ -12,6 +12,7 @@ import java.util.Optional;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
  * Client for communicating with the Copilot REST service.
@@ -128,7 +129,7 @@ public class CopilotClient {
         HttpResponse<String> response = send(command, dataCommand);
 
         if (response.statusCode() != 200) {
-            System.err.println("Unexpected response (" + response.statusCode() + ") communicating with the IDE plugin: "
+            VaadinPluginLog.error("Unexpected response (" + response.statusCode() + ") communicating with the IDE plugin: "
                     + response.body());
             return Optional.empty();
         }

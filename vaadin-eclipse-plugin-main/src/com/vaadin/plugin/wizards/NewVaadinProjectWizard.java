@@ -35,6 +35,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
 
 import com.vaadin.plugin.CopilotDotfileManager;
+import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
  * New Vaadin Project creation wizard.
@@ -217,7 +218,7 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
     private IProject importMavenProject(Path projectPath, String projectName, IProgressMonitor monitor)
             throws CoreException {
         // Use the regular import and then configure as Maven
-        System.out.println("=== Creating project and configuring Maven ===");
+        VaadinPluginLog.info("=== Creating project and configuring Maven ===");
 
         // First create the project normally
         IProject project = importProject(projectPath, projectName, monitor);
@@ -247,12 +248,11 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             // Additional refresh to ensure all resources are visible
             project.refreshLocal(IResource.DEPTH_INFINITE, monitor);
 
-            System.out.println("Maven nature enabled and project configured with forced update");
-            System.out.println("Has Maven nature: " + project.hasNature("org.eclipse.m2e.core.maven2Nature"));
+            VaadinPluginLog.info("Maven nature enabled and project configured with forced update");
+            VaadinPluginLog.debug("Has Maven nature: " + project.hasNature("org.eclipse.m2e.core.maven2Nature"));
 
         } catch (Exception e) {
-            System.err.println("Failed to configure Maven nature: " + e.getMessage());
-            e.printStackTrace();
+            VaadinPluginLog.error("Failed to configure Maven nature: " + e.getMessage(), e);
         }
 
         return project;
@@ -260,9 +260,9 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
 
     private IProject importGradleProject(Path projectPath, String projectName, IProgressMonitor monitor)
             throws CoreException {
-        System.out.println("=== Importing Gradle project ===");
-        System.out.println("Project path: " + projectPath);
-        System.out.println("Project name: " + projectName);
+        VaadinPluginLog.info("=== Importing Gradle project ===");
+        VaadinPluginLog.debug("Project path: " + projectPath);
+        VaadinPluginLog.debug("Project name: " + projectName);
 
         IProject project = null;
 
@@ -271,14 +271,13 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             // This will throw NoClassDefFoundError if Buildship is not available
             project = importGradleProjectWithBuildship(projectPath, projectName, monitor);
             if (project != null) {
-                System.out.println("Gradle project imported with Buildship successfully");
+                VaadinPluginLog.info("Gradle project imported with Buildship successfully");
                 return project;
             }
         } catch (NoClassDefFoundError | ClassNotFoundException e) {
-            System.out.println("Buildship not available, using basic Gradle configuration");
+            VaadinPluginLog.info("Buildship not available, using basic Gradle configuration");
         } catch (Exception e) {
-            System.err.println("Failed to import Gradle project with Buildship: " + e.getMessage());
-            e.printStackTrace();
+            VaadinPluginLog.error("Failed to import Gradle project with Buildship: " + e.getMessage(), e);
         }
 
         // Fall back to basic import
@@ -377,9 +376,9 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
 
     private IProject importProject(Path projectPath, String projectName, IProgressMonitor monitor)
             throws CoreException {
-        System.out.println("=== Using regular Eclipse project import ===");
-        System.out.println("Project path: " + projectPath);
-        System.out.println("Project name: " + projectName);
+        VaadinPluginLog.info("=== Using regular Eclipse project import ===");
+        VaadinPluginLog.debug("Project path: " + projectPath);
+        VaadinPluginLog.debug("Project name: " + projectName);
 
         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
         IProject project = root.getProject(projectName);

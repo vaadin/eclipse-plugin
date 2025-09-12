@@ -6,6 +6,7 @@ import org.eclipse.debug.core.IDebugEventSetListener;
 import org.eclipse.debug.core.model.IBreakpoint;
 import org.eclipse.jdt.debug.core.IJavaExceptionBreakpoint;
 import org.eclipse.jdt.debug.core.IJavaThread;
+import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
  * Debug event listener that filters out SilentException breakpoints to prevent the debugger from stopping unnecessarily
@@ -43,7 +44,7 @@ public class SilentExceptionFilter implements IDebugEventSetListener {
                             }
                         }
                     } catch (Exception e) {
-                        System.err.println("Error handling debug event: " + e.getMessage());
+                        VaadinPluginLog.error("Error handling debug event: " + e.getMessage());
                     }
                 }
             }

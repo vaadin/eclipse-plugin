@@ -21,6 +21,7 @@ import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.texteditor.ITextEditor;
+import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
  * Manages undo/redo operations for Copilot file modifications.
@@ -74,8 +75,7 @@ public class CopilotUndoManager {
             fileOperations.computeIfAbsent(filePath, k -> new ArrayList<>()).add(operation);
 
         } catch (Exception e) {
-            System.err.println("Failed to record operation: " + e.getMessage());
-            e.printStackTrace();
+            VaadinPluginLog.error("Failed to record operation: " + e.getMessage(), e);
         }
     }
 
@@ -116,8 +116,7 @@ public class CopilotUndoManager {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error performing undo: " + e.getMessage());
-            e.printStackTrace();
+            VaadinPluginLog.error("Error performing undo: " + e.getMessage(), e);
         }
 
         return performed;
@@ -144,8 +143,7 @@ public class CopilotUndoManager {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error performing redo: " + e.getMessage());
-            e.printStackTrace();
+            VaadinPluginLog.error("Error performing redo: " + e.getMessage(), e);
         }
 
         return performed;

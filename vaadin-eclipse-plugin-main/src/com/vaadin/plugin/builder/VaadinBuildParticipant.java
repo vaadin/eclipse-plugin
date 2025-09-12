@@ -20,6 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
  * Build participant that generates files in the output folder during compilation. These files will be automatically
@@ -35,23 +36,23 @@ public class VaadinBuildParticipant extends IncrementalProjectBuilder {
             throws CoreException {
 
         IProject project = getProject();
-        System.out.println(
+        VaadinPluginLog.debug(
                 "VaadinBuildParticipant.build() called for project: " + (project != null ? project.getName() : "null"));
 
         if (project == null || !project.isAccessible()) {
-            System.out.println("  - Project is null or not accessible");
+            VaadinPluginLog.debug("  - Project is null or not accessible");
             return null;
         }
 
         // Check if this is a Java project
         if (!project.hasNature(JavaCore.NATURE_ID)) {
-            System.out.println("  - Not a Java project");
+            VaadinPluginLog.debug("  - Not a Java project");
             return null;
         }
 
         // Check if project has Vaadin dependencies
         boolean hasVaadin = hasVaadinDependency(project);
-        System.out.println("  - Has Vaadin dependencies: " + hasVaadin);
+        VaadinPluginLog.debug("  - Has Vaadin dependencies: " + hasVaadin);
 
         if (!hasVaadin) {
             return null;
@@ -80,14 +81,14 @@ public class VaadinBuildParticipant extends IncrementalProjectBuilder {
                     // Check for Vaadin in the filename only (not the full path)
                     // This avoids false positives from temp directories containing "vaadin"
                     if (filename.contains("vaadin")) {
-                        System.out.println("    Found Vaadin dependency: " + entry.getPath());
+                        VaadinPluginLog.debug("    Found Vaadin dependency: " + entry.getPath());
                         return true;
                     }
                 }
             }
         } catch (Exception e) {
             // If we can't determine, assume no Vaadin dependency
-            System.err.println("Error checking for Vaadin dependencies: " + e.getMessage());
+            VaadinPluginLog.error("Error checking for Vaadin dependencies: " + e.getMessage());
         }
 
         return false;
@@ -167,10 +168,10 @@ public class VaadinBuildParticipant extends IncrementalProjectBuilder {
             vaadinFolder.setDerived(true, monitor);
             configFolder.setDerived(true, monitor);
 
-            System.out.println("Updated flow-build-info.json in output folder: " + configFolder.getFullPath());
+            VaadinPluginLog.info("Updated flow-build-info.json in output folder: " + configFolder.getFullPath());
 
         } catch (Exception e) {
-            System.err.println("Failed to update flow-build-info.json: " + e.getMessage());
+            VaadinPluginLog.error("Failed to update flow-build-info.json: " + e.getMessage());
         }
     }
 

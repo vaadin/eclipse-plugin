@@ -30,7 +30,7 @@ public class ResourceReader {
                 }
             }
         } catch (IOException e) {
-            System.err.println("Failed to read flow-build-info.json resource: " + e.getMessage());
+            VaadinPluginLog.error("Failed to read flow-build-info.json resource: " + e.getMessage());
         }
         return null;
     }
@@ -49,9 +49,9 @@ public class ResourceReader {
     public static void exampleUsage() {
         String content = readFlowBuildInfo();
         if (content != null) {
-            System.out.println("flow-build-info.json content: " + content);
+            VaadinPluginLog.info("flow-build-info.json content: " + content);
         } else {
-            System.out.println("flow-build-info.json resource not found in classpath");
+            VaadinPluginLog.info("flow-build-info.json resource not found in classpath");
         }
     }
 }
