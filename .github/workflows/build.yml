@@ -5,7 +5,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
 
@@ -24,7 +28,7 @@ jobs:
           maven-version: '3.9.11'
           cache: true
 
-      - if: ${{ env.ACT }}
+      - if: ${{ env.ACT && runner.os == 'Linux' }}
         name: Install system deps for ACT
         run: |
           sudo apt-get -q update
@@ -38,16 +42,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-tycho-
 
-      - name: Build and Test with Maven
+      - name: Build and Test with Maven (Linux)
+        if: runner.os == 'Linux'
         run: |
           export DISPLAY=:99
           xvfb-run -a mvn -ntp -B verify
+
+      - name: Build and Test with Maven (Windows)
+        if: runner.os == 'Windows'
+        run: mvn -ntp -B verify
 
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-logs
+          name: test-logs-${{ matrix.os }}
           path: |
             vaadin-eclipse-plugin.tests/target/work/data/.metadata/.log
             vaadin-eclipse-plugin.tests/target/surefire-reports/

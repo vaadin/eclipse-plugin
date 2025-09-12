@@ -43,7 +43,40 @@ public abstract class BaseIntegrationTest {
 
 		// Clean up test project
 		if (testProject != null && testProject.exists()) {
-			testProject.delete(true, true, null);
+			// Try to close the project first to release any locks
+			if (testProject.isOpen()) {
+				testProject.close(null);
+			}
+
+			// Add a small delay to allow file handles to be released on Windows
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				// Ignore
+			}
+
+			// Try to delete with retry logic for Windows file locking issues
+			int retries = 3;
+			CoreException lastException = null;
+			for (int i = 0; i < retries; i++) {
+				try {
+					testProject.delete(true, true, null);
+					return; // Success
+				} catch (CoreException e) {
+					lastException = e;
+					if (i < retries - 1) {
+						try {
+							Thread.sleep(200);
+						} catch (InterruptedException ie) {
+							// Ignore
+						}
+					}
+				}
+			}
+			// If we still couldn't delete after retries, throw the last exception
+			if (lastException != null) {
+				throw lastException;
+			}
 		}
 	}
 
