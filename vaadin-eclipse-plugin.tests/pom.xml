@@ -33,6 +33,14 @@
                     </includes>
                     <!-- Don't specify product/application, let Eclipse use defaults -->
                     <!-- argLine is set by profiles based on OS -->
+                    <!-- Add SLF4J implementation to suppress warning -->
+                    <dependencies>
+                        <dependency>
+                            <type>eclipse-plugin</type>
+                            <artifactId>org.slf4j.simple</artifactId>
+                            <version>0.0.0</version>
+                        </dependency>
+                    </dependencies>
                 </configuration>
             </plugin>
         </plugins>
@@ -56,6 +64,14 @@
                         <configuration>
                             <argLine>-XstartOnFirstThread</argLine>
                             <rerunFailingTestsCount>0</rerunFailingTestsCount>
+                            <!-- Add SLF4J implementation to suppress warning -->
+                            <dependencies>
+                                <dependency>
+                                    <type>eclipse-plugin</type>
+                                    <artifactId>org.slf4j.simple</artifactId>
+                                    <version>0.0.0</version>
+                                </dependency>
+                            </dependencies>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -82,6 +98,14 @@
                             <environmentVariables>
                                 <DISPLAY>:99</DISPLAY>
                             </environmentVariables>
+                            <!-- Add SLF4J implementation to suppress warning -->
+                            <dependencies>
+                                <dependency>
+                                    <type>eclipse-plugin</type>
+                                    <artifactId>org.slf4j.simple</artifactId>
+                                    <version>0.0.0</version>
+                                </dependency>
+                            </dependencies>
                         </configuration>
                     </plugin>
                 </plugins>
