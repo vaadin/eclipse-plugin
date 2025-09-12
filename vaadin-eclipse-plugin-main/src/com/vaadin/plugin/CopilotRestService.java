@@ -196,9 +196,15 @@ public class CopilotRestService {
         private String handleCommand(String command, String projectBasePath, JsonObject data) {
             VaadinPluginLog.debug("Handling command: " + command + " for project: " + projectBasePath);
 
+            // Special case for getModulePaths - it should return an empty project structure if project not found
+            if ("getModulePaths".equals(command)) {
+                return handleGetModulePaths(projectBasePath);
+            }
+
             // Find the Eclipse project
             IProject project = findProject(projectBasePath);
             if (project == null) {
+                VaadinPluginLog.error("Project not found for path: " + projectBasePath);
                 return createErrorResponse("Project not found: " + projectBasePath);
             }
 
@@ -217,8 +223,6 @@ public class CopilotRestService {
                 return handleRefresh(project);
             case "showInIde":
                 return handleShowInIde(project, data);
-            case "getModulePaths":
-                return handleGetModulePaths(project);
             case "compileFiles":
                 return handleCompileFiles(project, data);
             case "restartApplication":
@@ -245,8 +249,19 @@ public class CopilotRestService {
         private IProject findProject(String projectBasePath) {
             IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
             for (IProject project : projects) {
-                if (project.getLocation() != null && project.getLocation().toPortableString().equals(projectBasePath)) {
-                    return project;
+                if (project.getLocation() != null) {
+                    // Compare both portable string (forward slashes) and OS string (native separators)
+                    String projectLocationPortable = project.getLocation().toPortableString();
+                    String projectLocationOS = project.getLocation().toOSString();
+                    
+                    // Normalize the input path for comparison
+                    String normalizedBasePath = projectBasePath.replace('\\', '/');
+                    
+                    if (projectLocationPortable.equals(projectBasePath) || 
+                        projectLocationPortable.equals(normalizedBasePath) ||
+                        projectLocationOS.equals(projectBasePath)) {
+                        return project;
+                    }
                 }
             }
             return null;
@@ -625,12 +640,24 @@ public class CopilotRestService {
             }
         }
 
-        private String handleGetModulePaths(IProject project) {
-            VaadinPluginLog.debug("GetModulePaths command for project: " + project.getName());
-
+        private String handleGetModulePaths(String projectBasePath) {
+            VaadinPluginLog.debug("GetModulePaths command for project path: " + projectBasePath);
+            
             Map<String, Object> response = new HashMap<>();
             Map<String, Object> projectInfo = new HashMap<>();
             List<Map<String, Object>> modules = new ArrayList<>();
+            
+            // Find the project
+            IProject project = findProject(projectBasePath);
+            
+            if (project == null) {
+                VaadinPluginLog.warning("Project not found for getModulePaths: " + projectBasePath);
+                // Return empty but valid structure - Copilot expects a project object
+                projectInfo.put("basePath", projectBasePath);
+                projectInfo.put("modules", modules);
+                response.put("project", projectInfo);
+                return createResponse(response);
+            }
 
             try {
                 // Add the main project as a module
@@ -638,7 +665,8 @@ public class CopilotRestService {
                 module.put("name", project.getName());
 
                 List<String> contentRoots = new ArrayList<>();
-                contentRoots.add(project.getLocation().toString());
+                // Use OS-specific path format for consistency with what Copilot sends
+                contentRoots.add(project.getLocation().toOSString());
                 module.put("contentRoots", contentRoots);
 
                 // If it's a Java project, get source paths
@@ -654,7 +682,7 @@ public class CopilotRestService {
                     for (IClasspathEntry entry : entries) {
                         if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
                             IPath path = entry.getPath();
-                            String fullPath = project.getLocation().append(path.removeFirstSegments(1)).toString();
+                            String fullPath = project.getLocation().append(path.removeFirstSegments(1)).toOSString();
 
                             // Try to determine if it's test or main source
                             String pathStr = path.toString();
@@ -683,7 +711,7 @@ public class CopilotRestService {
                     IPath outputLocation = javaProject.getOutputLocation();
                     if (outputLocation != null) {
                         String outputPath = project.getLocation().append(outputLocation.removeFirstSegments(1))
-                                .toString();
+                                .toOSString();
                         module.put("outputPath", outputPath);
                     }
                 }
@@ -702,7 +730,7 @@ public class CopilotRestService {
                             nestedModule.put("name", p.getName());
 
                             List<String> nestedContentRoots = new ArrayList<>();
-                            nestedContentRoots.add(pLocation.toString());
+                            nestedContentRoots.add(pLocation.toOSString());
                             nestedModule.put("contentRoots", nestedContentRoots);
 
                             modules.add(nestedModule);
@@ -714,7 +742,7 @@ public class CopilotRestService {
                 VaadinPluginLog.error("Error getting module paths: " + e.getMessage(), e);
             }
 
-            projectInfo.put("basePath", project.getLocation().toString());
+            projectInfo.put("basePath", project.getLocation().toOSString());
             projectInfo.put("modules", modules);
             response.put("project", projectInfo);
 
