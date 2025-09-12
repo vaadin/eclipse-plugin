@@ -228,7 +228,7 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 				assertEquals("Module A should have one content root", 1, contentRoots.size());
 				String contentRoot = contentRoots.get(0).getAsString();
 				assertTrue("Module A content root should be nested in parent",
-						contentRoot.contains(testProject.getName() + "/module-a"));
+						contentRoot.contains(testProject.getName() + java.io.File.separator + "module-a"));
 			} else if ("module-b".equals(moduleName)) {
 				foundModuleB = true;
 				assertTrue("Module B should have contentRoots", module.has("contentRoots"));
@@ -236,7 +236,7 @@ public class AdvancedEndpointsTest extends BaseIntegrationTest {
 				assertEquals("Module B should have one content root", 1, contentRoots.size());
 				String contentRoot = contentRoots.get(0).getAsString();
 				assertTrue("Module B content root should be nested in parent",
-						contentRoot.contains(testProject.getName() + "/module-b"));
+						contentRoot.contains(testProject.getName() + java.io.File.separator + "module-b"));
 			}
 		}
 
