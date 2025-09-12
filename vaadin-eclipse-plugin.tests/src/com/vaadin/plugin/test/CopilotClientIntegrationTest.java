@@ -47,6 +47,18 @@ public class CopilotClientIntegrationTest extends BaseIntegrationTest {
 	protected void doTearDown() throws CoreException {
 		if (restService != null) {
 			restService.stop();
+			restService = null;
+		}
+		if (client != null) {
+			client = null;
+		}
+		// Force garbage collection to release file handles
+		System.gc();
+		// Small delay to allow cleanup
+		try {
+			Thread.sleep(100);
+		} catch (InterruptedException e) {
+			// Ignore
 		}
 	}
 

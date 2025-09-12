@@ -47,6 +47,18 @@ public class BinaryFileUndoRedoTest extends BaseIntegrationTest {
 	protected void doTearDown() throws CoreException {
 		if (restService != null) {
 			restService.stop();
+			restService = null;
+		}
+		if (client != null) {
+			client = null;
+		}
+		// Force garbage collection to release file handles
+		System.gc();
+		// Small delay to allow cleanup
+		try {
+			Thread.sleep(100);
+		} catch (InterruptedException e) {
+			// Ignore
 		}
 	}
 
@@ -68,7 +80,10 @@ public class BinaryFileUndoRedoTest extends BaseIntegrationTest {
 		IFile file = testProject.getFile("test.png");
 		assertTrue("File should exist", file.exists());
 
-		byte[] readData = file.getContents().readAllBytes();
+		byte[] readData;
+		try (java.io.InputStream is = file.getContents()) {
+			readData = is.readAllBytes();
+		}
 		assertArrayEquals("Binary content should match", binaryData, readData);
 	}
 
@@ -92,7 +107,10 @@ public class BinaryFileUndoRedoTest extends BaseIntegrationTest {
 
 		// Verify modified content
 		IFile file = testProject.getFile("binary.dat");
-		byte[] currentData = file.getContents().readAllBytes();
+		byte[] currentData;
+		try (java.io.InputStream is = file.getContents()) {
+			currentData = is.readAllBytes();
+		}
 		assertArrayEquals("Should have modified data", modifiedData, currentData);
 
 		// Perform undo
@@ -104,7 +122,9 @@ public class BinaryFileUndoRedoTest extends BaseIntegrationTest {
 
 		// Verify content reverted to original
 		file.refreshLocal(0, null);
-		currentData = file.getContents().readAllBytes();
+		try (java.io.InputStream is = file.getContents()) {
+			currentData = is.readAllBytes();
+		}
 		assertArrayEquals("Should have original data after undo", originalData, currentData);
 
 		// Perform redo
@@ -116,7 +136,9 @@ public class BinaryFileUndoRedoTest extends BaseIntegrationTest {
 
 		// Verify content is modified again
 		file.refreshLocal(0, null);
-		currentData = file.getContents().readAllBytes();
+		try (java.io.InputStream is = file.getContents()) {
+			currentData = is.readAllBytes();
+		}
 		assertArrayEquals("Should have modified data after redo", modifiedData, currentData);
 	}
 
@@ -151,7 +173,10 @@ public class BinaryFileUndoRedoTest extends BaseIntegrationTest {
 		// Verify original content restored
 		IFile file = testProject.getFile("large.bin");
 		file.refreshLocal(0, null);
-		byte[] currentData = file.getContents().readAllBytes();
+		byte[] currentData;
+		try (java.io.InputStream is = file.getContents()) {
+			currentData = is.readAllBytes();
+		}
 		assertArrayEquals("Large file should be restored correctly", largeData, currentData);
 	}
 
@@ -182,11 +207,17 @@ public class BinaryFileUndoRedoTest extends BaseIntegrationTest {
 
 		// Verify binary reverted but text unchanged
 		IFile textIFile = testProject.getFile("text.txt");
-		String currentText = new String(textIFile.getContents().readAllBytes(), "UTF-8");
+		String currentText;
+		try (java.io.InputStream is = textIFile.getContents()) {
+			currentText = new String(is.readAllBytes(), "UTF-8");
+		}
 		assertEquals("Text should still be modified", "Modified text", currentText);
 
 		IFile binaryIFile = testProject.getFile("binary.dat");
-		byte[] currentBinary = binaryIFile.getContents().readAllBytes();
+		byte[] currentBinary;
+		try (java.io.InputStream is = binaryIFile.getContents()) {
+			currentBinary = is.readAllBytes();
+		}
 		assertArrayEquals("Binary should be reverted", binaryContent, currentBinary);
 	}
 
@@ -211,7 +242,10 @@ public class BinaryFileUndoRedoTest extends BaseIntegrationTest {
 		// Verify file is empty
 		IFile file = testProject.getFile("empty.bin");
 		file.refreshLocal(0, null);
-		byte[] currentData = file.getContents().readAllBytes();
+		byte[] currentData;
+		try (java.io.InputStream is = file.getContents()) {
+			currentData = is.readAllBytes();
+		}
 		assertEquals("File should be empty after undo", 0, currentData.length);
 	}
 }
