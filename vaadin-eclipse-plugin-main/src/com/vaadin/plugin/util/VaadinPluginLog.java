@@ -1,32 +1,13 @@
 package com.vaadin.plugin.util;
 
 import org.eclipse.core.runtime.ILog;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.Status;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.FrameworkUtil;
 
 /**
  * Utility class for logging messages in the Vaadin Eclipse Plugin.
- * Provides methods for logging at different levels (info, warning, error, debug).
+ * Uses the simplified ILog.get() approach available since Eclipse 2021-03.
+ * Each call automatically uses the logger for the calling class's bundle.
  */
 public class VaadinPluginLog {
-    
-    private static final String PLUGIN_ID = "vaadin-eclipse-plugin";
-    private static ILog log;
-    
-    static {
-        // Try to get the bundle using the correct plugin ID
-        Bundle bundle = Platform.getBundle(PLUGIN_ID);
-        if (bundle == null) {
-            // Fallback: try to get the bundle from a class in this plugin
-            bundle = FrameworkUtil.getBundle(VaadinPluginLog.class);
-        }
-        if (bundle != null) {
-            log = Platform.getLog(bundle);
-        }
-    }
     
     /**
      * Logs an informational message.
@@ -34,9 +15,7 @@ public class VaadinPluginLog {
      * @param message the message to log
      */
     public static void info(String message) {
-        if (log != null) {
-            log.log(new Status(IStatus.INFO, PLUGIN_ID, message));
-        }
+        ILog.get().info(message);
     }
     
     /**
@@ -45,9 +24,7 @@ public class VaadinPluginLog {
      * @param message the message to log
      */
     public static void warning(String message) {
-        if (log != null) {
-            log.log(new Status(IStatus.WARNING, PLUGIN_ID, message));
-        }
+        ILog.get().warn(message);
     }
     
     /**
@@ -57,9 +34,7 @@ public class VaadinPluginLog {
      * @param exception the exception to log
      */
     public static void warning(String message, Throwable exception) {
-        if (log != null) {
-            log.log(new Status(IStatus.WARNING, PLUGIN_ID, message, exception));
-        }
+        ILog.get().warn(message, exception);
     }
     
     /**
@@ -68,9 +43,7 @@ public class VaadinPluginLog {
      * @param message the message to log
      */
     public static void error(String message) {
-        if (log != null) {
-            log.log(new Status(IStatus.ERROR, PLUGIN_ID, message));
-        }
+        ILog.get().error(message);
     }
     
     /**
@@ -80,9 +53,7 @@ public class VaadinPluginLog {
      * @param exception the exception to log
      */
     public static void error(String message, Throwable exception) {
-        if (log != null) {
-            log.log(new Status(IStatus.ERROR, PLUGIN_ID, message, exception));
-        }
+        ILog.get().error(message, exception);
     }
     
     /**
@@ -92,8 +63,6 @@ public class VaadinPluginLog {
      * @param message the message to log
      */
     public static void debug(String message) {
-        if (log != null) {
-            log.log(new Status(IStatus.INFO, PLUGIN_ID, "[DEBUG] " + message));
-        }
+        ILog.get().info("[DEBUG] " + message);
     }
 }
