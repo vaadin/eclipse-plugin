@@ -67,7 +67,7 @@ public class StarterProjectModelTest {
 		model.setIncludeFlow(false);
 		model.setIncludeHilla(false);
 		String url = model.getDownloadUrl();
-		assertTrue("Should have frameworks=flow", !url.matches(".*frameworks=.*"));
+		assertTrue("Shouldn't contain frameworks parameter", !url.matches(".*frameworks=.*"));
 
 		// Test Flow only
 		model.setIncludeFlow(true);
