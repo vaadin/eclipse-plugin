@@ -196,7 +196,8 @@ public class CopilotRestService {
         private String handleCommand(String command, String projectBasePath, JsonObject data) {
             VaadinPluginLog.debug("Handling command: " + command + " for project: " + projectBasePath);
 
-            // Special case for getModulePaths - it should return an empty project structure if project not found
+            // Special case for getModulePaths - it should return an empty project structure
+            // if project not found
             if ("getModulePaths".equals(command)) {
                 return handleGetModulePaths(projectBasePath);
             }
@@ -250,16 +251,17 @@ public class CopilotRestService {
             IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
             for (IProject project : projects) {
                 if (project.getLocation() != null) {
-                    // Compare both portable string (forward slashes) and OS string (native separators)
+                    // Compare both portable string (forward slashes) and OS string (native
+                    // separators)
                     String projectLocationPortable = project.getLocation().toPortableString();
                     String projectLocationOS = project.getLocation().toOSString();
-                    
+
                     // Normalize the input path for comparison
                     String normalizedBasePath = projectBasePath.replace('\\', '/');
-                    
-                    if (projectLocationPortable.equals(projectBasePath) || 
-                        projectLocationPortable.equals(normalizedBasePath) ||
-                        projectLocationOS.equals(projectBasePath)) {
+
+                    if (projectLocationPortable.equals(projectBasePath)
+                            || projectLocationPortable.equals(normalizedBasePath)
+                            || projectLocationOS.equals(projectBasePath)) {
                         return project;
                     }
                 }
@@ -642,14 +644,14 @@ public class CopilotRestService {
 
         private String handleGetModulePaths(String projectBasePath) {
             VaadinPluginLog.debug("GetModulePaths command for project path: " + projectBasePath);
-            
+
             Map<String, Object> response = new HashMap<>();
             Map<String, Object> projectInfo = new HashMap<>();
             List<Map<String, Object>> modules = new ArrayList<>();
-            
+
             // Find the project
             IProject project = findProject(projectBasePath);
-            
+
             if (project == null) {
                 VaadinPluginLog.warning("Project not found for getModulePaths: " + projectBasePath);
                 // Return empty but valid structure - Copilot expects a project object
