@@ -459,14 +459,6 @@ public class VaadinProjectWizardPage extends WizardPage {
             return;
         }
 
-        // Validate project type selection
-        if (starterProjectRadio.getSelection()) {
-            if (!flowCheckbox.getSelection() && !hillaCheckbox.getSelection()) {
-                updateStatus("Please select at least one framework (Flow or Hilla)");
-                return;
-            }
-        }
-
         updateStatus(null);
     }
 

@@ -24,9 +24,9 @@ public class StarterProjectModel extends AbstractProjectModel {
             url.append("&frameworks=flow,hilla");
         } else if (includeHilla) {
             url.append("&frameworks=hilla");
-        } else {
+        } else if (includeFlow) {
             url.append("&frameworks=flow");
-        }
+        } // else: do not add frameworks parameter if both are false
 
         // Add platform version selection (always include, defaults to "latest")
         String platformVersion = prerelease ? "pre" : "latest";
