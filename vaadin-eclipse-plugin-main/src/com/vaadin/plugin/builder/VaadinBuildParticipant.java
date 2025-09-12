@@ -144,8 +144,8 @@ public class VaadinBuildParticipant extends IncrementalProjectBuilder {
                 json = new JsonObject();
             }
 
-            // Add or update npmFolder
-            String projectPath = project.getLocation().toOSString();
+            // Add or update npmFolder - use portable string for cross-platform compatibility
+            String projectPath = project.getLocation().toPortableString();
             json.addProperty("npmFolder", projectPath);
 
             // Convert to formatted JSON string
