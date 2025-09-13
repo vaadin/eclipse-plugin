@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets;
  */
 public abstract class AbstractProjectModel {
 
-    protected String projectName;
+    protected String projectName = "NewProject";
     protected String location;
     protected String groupId = "com.example.application";
 

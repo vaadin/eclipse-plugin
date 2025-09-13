@@ -439,7 +439,7 @@ public class VaadinProjectWizardPage extends WizardPage {
 
     private String generateProjectName() {
         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-        String baseName = "vaadin-project";
+        String baseName = starterModel.getProjectName();
         String projectName = baseName;
         int counter = 1;
 
