@@ -453,6 +453,7 @@ public class VaadinProjectWizardPage extends WizardPage {
 
     private void dialogChanged() {
         String projectName = projectNameText.getText();
+        String groupId = groupIdText.getText();
 
         // Update location if using default
         if (useDefaultLocationButton.getSelection()) {
@@ -460,13 +461,16 @@ public class VaadinProjectWizardPage extends WizardPage {
         }
 
         // Validate project name
-        if (projectName.length() == 0) {
-            updateStatus("Project name must be specified");
+        String projectNamePattern = "^[A-Za-z0-9_.-]+$";
+        if (!projectName.matches(projectNamePattern)) {
+            updateStatus("Name must have only letters/digits/underscores/hyphens/dots");
             return;
         }
 
-        if (projectName.contains(" ")) {
-            updateStatus("Project name cannot contain spaces");
+        // Validate group ID
+        String groupIdPattern = "^(?!\\.)(?!.*\\.\\.)(?=.*\\.)([A-Za-z0-9_.]+)(?<!\\.)$";
+        if (!groupId.matches(groupIdPattern)) {
+            updateStatus("Group ID must use letters/digits/underscores/dots, include at least one dot, no leading/trailing or consecutive dots.");
             return;
         }
 
@@ -475,6 +479,7 @@ public class VaadinProjectWizardPage extends WizardPage {
             updateStatus("A project with this name already exists");
             return;
         }
+
 
         updateStatus(null);
     }
