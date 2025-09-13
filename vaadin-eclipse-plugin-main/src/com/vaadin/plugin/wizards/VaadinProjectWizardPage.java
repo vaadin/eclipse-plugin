@@ -28,6 +28,7 @@ public class VaadinProjectWizardPage extends WizardPage {
     private Text projectNameText;
     private Text locationText;
     private Button useDefaultLocationButton;
+    private Text groupIdText;
 
     // Starter project options
     private Button starterProjectRadio;
@@ -76,6 +77,22 @@ public class VaadinProjectWizardPage extends WizardPage {
         projectNameText.setLayoutData(gd);
         projectNameText.addModifyListener(new ModifyListener() {
             public void modifyText(ModifyEvent e) {
+                dialogChanged();
+            }
+        });
+
+        // Group ID
+        label = new Label(container, SWT.NULL);
+        label.setText("Group ID:");
+        groupIdText = new Text(container, SWT.BORDER | SWT.SINGLE);
+        gd = new GridData(GridData.FILL_HORIZONTAL);
+        gd.horizontalSpan = 2;
+        groupIdText.setLayoutData(gd);
+        groupIdText.setText(starterModel.getGroupId());
+        groupIdText.addModifyListener(new ModifyListener() {
+            public void modifyText(ModifyEvent e) {
+                starterModel.setGroupId(groupIdText.getText());
+                helloWorldModel.setGroupId(groupIdText.getText());
                 dialogChanged();
             }
         });
@@ -422,7 +439,7 @@ public class VaadinProjectWizardPage extends WizardPage {
 
     private String generateProjectName() {
         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-        String baseName = "vaadin-project";
+        String baseName = starterModel.getProjectName();
         String projectName = baseName;
         int counter = 1;
 
@@ -436,6 +453,7 @@ public class VaadinProjectWizardPage extends WizardPage {
 
     private void dialogChanged() {
         String projectName = projectNameText.getText();
+        String groupId = groupIdText.getText();
 
         // Update location if using default
         if (useDefaultLocationButton.getSelection()) {
@@ -443,13 +461,16 @@ public class VaadinProjectWizardPage extends WizardPage {
         }
 
         // Validate project name
-        if (projectName.length() == 0) {
-            updateStatus("Project name must be specified");
+        String projectNamePattern = "^[A-Za-z0-9_.-]+$";
+        if (!projectName.matches(projectNamePattern)) {
+            updateStatus("Name must have only letters/digits/underscores/hyphens/dots");
             return;
         }
 
-        if (projectName.contains(" ")) {
-            updateStatus("Project name cannot contain spaces");
+        // Validate group ID
+        String groupIdPattern = "^(?!\\.)(?!.*\\.\\.)(?=.*\\.)([A-Za-z0-9_.]+)(?<!\\.)$";
+        if (!groupId.matches(groupIdPattern)) {
+            updateStatus("Group ID must use letters/digits/underscores/dots, include at least one dot, no leading/trailing or consecutive dots.");
             return;
         }
 
@@ -458,6 +479,7 @@ public class VaadinProjectWizardPage extends WizardPage {
             updateStatus("A project with this name already exists");
             return;
         }
+
 
         updateStatus(null);
     }
@@ -475,6 +497,7 @@ public class VaadinProjectWizardPage extends WizardPage {
 
         model.setProjectName(projectNameText.getText());
         model.setLocation(locationText.getText());
+        model.setGroupId(groupIdText.getText());
 
         if (starterProjectRadio != null && starterProjectRadio.getSelection()) {
             starterModel.setProjectName(projectNameText.getText());

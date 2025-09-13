@@ -18,7 +18,7 @@ public class HelloWorldProjectModel extends AbstractProjectModel {
         String artifactId = toArtifactId(projectName);
         url.append("name=").append(encode(artifactId));
         url.append("&artifactId=").append(encode(artifactId));
-        url.append("&groupId=com.example.application");
+        url.append("&groupId=").append(encode(getGroupId()));
 
         // Add framework
         url.append("&framework=").append(framework);
