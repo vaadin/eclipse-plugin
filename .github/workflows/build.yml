@@ -26,7 +26,6 @@ jobs:
       - uses: stCarolas/setup-maven@v5
         with:
           maven-version: '3.9.11'
-          cache: true
 
       - if: ${{ env.ACT && runner.os == 'Linux' }}
         name: Install system deps for ACT
@@ -61,3 +60,17 @@ jobs:
             vaadin-eclipse-plugin.tests/target/work/data/.metadata/.log
             vaadin-eclipse-plugin.tests/target/surefire-reports/
             vaadin-eclipse-plugin.tests/target/*.log
+
+      - uses: actions/upload-artifact@v4.3.3
+        if: runner.os == 'Linux'
+        id: artifact
+        with:
+          name: repository
+          path: vaadin-eclipse-plugin-site/target/repository
+      - uses: mshick/add-pr-comment@v2
+        if: runner.os == 'Linux'
+        with:
+          message-id: download-artifact-comment
+          refresh-message-position: true
+          message: |
+            Artifact build on last commit: [repository.zip](${{ steps.artifact.outputs.artifact-url }}).
