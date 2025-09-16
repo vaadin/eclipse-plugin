@@ -133,4 +133,16 @@ public class StarterProjectModelTest {
 		String url = model.getDownloadUrl();
 		assertTrue("Should contain platformVersion=latest", url.contains("platformVersion=latest"));
 	}
+
+	@Test
+	public void testCustomGroupIdInUrl() {
+		model.setProjectName("custom-groupid-starter");
+		String customGroupId = "org.example.starter";
+		model.setGroupId(customGroupId);
+
+		String url = model.getDownloadUrl();
+		assertNotNull("URL should be generated", url);
+		String encodedGroupId = java.net.URLEncoder.encode(customGroupId, java.nio.charset.StandardCharsets.UTF_8);
+		assertTrue("URL should contain the custom groupId", url.contains("groupId=" + encodedGroupId));
+	}
 }

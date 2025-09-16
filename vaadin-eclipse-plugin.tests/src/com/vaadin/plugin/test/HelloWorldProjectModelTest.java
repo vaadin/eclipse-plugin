@@ -128,4 +128,17 @@ public class HelloWorldProjectModelTest {
 			assertTrue("Should contain stack=" + arch, url.contains("stack=" + arch));
 		}
 	}
+
+	@Test
+	public void testCustomGroupIdInUrl() {
+		model.setProjectName("custom-groupid-test");
+		String customGroupId = "org.example.custom";
+		model.setGroupId(customGroupId);
+
+		String url = model.getDownloadUrl();
+		assertNotNull("URL should be generated", url);
+		// The groupId should be URL-encoded
+		String encodedGroupId = java.net.URLEncoder.encode(customGroupId, java.nio.charset.StandardCharsets.UTF_8);
+		assertTrue("URL should contain the custom groupId", url.contains("groupId=" + encodedGroupId));
+	}
 }
