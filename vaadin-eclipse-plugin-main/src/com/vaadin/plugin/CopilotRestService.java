@@ -1,5 +1,6 @@
 package com.vaadin.plugin;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -685,6 +686,12 @@ public class CopilotRestService {
                         if (entry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
                             IPath path = entry.getPath();
                             String fullPath = project.getLocation().append(path.removeFirstSegments(1)).toOSString();
+
+                            if (new File(fullPath).isDirectory() == false) {
+                                VaadinPluginLog.warning("Source path is not a directory: " + fullPath);
+                                continue;
+                            }
+
 
                             // Try to determine if it's test or main source
                             String pathStr = path.toString();

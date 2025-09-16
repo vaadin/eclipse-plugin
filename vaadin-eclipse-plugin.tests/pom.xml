@@ -72,7 +72,7 @@
                         <artifactId>tycho-surefire-plugin</artifactId>
                         <version>${tycho-version}</version>
                         <configuration>
-                            <argLine>-XstartOnFirstThread</argLine>
+                            <argLine>-XstartOnFirstThread -Declipse.e4.inject.javax.warning=false</argLine>
                             <rerunFailingTestsCount>0</rerunFailingTestsCount>
                             <dependencies>
                                 <dependency>
@@ -112,7 +112,7 @@
                         <artifactId>tycho-surefire-plugin</artifactId>
                         <version>${tycho-version}</version>
                         <configuration>
-                            <argLine>-Djava.awt.headless=true</argLine>
+                            <argLine>-Djava.awt.headless=true -Declipse.e4.inject.javax.warning=false</argLine>
                             <rerunFailingTestsCount>0</rerunFailingTestsCount>
                             <environmentVariables>
                                 <DISPLAY>:99</DISPLAY>
