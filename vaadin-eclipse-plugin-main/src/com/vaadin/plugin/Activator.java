@@ -6,6 +6,7 @@ import org.osgi.framework.BundleContext;
 
 import com.vaadin.plugin.debug.SilentExceptionFilter;
 import com.vaadin.plugin.launch.ServerLaunchListener;
+import com.vaadin.plugin.util.AnalyticsUtil;
 import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
@@ -37,6 +38,10 @@ public class Activator implements BundleActivator {
             dotfileManager.initialize();
             // Update all dotfiles with the current endpoint
             dotfileManager.updateAllDotfiles();
+            
+            // Initialize Amplitude
+            AnalyticsUtil.trackPluginInitialized();
+
         } catch (Exception e) {
             VaadinPluginLog.error("Failed to start Vaadin Eclipse Plugin: " + e.getMessage(), e);
             // Clean up any partially initialized resources
