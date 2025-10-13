@@ -24,8 +24,13 @@
     	</dependency>
     	<dependency>
     		<artifactId>json</artifactId>
-    		<version>20201115</version>
     		<groupId>org.json</groupId>
+    		<version>20230227</version>
+    	</dependency>
+    	<dependency>
+    		<groupId>com.google.code.gson</groupId>
+    		<artifactId>gson</artifactId>
+    		<version>2.10.1</version>
     	</dependency>
     	<dependency>
     		<artifactId>license-checker</artifactId>

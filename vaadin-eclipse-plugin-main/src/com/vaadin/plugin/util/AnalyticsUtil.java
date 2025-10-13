@@ -91,12 +91,16 @@ public final class AnalyticsUtil {
     }
     
     private static String getPluginVersion() {
-    	Bundle bundle = Platform.getBundle("com.vaadin.plugin");
+    	Bundle bundle = Platform.getBundle("vaadin-eclipse-plugin");
     	return bundle.getVersion().toString();
 	}
     
     private static String getEclipseVersion() {
-		return Platform.getProduct().getDefiningBundle().getVersion().toString();
+    	Bundle bundle = Platform.getBundle("org.eclipse.platform");
+        if (bundle != null) {
+            return bundle.getVersion().toString();
+        }
+        return "Unknown";
 	}
 
     // --- Public tracking API ---

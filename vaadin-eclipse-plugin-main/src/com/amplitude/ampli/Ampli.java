@@ -245,62 +245,6 @@ public class Ampli {
     }
 
     /**
-     * Identify
-     * <p>
-     * <a href="https://data.amplitude.com/vaadin/IDE%20Plugins/events/main/latest/Identify">View in Tracking Plan</a>
-     * <p>
-     * Event has no description in tracking plan.
-     *
-     * @param userId The user's ID
-     */
-    public void identify(String userId) {
-        this.identify(userId, null, null);
-    }
-
-    /**
-     * Identify
-     * <p>
-     * <a href="https://data.amplitude.com/vaadin/IDE%20Plugins/events/main/latest/Identify">View in Tracking Plan</a>
-     * <p>
-     * Event has no description in tracking plan.
-     *
-     * @param userId The user's ID
-     * @param options The event's options
-     */
-    public void identify(String userId, EventOptions options) {
-        this.identify(userId, options, null);
-    }
-
-    /**
-     * Identify
-     * <p>
-     * <a href="https://data.amplitude.com/vaadin/IDE%20Plugins/events/main/latest/Identify">View in Tracking Plan</a>
-     * <p>
-     * Event has no description in tracking plan.
-     *
-     * @param userId The user's ID
-     * @param extra Extra untyped parameters for use in middleware
-     */
-    public void identify(String userId, MiddlewareExtra extra) {
-        this.identify(userId, null, extra);
-    }
-
-    /**
-     * Identify
-     * <p>
-     * <a href="https://data.amplitude.com/vaadin/IDE%20Plugins/events/main/latest/Identify">View in Tracking Plan</a>
-     * <p>
-     * Event has no description in tracking plan.
-     *
-     * @param userId The user's ID
-     * @param options The event's options
-     * @param extra Extra untyped parameters for use in middleware
-     */
-    public void identify(String userId, EventOptions options, MiddlewareExtra extra) {
-        this.track(userId, Identify.builder().build(), options, extra);
-    }
-
-    /**
      * ManualCopilotRestart
      * <p>
      * <a href="https://data.amplitude.com/vaadin/IDE%20Plugins/events/main/latest/ManualCopilotRestart">View in Tracking Plan</a>
