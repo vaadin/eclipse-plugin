@@ -54,7 +54,21 @@
                             <arch>x86_64</arch>
                         </environment>
                     </environments>
+                    <pomDependencies>consider</pomDependencies>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.eclipse.tycho.extras</groupId>
+                <artifactId>tycho-p2-extras-plugin</artifactId>
+                <version>${tycho-version}</version>
+                <executions>
+                    <execution>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>publish-features-and-bundles</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
@@ -86,6 +100,11 @@
             <id>eclipse-release</id>
             <layout>p2</layout>
             <url>https://download.eclipse.org/releases/2024-03</url>
+        </repository>
+        <repository>
+            <id>eclipse-orbit</id>
+            <layout>p2</layout>
+            <url>https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/2024-03</url>
         </repository>
     </repositories>
 </project>
