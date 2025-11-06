@@ -12,9 +12,10 @@ import java.util.UUID;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import elemental.json.Json;
-import elemental.json.JsonException;
-import elemental.json.JsonObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 
 public final class VaadinHomeUtil {
 
@@ -41,8 +42,9 @@ public final class VaadinHomeUtil {
         if (userKeyFile.exists()) {
             try {
                 String content = Files.readString(userKeyFile.toPath());
-                return Json.parse(content).getString("key");
-            } catch (JsonException ex) {
+                JsonObject jsonObject = JsonParser.parseString(content).getAsJsonObject();
+                return jsonObject.get("key").getAsString();
+            } catch (JsonSyntaxException ex) {
                 // fix for invalid JSON regression
                 // fall through to regenerate
                 // noinspection ResultOfMethodCallIgnored
@@ -51,10 +53,11 @@ public final class VaadinHomeUtil {
         }
 
         String key = "user-" + UUID.randomUUID();
-        JsonObject keyObject = Json.createObject();
-        keyObject.put("key", key);
+        JsonObject keyObject = new JsonObject();
+        keyObject.addProperty("key", key);
+        Gson gson = new Gson();
         Files.createDirectories(vaadinHome.toPath());
-        Files.write(userKeyFile.toPath(), keyObject.toJson().getBytes(Charset.defaultCharset()));
+        Files.write(userKeyFile.toPath(), gson.toJson(keyObject).getBytes(Charset.defaultCharset()));
         return key;
     }
 

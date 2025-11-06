@@ -7,11 +7,10 @@ import org.eclipse.core.runtime.Platform;
 import org.osgi.framework.Bundle;
 
 import com.amplitude.ampli.*;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.vaadin.pro.licensechecker.LocalProKey;
 import com.vaadin.pro.licensechecker.ProKey;
-
-import elemental.json.Json;
-import elemental.json.JsonObject;
 
 public final class AnalyticsUtil {
 
@@ -61,9 +60,9 @@ public final class AnalyticsUtil {
                 if (vaadiner == null) {
                     ProKey proKey = LocalProKey.get();
                     if (proKey != null) {
-                        JsonObject json = (JsonObject) Json.parse(proKey.toJson());
-                        if (json.hasKey("username")) {
-                            String username = json.getString("username");
+                        JsonObject json = JsonParser.parseString(proKey.toJson()).getAsJsonObject();
+                        if (json.has("username")) {
+                            String username = json.get("username").getAsString();
                             vaadiner = username != null && username.endsWith("@vaadin.com");
                         } else {
                             vaadiner = false;
