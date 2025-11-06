@@ -54,6 +54,7 @@
                             <arch>x86_64</arch>
                         </environment>
                     </environments>
+                    <pomDependencies>consider</pomDependencies>
                 </configuration>
             </plugin>
             <plugin>
@@ -91,6 +92,14 @@
             <id>eclipse-orbit</id>
             <layout>p2</layout>
             <url>https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/2024-03</url>
+        </repository>
+        <repository>
+            <id>vaadin-prereleases</id>
+            <url>https://maven.vaadin.com/vaadin-prereleases</url>
+        </repository>
+        <repository>
+            <id>vaadin-commercial</id>
+            <url>https://maven.vaadin.com/vaadin-commercial</url>
         </repository>
     </repositories>
 </project>

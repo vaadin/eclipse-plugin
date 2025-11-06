@@ -15,6 +15,14 @@
     <packaging>eclipse-repository</packaging>
     <name>Vaadin Eclipse Plugin Update Site</name>
 
+    <dependencies>
+        <dependency>
+            <artifactId>license-checker</artifactId>
+            <groupId>com.vaadin</groupId>
+            <version>2.0.0</version>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>

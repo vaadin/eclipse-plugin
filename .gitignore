@@ -12,3 +12,7 @@ local.properties
 target
 .mvn
 .vscode
+.idea
+**/.vaadin
+**/.DS_Store
+**/*.iml
