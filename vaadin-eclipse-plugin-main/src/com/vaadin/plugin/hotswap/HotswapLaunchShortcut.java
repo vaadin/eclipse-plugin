@@ -36,6 +36,8 @@ import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 
+import com.vaadin.plugin.TelemetryService;
+
 /**
  * Launch shortcut for debugging Java applications with Hotswap Agent. This adds "Java Application using Hotswap Agent"
  * to the Debug As menu.
@@ -147,6 +149,7 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
             // Create or find launch configuration
             ILaunchConfiguration config = findOrCreateLaunchConfiguration(mainType, jbr);
             if (config != null) {
+                trackDebugLaunch(mainType, jbr != null);
                 DebugUITools.launch(config, mode);
             }
 
@@ -209,6 +212,7 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
             // Create or find launch configuration
             ILaunchConfiguration config = findOrCreateLaunchConfiguration(mainType, jbr);
             if (config != null) {
+                trackDebugLaunch(mainType, jbr != null);
                 DebugUITools.launch(config, mode);
             }
 
@@ -216,6 +220,18 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
             MessageDialog.openError(getShell(), "Launch Error",
                     "Failed to launch with Hotswap Agent: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    private void trackDebugLaunch(IType mainType, boolean hasJBR) {
+        try {
+            java.util.Map<String, Object> properties = new java.util.HashMap<>();
+            properties.put("main_class", mainType.getFullyQualifiedName());
+            properties.put("project_name", mainType.getJavaProject().getElementName());
+            properties.put("has_jbr", hasJBR);
+            TelemetryService.getInstance().trackEvent("debug_launched", properties);
+        } catch (Exception e) {
+            // Ignore telemetry errors
         }
     }
 

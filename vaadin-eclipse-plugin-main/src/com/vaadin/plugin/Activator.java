@@ -16,6 +16,7 @@ public class Activator implements BundleActivator {
     private ServerLaunchListener serverLaunchListener;
     private CopilotDotfileManager dotfileManager;
     private SilentExceptionFilter silentExceptionFilter;
+    private TelemetryService telemetryService;
 
     @Override
     public void start(BundleContext context) throws Exception {
@@ -37,6 +38,10 @@ public class Activator implements BundleActivator {
             dotfileManager.initialize();
             // Update all dotfiles with the current endpoint
             dotfileManager.updateAllDotfiles();
+
+            // Initialize telemetry
+            telemetryService = TelemetryService.getInstance();
+            telemetryService.trackEvent("plugin_activated", null);
         } catch (Exception e) {
             VaadinPluginLog.error("Failed to start Vaadin Eclipse Plugin: " + e.getMessage(), e);
             // Clean up any partially initialized resources
@@ -47,6 +52,12 @@ public class Activator implements BundleActivator {
 
     @Override
     public void stop(BundleContext context) throws Exception {
+        // Shutdown telemetry
+        if (telemetryService != null) {
+            telemetryService.shutdown();
+            telemetryService = null;
+        }
+
         // Cleanup dotfile manager
         if (dotfileManager != null) {
             dotfileManager.shutdown();
