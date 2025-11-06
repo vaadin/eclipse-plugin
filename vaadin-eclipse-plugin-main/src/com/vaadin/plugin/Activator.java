@@ -41,7 +41,12 @@ public class Activator implements BundleActivator {
 
             // Initialize telemetry
             telemetryService = TelemetryService.getInstance();
-            telemetryService.trackEvent("plugin_activated", null);
+            java.util.Map<String, Object> properties = new java.util.HashMap<>();
+            String proKey = System.getProperty("vaadin.prokey", "");
+            if (!proKey.isEmpty()) {
+                properties.put("ProKey", proKey);
+            }
+            telemetryService.trackEvent("PluginInitialized", properties);
         } catch (Exception e) {
             VaadinPluginLog.error("Failed to start Vaadin Eclipse Plugin: " + e.getMessage(), e);
             // Clean up any partially initialized resources

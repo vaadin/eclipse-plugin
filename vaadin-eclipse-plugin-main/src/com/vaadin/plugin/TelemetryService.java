@@ -59,6 +59,15 @@ public class TelemetryService {
         return workspaceId + "-" + instanceId;
     }
 
+    private boolean isVaadiner() {
+        String userEmail = System.getProperty("user.name", "");
+        return userEmail.contains("vaadin") || userEmail.endsWith("@vaadin.com");
+    }
+
+    private String getProKey() {
+        return System.getProperty("vaadin.prokey", "");
+    }
+
     public void trackEvent(String eventName, Map<String, Object> properties) {
         executor.submit(() -> {
             try {
@@ -83,6 +92,7 @@ public class TelemetryService {
             eventProperties.put("java_version", System.getProperty("java.version"));
             eventProperties.put("os", System.getProperty("os.name"));
             eventProperties.put("os_version", System.getProperty("os.version"));
+            eventProperties.put("Vaadiner", isVaadiner());
             if (properties != null) {
                 eventProperties.putAll(properties);
             }

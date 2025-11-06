@@ -229,7 +229,7 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
             properties.put("main_class", mainType.getFullyQualifiedName());
             properties.put("project_name", mainType.getJavaProject().getElementName());
             properties.put("has_jbr", hasJBR);
-            TelemetryService.getInstance().trackEvent("debug_launched", properties);
+            TelemetryService.getInstance().trackEvent("DebugWithHotswap", properties);
         } catch (Exception e) {
             // Ignore telemetry errors
         }

@@ -423,6 +423,7 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
     private void trackProjectCreation(AbstractProjectModel model) {
         try {
             java.util.Map<String, Object> properties = new java.util.HashMap<>();
+            properties.put("downloadUrl", model.getDownloadUrl());
 
             if (model instanceof StarterProjectModel) {
                 StarterProjectModel starterModel = (StarterProjectModel) model;
@@ -439,7 +440,7 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
                 properties.put("architecture", helloWorldModel.getArchitecture());
             }
 
-            TelemetryService.getInstance().trackEvent("project_created", properties);
+            TelemetryService.getInstance().trackEvent("ProjectCreated", properties);
         } catch (Exception e) {
             VaadinPluginLog.info("Failed to track project creation: " + e.getMessage());
         }
