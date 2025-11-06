@@ -1,17 +1,17 @@
 package com.vaadin.plugin.util;
 
+import java.io.IOException;
+import java.util.UUID;
+
+import org.eclipse.core.runtime.Platform;
+import org.osgi.framework.Bundle;
+
 import com.amplitude.ampli.*;
 import com.vaadin.pro.licensechecker.LocalProKey;
 import com.vaadin.pro.licensechecker.ProKey;
 
 import elemental.json.Json;
 import elemental.json.JsonObject;
-
-import java.io.IOException;
-import java.util.UUID;
-
-import org.eclipse.core.runtime.Platform;
-import org.osgi.framework.Bundle;
 
 public final class AnalyticsUtil {
 
@@ -32,7 +32,7 @@ public final class AnalyticsUtil {
         opts.setRegion(System.getProperty("user.region"));
         opts.setOsName(System.getProperty("os.name"));
         opts.setOsVersion(System.getProperty("os.version"));
-		opts.setAppVersion(getPluginVersion());
+        opts.setAppVersion(getPluginVersion());
         return opts;
     }
 
@@ -80,64 +80,56 @@ public final class AnalyticsUtil {
     private static String getProKey() {
         ProKey proKey = LocalProKey.get();
         if (proKey != null) {
-        	return proKey.getProKey();
+            return proKey.getProKey();
         }
         return null;
     }
 
     private static boolean isEnabled() {
         // Adjust getters if VaadinSettings exposes them differently
-        return true; //VaadinSettings.getInstance().getState().getSendUsageStatistics();
+        return true; // VaadinSettings.getInstance().getState().getSendUsageStatistics();
     }
-    
+
     private static String getPluginVersion() {
-    	Bundle bundle = Platform.getBundle("vaadin-eclipse-plugin");
-    	return bundle.getVersion().toString();
-	}
-    
+        Bundle bundle = Platform.getBundle("vaadin-eclipse-plugin");
+        return bundle.getVersion().toString();
+    }
+
     private static String getEclipseVersion() {
-    	Bundle bundle = Platform.getBundle("org.eclipse.platform");
+        Bundle bundle = Platform.getBundle("org.eclipse.platform");
         if (bundle != null) {
             return bundle.getVersion().toString();
         }
         return "Unknown";
-	}
+    }
 
     // --- Public tracking API ---
 
     public static void trackPluginInitialized() {
         if (isEnabled()) {
-            Ampli.getInstance().pluginInitialized(
-                    getUserId(),
-                    PluginInitialized.builder().vaadiner(isVaadiner()).proKey(getProKey()).build()
-            );
+            Ampli.getInstance().pluginInitialized(getUserId(),
+                    PluginInitialized.builder().vaadiner(isVaadiner()).proKey(getProKey()).build());
         }
     }
 
     public static void trackProjectCreated(String downloadUrl) {
         if (isEnabled()) {
-            Ampli.getInstance().projectCreated(
-                    getUserId(),
-                    ProjectCreated.builder().vaadiner(isVaadiner()).downloadUrl(downloadUrl).build()
-            );
+            Ampli.getInstance().projectCreated(getUserId(),
+                    ProjectCreated.builder().vaadiner(isVaadiner()).downloadUrl(downloadUrl).build());
         }
     }
 
     public static void trackManualCopilotRestart() {
         if (isEnabled()) {
-            Ampli.getInstance().manualCopilotRestart(
-                    getUserId(),
-                    ManualCopilotRestart.builder().vaadiner(isVaadiner()).build()
-            );
+            Ampli.getInstance().manualCopilotRestart(getUserId(),
+                    ManualCopilotRestart.builder().vaadiner(isVaadiner()).build());
         }
     }
 
     public static void trackDebugWithHotswap() {
         if (isEnabled()) {
-            Ampli.getInstance().debugWithHotswap(
-                    getUserId(),
-                    DebugWithHotswap.builder().vaadiner(isVaadiner()).build()
-            );
+            Ampli.getInstance().debugWithHotswap(getUserId(),
+                    DebugWithHotswap.builder().vaadiner(isVaadiner()).build());
         }
     }
 }

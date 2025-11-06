@@ -1,7 +1,6 @@
 package com.amplitude;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.google.gson.JsonObject;
 
 public class Plan {
     /**
@@ -21,11 +20,13 @@ public class Plan {
      */
     private String versionId;
 
-    private JSONObject jsonPlan;
+    private JsonObject jsonPlan;
 
     /**
      * Set the tracking plan branch information.
-     * @param branch The tracking plan branch name e.g. "main"
+     *
+     * @param branch
+     *            The tracking plan branch name e.g. "main"
      * @return the same Plan object
      */
     public Plan setBranch(String branch) {
@@ -36,7 +37,9 @@ public class Plan {
 
     /**
      * Set the tracking plan source information.
-     * @param source The tracking plan source e.g. "web", "mobile"
+     *
+     * @param source
+     *            The tracking plan source e.g. "web", "mobile"
      * @return the same Plan object
      */
     public Plan setSource(String source) {
@@ -47,7 +50,9 @@ public class Plan {
 
     /**
      * Set the tracking plan version information.
-     * @param version The tracking plan version e.g. "1", "15"
+     *
+     * @param version
+     *            The tracking plan version e.g. "1", "15"
      * @return the same Plan object
      */
     public Plan setVersion(String version) {
@@ -58,7 +63,9 @@ public class Plan {
 
     /**
      * Set the tracking plan version Id.
-     * @param versionId The tracking plan versionId e.g. "9ec23ba0-275f-468f-80d1-66b88bff9529"
+     *
+     * @param versionId
+     *            The tracking plan versionId e.g. "9ec23ba0-275f-468f-80d1-66b88bff9529"
      * @return the same Plan object
      */
     public Plan setVersionId(String versionId) {
@@ -68,26 +75,27 @@ public class Plan {
     }
 
     /**
-     * Get JSONObject of current tacking plan
-     * @return JSONObject including plan information
+     * Get JsonObject of current tacking plan
+     *
+     * @return JsonObject including plan information
      */
-    protected JSONObject toJSONObject() throws JSONException {
+    protected JsonObject toJsonObject() {
         if (this.jsonPlan != null) {
             return this.jsonPlan;
         }
 
-        JSONObject plan = new JSONObject();
+        JsonObject plan = new JsonObject();
         if (!Utils.isEmptyString(branch)) {
-            plan.put(Constants.AMP_PLAN_BRANCH, branch);
+            plan.addProperty(Constants.AMP_PLAN_BRANCH, branch);
         }
         if (!Utils.isEmptyString(source)) {
-            plan.put(Constants.AMP_PLAN_SOURCE, source);
+            plan.addProperty(Constants.AMP_PLAN_SOURCE, source);
         }
         if (!Utils.isEmptyString(version)) {
-            plan.put(Constants.AMP_PLAN_VERSION, version);
+            plan.addProperty(Constants.AMP_PLAN_VERSION, version);
         }
         if (!Utils.isEmptyString(versionId)) {
-            plan.put(Constants.AMP_PLAN_VERSION_ID, versionId);
+            plan.addProperty(Constants.AMP_PLAN_VERSION_ID, versionId);
         }
         this.jsonPlan = plan;
         return plan;

@@ -23,8 +23,7 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.wst.common.modulecore,
  org.eclipse.m2e.core,
  org.eclipse.m2e.maven.runtime,
- org.eclipse.buildship.core;resolution:=optional,
- org.json
+ org.eclipse.buildship.core;resolution:=optional
 Bundle-Activator: com.vaadin.plugin.Activator
 Bundle-ActivationPolicy: lazy
 Import-Package: org.osgi.framework,

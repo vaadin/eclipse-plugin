@@ -38,7 +38,7 @@ public class Activator implements BundleActivator {
             dotfileManager.initialize();
             // Update all dotfiles with the current endpoint
             dotfileManager.updateAllDotfiles();
-            
+
             // Initialize Amplitude
             AnalyticsUtil.trackPluginInitialized();
 

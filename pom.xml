@@ -54,21 +54,7 @@
                             <arch>x86_64</arch>
                         </environment>
                     </environments>
-                    <pomDependencies>consider</pomDependencies>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.eclipse.tycho.extras</groupId>
-                <artifactId>tycho-p2-extras-plugin</artifactId>
-                <version>${tycho-version}</version>
-                <executions>
-                    <execution>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>publish-features-and-bundles</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>

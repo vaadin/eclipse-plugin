@@ -1,9 +1,5 @@
 package com.vaadin.plugin.util;
 
-import elemental.json.Json;
-import elemental.json.JsonException;
-import elemental.json.JsonObject;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,13 +12,18 @@ import java.util.UUID;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import elemental.json.Json;
+import elemental.json.JsonException;
+import elemental.json.JsonObject;
+
 public final class VaadinHomeUtil {
 
     private static final String PROPERTY_USER_HOME = "user.home";
     private static final String VAADIN_FOLDER_NAME = ".vaadin";
     private static final String HOTSWAP_AGENT_JAR_FILE_NAME = "hotswap-agent.jar";
 
-    private VaadinHomeUtil() { /* no instances */ }
+    private VaadinHomeUtil() {
+        /* no instances */ }
 
     /**
      * Get Vaadin home directory.
@@ -44,7 +45,7 @@ public final class VaadinHomeUtil {
             } catch (JsonException ex) {
                 // fix for invalid JSON regression
                 // fall through to regenerate
-                //noinspection ResultOfMethodCallIgnored
+                // noinspection ResultOfMethodCallIgnored
                 userKeyFile.delete();
             }
         }
@@ -64,7 +65,8 @@ public final class VaadinHomeUtil {
      */
     public static File getHotSwapAgentJar() {
         File jar = getHotSwapAgentJarFile();
-        // might only happen if user removes hotswap-agent.jar manually after plugin is already installed
+        // might only happen if user removes hotswap-agent.jar manually after plugin is
+        // already installed
         if (!jar.exists()) {
             updateOrInstallHotSwapJar();
         }
@@ -78,8 +80,7 @@ public final class VaadinHomeUtil {
      */
     public static String updateOrInstallHotSwapJar() {
         try {
-            InputStream bundledHotswap = VaadinHomeUtil.class
-                    .getClassLoader()
+            InputStream bundledHotswap = VaadinHomeUtil.class.getClassLoader()
                     .getResourceAsStream(HOTSWAP_AGENT_JAR_FILE_NAME);
 
             if (bundledHotswap == null) {
@@ -93,7 +94,7 @@ public final class VaadinHomeUtil {
                 try {
                     // Create parent directories if they don't exist
                     Files.createDirectories(targetPath.getParent());
-                    
+
                     try (InputStream in = bundledHotswap) {
                         Files.copy(in, targetPath, StandardCopyOption.REPLACE_EXISTING);
                     }
@@ -101,8 +102,8 @@ public final class VaadinHomeUtil {
                     VaadinPluginLog.info("Installed hotswap-agent.jar version: " + version);
                     return version;
                 } catch (IOException e) {
-                    throw new IllegalStateException(
-                            "Unable to copy hotswap-agent.jar to " + target.getAbsolutePath(), e);
+                    throw new IllegalStateException("Unable to copy hotswap-agent.jar to " + target.getAbsolutePath(),
+                            e);
                 }
             } else if (isBundledVersionNewer()) {
                 try (InputStream in = VaadinHomeUtil.class.getClassLoader()
@@ -123,7 +124,7 @@ public final class VaadinHomeUtil {
                 return version;
             }
         } catch (Exception e) {
-        	VaadinPluginLog.error(e.getMessage(), e);
+            VaadinPluginLog.error(e.getMessage(), e);
             return null;
         }
     }
@@ -141,8 +142,7 @@ public final class VaadinHomeUtil {
         Path tempFile = null;
         try {
             tempFile = Files.createTempFile("bundled-hotswap-agent", ".jar");
-            InputStream in = VaadinHomeUtil.class.getClassLoader()
-                    .getResourceAsStream(HOTSWAP_AGENT_JAR_FILE_NAME);
+            InputStream in = VaadinHomeUtil.class.getClassLoader().getResourceAsStream(HOTSWAP_AGENT_JAR_FILE_NAME);
             if (in == null) {
                 throw new IllegalStateException("Unable to copy hotswap-agent.jar to temporary file ");
             }
