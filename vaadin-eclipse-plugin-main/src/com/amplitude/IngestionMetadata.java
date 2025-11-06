@@ -1,6 +1,7 @@
 package com.amplitude;
 
-import com.google.gson.JsonObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class IngestionMetadata {
     /**
@@ -12,7 +13,7 @@ public class IngestionMetadata {
      */
     private String sourceVersion;
 
-    private JsonObject jsonObject;
+    private JSONObject jsonObject;
 
     /**
      * Set the ingestion metadata source name information.
@@ -41,21 +42,21 @@ public class IngestionMetadata {
     }
 
     /**
-     * Get JsonObject of current ingestion metadata
+     * Get JSONObject of current ingestion metadata
      *
-     * @return JsonObject including ingestion metadata information
+     * @return JSONObject including ingestion metadata information
      */
-    protected JsonObject toJsonObject() {
+    protected JSONObject toJSONObject() throws JSONException {
         if (this.jsonObject != null) {
             return this.jsonObject;
         }
 
-        JsonObject jsonObject = new JsonObject();
+        JSONObject jsonObject = new JSONObject();
         if (!Utils.isEmptyString(sourceName)) {
-            jsonObject.addProperty(Constants.AMP_INGESTION_METADATA_SOURCE_NAME, sourceName);
+            jsonObject.put(Constants.AMP_INGESTION_METADATA_SOURCE_NAME, sourceName);
         }
         if (!Utils.isEmptyString(sourceVersion)) {
-            jsonObject.addProperty(Constants.AMP_INGESTION_METADATA_SOURCE_VERSION, sourceVersion);
+            jsonObject.put(Constants.AMP_INGESTION_METADATA_SOURCE_VERSION, sourceVersion);
         }
         this.jsonObject = jsonObject;
         return jsonObject;

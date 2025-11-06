@@ -1,6 +1,7 @@
 package com.amplitude;
 
-import com.google.gson.JsonObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class Plan {
     /**
@@ -20,7 +21,7 @@ public class Plan {
      */
     private String versionId;
 
-    private JsonObject jsonPlan;
+    private JSONObject jsonPlan;
 
     /**
      * Set the tracking plan branch information.
@@ -75,27 +76,27 @@ public class Plan {
     }
 
     /**
-     * Get JsonObject of current tacking plan
+     * Get JSONObject of current tacking plan
      *
-     * @return JsonObject including plan information
+     * @return JSONObject including plan information
      */
-    protected JsonObject toJsonObject() {
+    protected JSONObject toJSONObject() throws JSONException {
         if (this.jsonPlan != null) {
             return this.jsonPlan;
         }
 
-        JsonObject plan = new JsonObject();
+        JSONObject plan = new JSONObject();
         if (!Utils.isEmptyString(branch)) {
-            plan.addProperty(Constants.AMP_PLAN_BRANCH, branch);
+            plan.put(Constants.AMP_PLAN_BRANCH, branch);
         }
         if (!Utils.isEmptyString(source)) {
-            plan.addProperty(Constants.AMP_PLAN_SOURCE, source);
+            plan.put(Constants.AMP_PLAN_SOURCE, source);
         }
         if (!Utils.isEmptyString(version)) {
-            plan.addProperty(Constants.AMP_PLAN_VERSION, version);
+            plan.put(Constants.AMP_PLAN_VERSION, version);
         }
         if (!Utils.isEmptyString(versionId)) {
-            plan.addProperty(Constants.AMP_PLAN_VERSION_ID, versionId);
+            plan.put(Constants.AMP_PLAN_VERSION_ID, versionId);
         }
         this.jsonPlan = plan;
         return plan;

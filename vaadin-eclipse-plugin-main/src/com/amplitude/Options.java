@@ -3,7 +3,8 @@ package com.amplitude;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.google.gson.JsonObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class Options {
 
@@ -35,10 +36,14 @@ public class Options {
         return this;
     }
 
-    public JsonObject toJsonObject() {
-        JsonObject eventOptions = new JsonObject();
-        if (minIdLength != null)
-            eventOptions.addProperty("min_id_length", minIdLength);
+    public JSONObject toJsonObject() {
+        JSONObject eventOptions = new JSONObject();
+        try {
+            if (minIdLength != null)
+                eventOptions.put("min_id_length", minIdLength);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         return eventOptions;
     }
 }

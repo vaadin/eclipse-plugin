@@ -1,13 +1,11 @@
 package com.amplitude;
 
-import java.util.Map;
+import java.util.Iterator;
 import java.util.UUID;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class Event {
     /** A unique identifier for your event. */
@@ -110,13 +108,13 @@ public class Event {
      * property values in an array. Date values are transformed into string values. Object depth may not exceed 40
      * layers.
      */
-    public JsonObject eventProperties;
+    public JSONObject eventProperties;
 
     /**
      * A dictionary of key-value pairs that represent additional data tied to the user. You can store property values in
      * an array. Date values are transformed into string values. Object depth may not exceed 40 layers.
      */
-    public JsonObject userProperties;
+    public JSONObject userProperties;
 
     /**
      * The price of the item purchased. Required for revenue data if the revenue field is not sent. You can use negative
@@ -172,13 +170,13 @@ public class Event {
      * dictionary of key-value pairs that represent groups of users to the event as an event-level group. You can only
      * track up to 5 groups.
      */
-    public JsonObject groups;
+    public JSONObject groups;
 
     /**
      * This feature is only available to Enterprise customers who have purchased the Accounts add-on. A dictionary of
      * key-value pairs that represent data tied to the groups.
      */
-    public JsonObject groupProperties;
+    public JSONObject groupProperties;
 
     /**
      * The tracking plan.
@@ -231,140 +229,123 @@ public class Event {
         this.deviceId = deviceId;
     }
 
-    /** @return the JsonObject that represents the event data of this event */
-    public JsonObject toJsonObject() {
-        JsonObject event = new JsonObject();
+    /** @return the JSONObject that represents the event data of this event */
+    public JSONObject toJsonObject() {
+        JSONObject event = new JSONObject();
         try {
-            event.addProperty("event_type", eventType);
-            event.add("user_id", replaceWithJsonNull(userId));
-            event.add("device_id", replaceWithJsonNull(deviceId));
-            event.addProperty("time", timestamp);
-            event.addProperty("location_lat", locationLat);
-            event.addProperty("location_lng", locationLng);
-            event.addProperty("app_version", appVersion);
-            event.add("version_name", replaceWithJsonNull(versionName));
-            event.addProperty("library", Constants.SDK_LIBRARY + "/" + Constants.SDK_VERSION);
-            event.add("platform", replaceWithJsonNull(platform));
-            event.add("os_name", replaceWithJsonNull(osName));
-            event.add("os_version", replaceWithJsonNull(osVersion));
-            event.add("device_brand", replaceWithJsonNull(deviceBrand));
-            event.add("device_manufacturer", replaceWithJsonNull(deviceManufacturer));
-            event.add("device_model", replaceWithJsonNull(deviceModel));
-            event.add("carrier", replaceWithJsonNull(carrier));
-            event.add("country", replaceWithJsonNull(country));
-            event.add("region", replaceWithJsonNull(region));
-            event.add("city", replaceWithJsonNull(city));
-            event.add("dma", replaceWithJsonNull(dma));
-            event.add("idfa", replaceWithJsonNull(idfa));
-            event.add("idfv", replaceWithJsonNull(idfv));
-            event.add("adid", replaceWithJsonNull(adid));
-            event.add("android_id", replaceWithJsonNull(androidId));
-            event.add("language", replaceWithJsonNull(language));
-            event.add("partner_id", replaceWithJsonNull(partnerId));
-            event.add("ip", replaceWithJsonNull(ip));
-            event.add("event_properties", (eventProperties == null) ? new JsonObject() : truncate(eventProperties));
-            event.add("user_properties", (userProperties == null) ? new JsonObject() : truncate(userProperties));
+            event.put("event_type", eventType);
+            event.put("user_id", replaceWithJSONNull(userId));
+            event.put("device_id", replaceWithJSONNull(deviceId));
+            event.put("time", timestamp);
+            event.put("location_lat", locationLat);
+            event.put("location_lng", locationLng);
+            event.put("app_version", appVersion);
+            event.put("version_name", replaceWithJSONNull(versionName));
+            event.put("library", Constants.SDK_LIBRARY + "/" + Constants.SDK_VERSION);
+            event.put("platform", replaceWithJSONNull(platform));
+            event.put("os_name", replaceWithJSONNull(osName));
+            event.put("os_version", replaceWithJSONNull(osVersion));
+            event.put("device_brand", replaceWithJSONNull(deviceBrand));
+            event.put("device_manufacturer", replaceWithJSONNull(deviceManufacturer));
+            event.put("device_model", replaceWithJSONNull(deviceModel));
+            event.put("carrier", replaceWithJSONNull(carrier));
+            event.put("country", replaceWithJSONNull(country));
+            event.put("region", replaceWithJSONNull(region));
+            event.put("city", replaceWithJSONNull(city));
+            event.put("dma", replaceWithJSONNull(dma));
+            event.put("idfa", replaceWithJSONNull(idfa));
+            event.put("idfv", replaceWithJSONNull(idfv));
+            event.put("adid", replaceWithJSONNull(adid));
+            event.put("android_id", replaceWithJSONNull(androidId));
+            event.put("language", replaceWithJSONNull(language));
+            event.put("partner_id", replaceWithJSONNull(partnerId));
+            event.put("ip", replaceWithJSONNull(ip));
+            event.put("event_properties", (eventProperties == null) ? new JSONObject() : truncate(eventProperties));
+            event.put("user_properties", (userProperties == null) ? new JSONObject() : truncate(userProperties));
 
             boolean shouldLogRevenueProps = (revenue != null || price != null);
             if (shouldLogRevenueProps) {
                 int eventQuantity = quantity > 0 ? quantity : 1;
-                event.add("price", replaceWithJsonNull(price));
-                event.addProperty("quantity", eventQuantity);
-                event.add("revenue", replaceWithJsonNull(revenue));
-                event.addProperty("productId", productId);
-                event.addProperty("revenueType", revenueType);
-                event.addProperty("currency", currency);
+                event.put("price", price);
+                event.put("quantity", eventQuantity);
+                event.put("revenue", revenue);
+                event.put("productId", productId);
+                event.put("revenueType", revenueType);
+                event.put("currency", currency);
             }
 
-            event.add("event_id", replaceWithJsonNull(eventId));
-            event.addProperty("session_id", sessionId); // session_id = -1 if outOfSession = true;
-            event.addProperty("insert_id", insertId);
-            event.add("groups", (groups == null) ? new JsonObject() : truncate(groups));
-            event.add("group_properties", (groupProperties == null) ? new JsonObject() : truncate(groupProperties));
+            event.put("event_id", replaceWithJSONNull(eventId));
+            event.put("session_id", sessionId); // session_id = -1 if outOfSession = true;
+            event.put("insert_id", insertId);
+            event.put("groups", (groups == null) ? new JSONObject() : truncate(groups));
+            event.put("group_properties", (groupProperties == null) ? new JSONObject() : truncate(groupProperties));
 
             if (plan != null) {
-                event.add("plan", plan.toJsonObject());
+                event.put("plan", plan.toJSONObject());
             }
 
             if (ingestionMetadata != null) {
-                event.add("ingestion_metadata", ingestionMetadata.toJsonObject());
+                event.put("ingestion_metadata", ingestionMetadata.toJSONObject());
             }
-        } catch (Exception e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
         return event;
     }
 
     /** internal method */
-    protected JsonElement replaceWithJsonNull(Object obj) {
-        return obj == null ? JsonNull.INSTANCE : new JsonPrimitive(obj.toString());
+    protected Object replaceWithJSONNull(Object obj) {
+        return obj == null ? JSONObject.NULL : obj;
     }
 
-    protected JsonElement replaceWithJsonNull(String str) {
-        return str == null ? JsonNull.INSTANCE : new JsonPrimitive(str);
-    }
-
-    protected JsonElement replaceWithJsonNull(Double d) {
-        return d == null ? JsonNull.INSTANCE : new JsonPrimitive(d);
-    }
-
-    protected JsonElement replaceWithJsonNull(Integer i) {
-        return i == null ? JsonNull.INSTANCE : new JsonPrimitive(i);
-    }
-
-    protected JsonObject truncate(JsonObject object) {
+    protected JSONObject truncate(JSONObject object) {
         if (object == null) {
-            return new JsonObject();
+            return new JSONObject();
         }
 
-        if (object.size() > Constants.MAX_PROPERTY_KEYS) {
+        if (object.length() > Constants.MAX_PROPERTY_KEYS) {
             throw new IllegalArgumentException(
                     "Too many properties (more than " + Constants.MAX_PROPERTY_KEYS + ") in JSON");
         }
 
-        JsonObject truncatedObject = new JsonObject();
-        for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
-            String key = entry.getKey();
-            JsonElement value = entry.getValue();
+        Iterator<?> keys = object.keys();
+        while (keys.hasNext()) {
+            String key = (String) keys.next();
 
             try {
-                if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()) {
-                    truncatedObject.addProperty(key, truncate(value.getAsString()));
-                } else if (value.isJsonObject()) {
-                    truncatedObject.add(key, truncate(value.getAsJsonObject()));
-                } else if (value.isJsonArray()) {
-                    truncatedObject.add(key, truncate(value.getAsJsonArray()));
-                } else {
-                    truncatedObject.add(key, value);
+                Object value = object.get(key);
+                if (value.getClass().equals(String.class)) {
+                    object.put(key, truncate((String) value));
+                } else if (value.getClass().equals(JSONObject.class)) {
+                    object.put(key, truncate((JSONObject) value));
+                } else if (value.getClass().equals(JSONArray.class)) {
+                    object.put(key, truncate((JSONArray) value));
                 }
-            } catch (Exception e) {
+            } catch (JSONException e) {
                 throw new IllegalArgumentException(
                         "JSON parsing error. Too long (>" + Constants.MAX_STRING_LENGTH + " chars) or invalid JSON");
             }
         }
 
-        return truncatedObject;
+        return object;
     }
 
-    protected JsonArray truncate(JsonArray array) {
+    protected JSONArray truncate(JSONArray array) throws JSONException {
         if (array == null) {
-            return new JsonArray();
+            return new JSONArray();
         }
 
-        JsonArray truncatedArray = new JsonArray();
-        for (int i = 0; i < array.size(); i++) {
-            JsonElement value = array.get(i);
-            if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()) {
-                truncatedArray.add(truncate(value.getAsString()));
-            } else if (value.isJsonObject()) {
-                truncatedArray.add(truncate(value.getAsJsonObject()));
-            } else if (value.isJsonArray()) {
-                truncatedArray.add(truncate(value.getAsJsonArray()));
-            } else {
-                truncatedArray.add(value);
+        for (int i = 0; i < array.length(); i++) {
+            Object value = array.get(i);
+            if (value.getClass().equals(String.class)) {
+                array.put(i, truncate((String) value));
+            } else if (value.getClass().equals(JSONObject.class)) {
+                array.put(i, truncate((JSONObject) value));
+            } else if (value.getClass().equals(JSONArray.class)) {
+                array.put(i, truncate((JSONArray) value));
             }
         }
-        return truncatedArray;
+        return array;
     }
 
     public String toString() {

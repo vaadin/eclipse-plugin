@@ -8,19 +8,17 @@ import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import com.amplitude.exception.AmplitudeInvalidAPIKeyException;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
 
 public class HttpCall {
     private final String apiKey;
     private final String serverUrl;
     private final Options options;
     private final Proxy proxy;
-    private final Gson gson = new Gson();
 
     protected HttpCall(String apiKey, String serverUrl) {
         this(apiKey, serverUrl, null, Proxy.NO_PROXY);
@@ -56,18 +54,18 @@ public class HttpCall {
                 this.options.headers.forEach(connection::setRequestProperty);
             }
 
-            JsonObject bodyJson = new JsonObject();
-            bodyJson.addProperty("api_key", this.apiKey);
+            JSONObject bodyJson = new JSONObject();
+            bodyJson.put("api_key", this.apiKey);
             if (options != null)
-                bodyJson.add("options", options.toJsonObject());
+                bodyJson.put("options", options.toJsonObject());
 
-            JsonArray eventsArr = new JsonArray();
-            for (Event event : events) {
-                eventsArr.add(event.toJsonObject());
+            JSONArray eventsArr = new JSONArray();
+            for (int i = 0; i < events.size(); i++) {
+                eventsArr.put(i, events.get(i).toJsonObject());
             }
-            bodyJson.add("events", eventsArr);
+            bodyJson.put("events", eventsArr);
 
-            String bodyString = gson.toJson(bodyJson);
+            String bodyString = bodyJson.toString();
             OutputStream os = connection.getOutputStream();
             byte[] input = bodyString.getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
@@ -86,21 +84,31 @@ public class HttpCall {
             while ((output = br.readLine()) != null) {
                 sb.append(output);
             }
-            JsonObject responseJson = JsonParser.parseString(sb.toString()).getAsJsonObject();
+            JSONObject responseJson = new JSONObject(sb.toString());
             responseBody = Response.populateResponse(responseJson);
         } catch (IOException e) {
             // This handles UnknownHostException, when there is no internet connection.
             // SocketTimeoutException will be triggered when the HTTP request times out.
-            JsonObject timesOutResponse = new JsonObject();
-            timesOutResponse.addProperty("status", Status.TIMEOUT.toString());
-            timesOutResponse.addProperty("code", 408);
-            responseBody = Response.populateResponse(timesOutResponse);
-        } catch (JsonSyntaxException e) {
+            try {
+                JSONObject timesOutResponse = new JSONObject();
+                timesOutResponse.put("status", Status.TIMEOUT);
+                timesOutResponse.put("code", 408);
+                responseBody = Response.populateResponse(timesOutResponse);
+            } catch (JSONException jsonEx) {
+                // Handle JSON exception when creating timeout response
+                responseBody = new Response();
+            }
+        } catch (JSONException e) {
             // Some error responses from load balancers and reverse proxies may have
             // response bodies that are not JSON (e.g. HTML, XML).
-            JsonObject decodeFailureResponse = new JsonObject();
-            decodeFailureResponse.addProperty("code", responseCode);
-            responseBody = Response.populateResponse(decodeFailureResponse);
+            try {
+                JSONObject decodeFailureResponse = new JSONObject();
+                decodeFailureResponse.put("code", responseCode);
+                responseBody = Response.populateResponse(decodeFailureResponse);
+            } catch (JSONException jsonEx) {
+                // Handle JSON exception when creating decode failure response
+                responseBody = new Response();
+            }
         } finally {
             if (inputStream != null) {
                 try {

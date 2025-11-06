@@ -24,7 +24,8 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.m2e.core,
  org.eclipse.m2e.maven.runtime,
  org.eclipse.buildship.core;resolution:=optional,
- com.vaadin.license-checker
+ com.vaadin.license-checker,
+ org.json
 Bundle-Activator: com.vaadin.plugin.Activator
 Bundle-ActivationPolicy: lazy
 Import-Package: org.osgi.framework,

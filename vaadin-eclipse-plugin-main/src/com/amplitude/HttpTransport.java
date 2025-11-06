@@ -3,8 +3,10 @@ package com.amplitude;
 import java.util.*;
 import java.util.concurrent.*;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import com.amplitude.exception.AmplitudeInvalidAPIKeyException;
-import com.google.gson.JsonObject;
 
 class EventsRetryResult {
     protected boolean shouldRetry;
@@ -218,22 +220,26 @@ class HttpTransport {
         List<Event> eventsToDrop = new ArrayList<>();
         // Filter invalid event out based on the response code.
         if (response.status == Status.INVALID && response.invalidRequestBody != null) {
-            if ((response.invalidRequestBody.has("missingField")
-                    && Utils.getStringValueWithKey(response.invalidRequestBody, "missingField").length() > 0)
-                    || events.size() == 1) {
-                // Return early if there's an issue with the entire payload
-                // or if there's only one event and its invalid
-                eventsToDrop = events;
-            } else {
-                // Filter out invalid events id vv v
-                int[] invalidEventIndices = response.collectInvalidEventIndices();
-                for (int i = 0; i < events.size(); i++) {
-                    if (Arrays.binarySearch(invalidEventIndices, i) < 0) {
-                        eventsToRetry.add(events.get(i));
-                    } else {
-                        eventsToDrop.add(events.get(i));
+            try {
+                if ((response.invalidRequestBody.has("missingField")
+                        && response.invalidRequestBody.getString("missingField").length() > 0) || events.size() == 1) {
+                    // Return early if there's an issue with the entire payload
+                    // or if there's only one event and its invalid
+                    eventsToDrop = events;
+                } else {
+                    // Filter out invalid events id vv v
+                    int[] invalidEventIndices = response.collectInvalidEventIndices();
+                    for (int i = 0; i < events.size(); i++) {
+                        if (Arrays.binarySearch(invalidEventIndices, i) < 0) {
+                            eventsToRetry.add(events.get(i));
+                        } else {
+                            eventsToDrop.add(events.get(i));
+                        }
                     }
                 }
+            } catch (JSONException e) {
+                // Handle JSON exception when processing invalid request body
+                eventsToDrop = events;
             }
         } else if (response.status == Status.RATELIMIT && response.rateLimitBody != null) {
             for (Event event : events) {
@@ -241,20 +247,17 @@ class HttpTransport {
                     eventsToRetry.add(event);
                     if (recordThrottledId) {
                         try {
-                            JsonObject throttledUser = Utils.getJsonObjectValueWithKey(response.rateLimitBody,
-                                    "throttledUsers");
-                            JsonObject throttledDevice = Utils.getJsonObjectValueWithKey(response.rateLimitBody,
-                                    "throttledDevices");
+                            JSONObject throttledUser = response.rateLimitBody.getJSONObject("throttledUsers");
+                            JSONObject throttledDevice = response.rateLimitBody.getJSONObject("throttledDevices");
                             synchronized (throttleLock) {
                                 if (throttledUser.has(event.userId)) {
-                                    throttledUserId.put(event.userId, throttledUser.get(event.userId).getAsInt());
+                                    throttledUserId.put(event.userId, throttledUser.getInt(event.userId));
                                 }
                                 if (throttledDevice.has(event.deviceId)) {
-                                    throttledDeviceId.put(event.deviceId,
-                                            throttledDevice.get(event.deviceId).getAsInt());
+                                    throttledDeviceId.put(event.deviceId, throttledDevice.getInt(event.deviceId));
                                 }
                             }
-                        } catch (Exception e) {
+                        } catch (JSONException e) {
                             logger.debug("THROTTLED", "Error get throttled userId or deviceId");
                         }
                     }
