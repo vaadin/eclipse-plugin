@@ -8,8 +8,9 @@ import java.nio.charset.StandardCharsets;
  */
 public abstract class AbstractProjectModel {
 
-    protected String projectName;
+    protected String projectName = "NewProject";
     protected String location;
+    protected String groupId = "com.example.application";
 
     /**
      * Get the download URL for this project configuration.
@@ -60,5 +61,13 @@ public abstract class AbstractProjectModel {
 
     public void setLocation(String location) {
         this.location = location;
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
     }
 }
