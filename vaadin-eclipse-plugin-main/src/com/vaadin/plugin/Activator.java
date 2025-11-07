@@ -1,7 +1,7 @@
 package com.vaadin.plugin;
 
 import org.eclipse.debug.core.DebugPlugin;
-import org.osgi.framework.BundleActivator;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
 import com.vaadin.plugin.debug.SilentExceptionFilter;
@@ -11,7 +11,8 @@ import com.vaadin.plugin.util.VaadinPluginLog;
 /**
  * Bundle activator that starts the REST service when the plug-in is activated and stops it on shutdown.
  */
-public class Activator implements BundleActivator {
+public class Activator extends AbstractUIPlugin {
+    private static Activator plugin;
     private CopilotRestService restService;
     private ServerLaunchListener serverLaunchListener;
     private CopilotDotfileManager dotfileManager;
@@ -20,6 +21,8 @@ public class Activator implements BundleActivator {
 
     @Override
     public void start(BundleContext context) throws Exception {
+        super.start(context);
+        plugin = this;
         try {
             restService = new CopilotRestService();
             restService.start();
@@ -55,6 +58,10 @@ public class Activator implements BundleActivator {
         }
     }
 
+    public static Activator getDefault() {
+        return plugin;
+    }
+
     @Override
     public void stop(BundleContext context) throws Exception {
         // Shutdown telemetry
@@ -85,5 +92,8 @@ public class Activator implements BundleActivator {
             restService.stop();
             restService = null;
         }
+
+        plugin = null;
+        super.stop(context);
     }
 }

@@ -15,6 +15,7 @@ import java.util.concurrent.Executors;
 import org.eclipse.core.runtime.Platform;
 
 import com.google.gson.Gson;
+import com.vaadin.plugin.preferences.VaadinPreferencePage;
 import com.vaadin.plugin.util.VaadinPluginLog;
 
 public class TelemetryService {
@@ -69,6 +70,10 @@ public class TelemetryService {
     }
 
     public void trackEvent(String eventName, Map<String, Object> properties) {
+        if (!isTelemetryEnabled()) {
+            return;
+        }
+
         executor.submit(() -> {
             try {
                 sendEvent(eventName, properties);
@@ -76,6 +81,14 @@ public class TelemetryService {
                 VaadinPluginLog.info("Failed to send telemetry event: " + e.getMessage());
             }
         });
+    }
+
+    private boolean isTelemetryEnabled() {
+        try {
+            return Activator.getDefault().getPreferenceStore().getBoolean(VaadinPreferencePage.PREF_ENABLE_TELEMETRY);
+        } catch (Exception e) {
+            return true;
+        }
     }
 
     private void sendEvent(String eventName, Map<String, Object> properties) {
