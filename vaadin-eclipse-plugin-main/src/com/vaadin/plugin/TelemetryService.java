@@ -1,5 +1,6 @@
 package com.vaadin.plugin;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -16,6 +17,7 @@ import org.eclipse.core.runtime.Platform;
 
 import com.google.gson.Gson;
 import com.vaadin.plugin.preferences.VaadinPreferencePage;
+import com.vaadin.plugin.util.VaadinHomeUtil;
 import com.vaadin.plugin.util.VaadinPluginLog;
 
 public class TelemetryService {
@@ -28,8 +30,10 @@ public class TelemetryService {
     private final HttpClient httpClient;
     private final ExecutorService executor;
     private final Gson gson;
-    private final String userId;
     private final long sessionId;
+
+    private static volatile String userId = null;
+    private static volatile Boolean vaadiner = null;
 
     private TelemetryService() {
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
@@ -39,7 +43,6 @@ public class TelemetryService {
             return t;
         });
         this.gson = new Gson();
-        this.userId = getUserId();
         this.sessionId = System.currentTimeMillis();
     }
 
@@ -51,18 +54,32 @@ public class TelemetryService {
     }
 
     private String getUserId() {
-        String workspaceId = System.getProperty("user.name", "unknown");
-        String instanceId = System.getProperty(SESSION_ID_KEY);
-        if (instanceId == null) {
-            instanceId = UUID.randomUUID().toString();
-            System.setProperty(SESSION_ID_KEY, instanceId);
+        if (userId == null) {
+            synchronized (TelemetryService.class) {
+                if (userId == null) {
+                    try {
+                        userId = VaadinHomeUtil.getUserKey();
+                    } catch (IOException e) {
+                        userId = "user-" + UUID.randomUUID();
+                    }
+                }
+            }
         }
-        return workspaceId + "-" + instanceId;
+        return userId;
     }
 
     private boolean isVaadiner() {
-        String userEmail = System.getProperty("user.name", "");
-        return userEmail.contains("vaadin") || userEmail.endsWith("@vaadin.com");
+        if (vaadiner == null) {
+            synchronized (TelemetryService.class) {
+                try {
+                    String username = VaadinHomeUtil.getProUsername();
+                    vaadiner = username != null && username.endsWith("@vaadin.com");
+                } catch (IOException e) {
+                    vaadiner = false;
+                }
+            }
+        }
+        return vaadiner;
     }
 
     private String getProKey() {
@@ -94,17 +111,17 @@ public class TelemetryService {
     private void sendEvent(String eventName, Map<String, Object> properties) {
         try {
             Map<String, Object> eventData = new HashMap<>();
-            eventData.put("user_id", userId);
+            eventData.put("user_id", getUserId());
             eventData.put("event_type", eventName);
             eventData.put("time", System.currentTimeMillis());
             eventData.put("session_id", sessionId);
             eventData.put("platform", "Eclipse");
-
+            eventData.put("os_name", System.getProperty("os.name"));
+            eventData.put("os_version", System.getProperty("os.version"));
+            eventData.put("eclipse_version", Platform.getProduct().getDefiningBundle().getVersion().toString());
+            eventData.put("app_version", Platform.getBundle("vaadin-eclipse-plugin").getVersion().toString());
             Map<String, Object> eventProperties = new HashMap<>();
-            eventProperties.put("eclipse_version", Platform.getProduct().getDefiningBundle().getVersion().toString());
             eventProperties.put("java_version", System.getProperty("java.version"));
-            eventProperties.put("os", System.getProperty("os.name"));
-            eventProperties.put("os_version", System.getProperty("os.version"));
             eventProperties.put("Vaadiner", isVaadiner());
             if (properties != null) {
                 eventProperties.putAll(properties);
