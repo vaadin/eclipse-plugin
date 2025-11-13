@@ -39,7 +39,6 @@ public class VaadinProjectWizardPage extends WizardPage {
     // Hello World options
     private Button helloWorldRadio;
     private Group helloWorldGroup;
-    private Combo frameworkCombo;
     private Combo languageCombo;
     private Combo buildToolCombo;
     private Combo architectureCombo;
@@ -268,14 +267,6 @@ public class VaadinProjectWizardPage extends WizardPage {
         helloWorldGroup.setLayout(new GridLayout(2, false));
 
         label = new Label(helloWorldGroup, SWT.NONE);
-        label.setText("Framework:");
-
-        frameworkCombo = new Combo(helloWorldGroup, SWT.READ_ONLY);
-        frameworkCombo.setItems("Flow / Java");
-        frameworkCombo.select(0);
-        frameworkCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-        label = new Label(helloWorldGroup, SWT.NONE);
         label.setText("Language:");
 
         languageCombo = new Combo(helloWorldGroup, SWT.READ_ONLY);
@@ -336,7 +327,6 @@ public class VaadinProjectWizardPage extends WizardPage {
             }
         };
 
-        frameworkCombo.addSelectionListener(validationListener);
         languageCombo.addSelectionListener(validationListener);
         buildToolCombo.addSelectionListener(validationListener);
         architectureCombo.addSelectionListener(validationListener);
