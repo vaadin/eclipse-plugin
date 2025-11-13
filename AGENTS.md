@@ -70,7 +70,6 @@ mvn clean install -DskipTests
 3. **Compilation**: No error tracking service (IntelliJ has CompilationStatusManagerService)
 4. **Endpoint Discovery**: Basic annotation scanning vs microservices framework integration
 5. **Project Events**: Basic open/close listeners vs comprehensive ProjectManagerListener
-6. **Hilla Support**: No @Endpoint/@BrowserCallable detection (IntelliJ has VaadinHillaEndpointsProvider)
 
 ## Known Issues
 

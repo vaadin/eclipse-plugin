@@ -27,7 +27,6 @@ public class StarterProjectModelTest {
 	public void testDefaultValues() {
 		assertNotNull("Model should be created", model);
 		assertTrue("Should include Flow by default", model.isIncludeFlow());
-		assertFalse("Should not include Hilla by default", model.isIncludeHilla());
 		assertFalse("Should not be prerelease by default", model.isPrerelease());
 	}
 
@@ -63,29 +62,15 @@ public class StarterProjectModelTest {
 	public void testFrameworkSelection() {
 		model.setProjectName("framework-test");
 
-		// Test Empty selection (neither Flow nor Hilla)
-		model.setIncludeFlow(false);
-		model.setIncludeHilla(false);
-		String url = model.getDownloadUrl();
-		assertFalse("Shouldn't contain frameworks parameter", url.matches(".*frameworks=.*"));
-
 		// Test Flow only
 		model.setIncludeFlow(true);
-		model.setIncludeHilla(false);
-		url = model.getDownloadUrl();
+		String url = model.getDownloadUrl();
 		assertTrue("Should have frameworks=flow", url.contains("frameworks=flow"));
 
-		// Test Hilla only
+		// Test no frameworks selected
 		model.setIncludeFlow(false);
-		model.setIncludeHilla(true);
 		url = model.getDownloadUrl();
-		assertTrue("Should have frameworks=hilla", url.contains("frameworks=hilla"));
-
-		// Test both (Flow and Hilla)
-		model.setIncludeFlow(true);
-		model.setIncludeHilla(true);
-		url = model.getDownloadUrl();
-		assertTrue("Should have frameworks=flow,hilla", url.contains("frameworks=flow,hilla"));
+		assertFalse("Shouldn't contain frameworks parameter", url.matches(".*frameworks=.*"));
 	}
 
 	@Test
@@ -113,7 +98,6 @@ public class StarterProjectModelTest {
 		model.setProjectName("full-test");
 		model.setPrerelease(true);
 		model.setIncludeFlow(true);
-		model.setIncludeHilla(true);
 
 		String url = model.getDownloadUrl();
 

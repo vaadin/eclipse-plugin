@@ -34,7 +34,7 @@ public class HelloWorldProjectModelTest {
 	@Test
 	public void testHelloWorldProjectUrlGeneration() throws MalformedURLException {
 		model.setProjectName("hello-world");
-		model.setFramework("hilla");
+		model.setFramework("flow");
 		model.setLanguage("kotlin");
 		model.setBuildTool("gradle");
 		model.setArchitecture("quarkus");
@@ -44,7 +44,7 @@ public class HelloWorldProjectModelTest {
 
 		// Verify URL contains correct parameters
 		assertTrue("URL should be for helloworld endpoint", urlString.contains("/helloworld?"));
-		assertTrue("URL should contain framework", urlString.contains("framework=hilla"));
+		assertTrue("URL should contain framework", urlString.contains("framework=flow"));
 		assertTrue("URL should contain language", urlString.contains("language=kotlin"));
 		assertTrue("URL should contain build tool", urlString.contains("buildtool=gradle"));
 		assertTrue("URL should contain stack", urlString.contains("stack=quarkus"));
@@ -53,7 +53,7 @@ public class HelloWorldProjectModelTest {
 	@Test
 	public void testAllHelloWorldParameters() {
 		model.setProjectName("hello-test");
-		model.setFramework("hilla");
+		model.setFramework("flow");
 		model.setLanguage("kotlin");
 		model.setBuildTool("gradle");
 		model.setArchitecture("jakartaee");
