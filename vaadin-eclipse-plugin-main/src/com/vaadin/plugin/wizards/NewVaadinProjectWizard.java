@@ -35,6 +35,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
 
 import com.vaadin.plugin.CopilotDotfileManager;
+import com.vaadin.plugin.TelemetryService;
 import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
@@ -88,6 +89,8 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
             MessageDialog.openError(getShell(), "Error", "Project creation failed: " + realException.getMessage());
             return false;
         }
+
+        trackProjectCreation(model);
 
         return true;
     }
@@ -415,5 +418,31 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
                 // Ignore - README opening is not critical
             }
         });
+    }
+
+    private void trackProjectCreation(AbstractProjectModel model) {
+        try {
+            java.util.Map<String, Object> properties = new java.util.HashMap<>();
+            properties.put("downloadUrl", model.getDownloadUrl());
+
+            if (model instanceof StarterProjectModel) {
+                StarterProjectModel starterModel = (StarterProjectModel) model;
+                properties.put("project_type", "starter");
+                properties.put("prerelease", starterModel.isPrerelease());
+                properties.put("include_flow", starterModel.isIncludeFlow());
+                properties.put("include_hilla", starterModel.isIncludeHilla());
+            } else if (model instanceof HelloWorldProjectModel) {
+                HelloWorldProjectModel helloWorldModel = (HelloWorldProjectModel) model;
+                properties.put("project_type", "helloworld");
+                properties.put("framework", helloWorldModel.getFramework());
+                properties.put("language", helloWorldModel.getLanguage());
+                properties.put("build_tool", helloWorldModel.getBuildTool());
+                properties.put("architecture", helloWorldModel.getArchitecture());
+            }
+
+            TelemetryService.getInstance().trackEvent("ProjectCreated", properties);
+        } catch (Exception e) {
+            VaadinPluginLog.info("Failed to track project creation: " + e.getMessage());
+        }
     }
 }

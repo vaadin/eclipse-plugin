@@ -692,7 +692,6 @@ public class CopilotRestService {
                                 continue;
                             }
 
-
                             // Try to determine if it's test or main source
                             String pathStr = path.toString();
                             if (pathStr.contains("/test/") || pathStr.contains("/test-")) {

@@ -1,7 +1,7 @@
 package com.vaadin.plugin;
 
 import org.eclipse.debug.core.DebugPlugin;
-import org.osgi.framework.BundleActivator;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
 import com.vaadin.plugin.debug.SilentExceptionFilter;
@@ -11,14 +11,18 @@ import com.vaadin.plugin.util.VaadinPluginLog;
 /**
  * Bundle activator that starts the REST service when the plug-in is activated and stops it on shutdown.
  */
-public class Activator implements BundleActivator {
+public class Activator extends AbstractUIPlugin {
+    private static Activator plugin;
     private CopilotRestService restService;
     private ServerLaunchListener serverLaunchListener;
     private CopilotDotfileManager dotfileManager;
     private SilentExceptionFilter silentExceptionFilter;
+    private TelemetryService telemetryService;
 
     @Override
     public void start(BundleContext context) throws Exception {
+        super.start(context);
+        plugin = this;
         try {
             restService = new CopilotRestService();
             restService.start();
@@ -37,6 +41,15 @@ public class Activator implements BundleActivator {
             dotfileManager.initialize();
             // Update all dotfiles with the current endpoint
             dotfileManager.updateAllDotfiles();
+
+            // Initialize telemetry
+            telemetryService = TelemetryService.getInstance();
+            java.util.Map<String, Object> properties = new java.util.HashMap<>();
+            String proKey = System.getProperty("vaadin.prokey", "");
+            if (!proKey.isEmpty()) {
+                properties.put("ProKey", proKey);
+            }
+            telemetryService.trackEvent("PluginInitialized", properties);
         } catch (Exception e) {
             VaadinPluginLog.error("Failed to start Vaadin Eclipse Plugin: " + e.getMessage(), e);
             // Clean up any partially initialized resources
@@ -45,8 +58,18 @@ public class Activator implements BundleActivator {
         }
     }
 
+    public static Activator getDefault() {
+        return plugin;
+    }
+
     @Override
     public void stop(BundleContext context) throws Exception {
+        // Shutdown telemetry
+        if (telemetryService != null) {
+            telemetryService.shutdown();
+            telemetryService = null;
+        }
+
         // Cleanup dotfile manager
         if (dotfileManager != null) {
             dotfileManager.shutdown();
@@ -69,5 +92,8 @@ public class Activator implements BundleActivator {
             restService.stop();
             restService = null;
         }
+
+        plugin = null;
+        super.stop(context);
     }
 }

@@ -90,4 +90,21 @@
      </builder>
   </extension>
 
+  <!-- Preferences -->
+  <extension
+        point="org.eclipse.ui.preferencePages">
+     <page
+           id="com.vaadin.plugin.preferences.VaadinPreferencePage"
+           name="Vaadin"
+           class="com.vaadin.plugin.preferences.VaadinPreferencePage">
+     </page>
+  </extension>
+
+  <extension
+        point="org.eclipse.core.runtime.preferences">
+     <initializer
+           class="com.vaadin.plugin.preferences.PreferenceInitializer">
+     </initializer>
+  </extension>
+
 </plugin>
