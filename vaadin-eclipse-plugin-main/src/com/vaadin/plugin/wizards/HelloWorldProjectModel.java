@@ -5,7 +5,7 @@ package com.vaadin.plugin.wizards;
  */
 public class HelloWorldProjectModel extends AbstractProjectModel {
 
-    private String framework = "flow"; // flow or hilla
+    private String framework = "flow";
     private String language = "java"; // java or kotlin
     private String buildTool = "maven"; // maven or gradle
     private String architecture = "springboot"; // springboot, quarkus, jakartaee, servlet

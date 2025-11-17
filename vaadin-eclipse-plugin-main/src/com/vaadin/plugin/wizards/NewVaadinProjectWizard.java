@@ -430,7 +430,6 @@ public class NewVaadinProjectWizard extends Wizard implements INewWizard {
                 properties.put("project_type", "starter");
                 properties.put("prerelease", starterModel.isPrerelease());
                 properties.put("include_flow", starterModel.isIncludeFlow());
-                properties.put("include_hilla", starterModel.isIncludeHilla());
             } else if (model instanceof HelloWorldProjectModel) {
                 HelloWorldProjectModel helloWorldModel = (HelloWorldProjectModel) model;
                 properties.put("project_type", "helloworld");

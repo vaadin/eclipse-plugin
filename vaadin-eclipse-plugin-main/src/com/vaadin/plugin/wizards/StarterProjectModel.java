@@ -7,7 +7,6 @@ public class StarterProjectModel extends AbstractProjectModel {
 
     private boolean prerelease = false;
     private boolean includeFlow = true;
-    private boolean includeHilla = false;
 
     @Override
     public String getDownloadUrl() {
@@ -20,13 +19,9 @@ public class StarterProjectModel extends AbstractProjectModel {
         url.append("&groupId=").append(encode(groupId));
 
         // Add framework selection using the 'frameworks' parameter
-        if (includeFlow && includeHilla) {
-            url.append("&frameworks=flow,hilla");
-        } else if (includeHilla) {
-            url.append("&frameworks=hilla");
-        } else if (includeFlow) {
+        if (includeFlow) {
             url.append("&frameworks=flow");
-        } // else: do not add frameworks parameter if both are false
+        }
 
         // Add platform version selection (always include, defaults to "latest")
         String platformVersion = prerelease ? "pre" : "latest";
@@ -57,13 +52,5 @@ public class StarterProjectModel extends AbstractProjectModel {
 
     public void setIncludeFlow(boolean includeFlow) {
         this.includeFlow = includeFlow;
-    }
-
-    public boolean isIncludeHilla() {
-        return includeHilla;
-    }
-
-    public void setIncludeHilla(boolean includeHilla) {
-        this.includeHilla = includeHilla;
     }
 }

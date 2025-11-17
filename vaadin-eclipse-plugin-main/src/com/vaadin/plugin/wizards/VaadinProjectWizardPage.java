@@ -34,13 +34,11 @@ public class VaadinProjectWizardPage extends WizardPage {
     private Button starterProjectRadio;
     private Group starterGroup;
     private Button flowCheckbox;
-    private Button hillaCheckbox;
     private Combo vaadinVersionCombo;
 
     // Hello World options
     private Button helloWorldRadio;
     private Group helloWorldGroup;
-    private Combo frameworkCombo;
     private Combo languageCombo;
     private Combo buildToolCombo;
     private Combo architectureCombo;
@@ -182,23 +180,22 @@ public class VaadinProjectWizardPage extends WizardPage {
         gd.widthHint = 500;
         gettingStartedText.setLayoutData(gd);
 
-        // Flow and Hilla section
-        Label flowHillaLabel = new Label(parent, SWT.NONE);
-        flowHillaLabel.setText("Flow and Hilla");
-        flowHillaLabel.setFont(JFaceResources.getFontRegistry().getBold(JFaceResources.DEFAULT_FONT));
+        // Flow section
+        Label flowLabel = new Label(parent, SWT.NONE);
+        flowLabel.setText("Flow");
+        flowLabel.setFont(JFaceResources.getFontRegistry().getBold(JFaceResources.DEFAULT_FONT));
         gd = new GridData();
         gd.horizontalSpan = 3;
         gd.verticalIndent = 10;
-        flowHillaLabel.setLayoutData(gd);
+        flowLabel.setLayoutData(gd);
 
-        Label flowHillaText = new Label(parent, SWT.WRAP);
-        flowHillaText.setText("Flow framework is the most productive choice, allowing 100% of the user interface to be "
-                + "coded in server-side Java. Hilla framework, on the other hand, enables implementation of your user "
-                + "interface with React while automatically connecting it to your Java backend.");
+        Label flowText = new Label(parent, SWT.WRAP);
+        flowText.setText("Flow framework is the most productive choice, allowing 100% of the user interface to be "
+                + "coded in server-side Java.");
         gd = new GridData(GridData.FILL_HORIZONTAL);
         gd.horizontalSpan = 3;
         gd.widthHint = 500;
-        flowHillaText.setLayoutData(gd);
+        flowText.setLayoutData(gd);
     }
 
     private void createProjectTypeSection(Composite parent) {
@@ -261,13 +258,6 @@ public class VaadinProjectWizardPage extends WizardPage {
         gd.horizontalSpan = 2;
         flowCheckbox.setLayoutData(gd);
 
-        hillaCheckbox = new Button(starterGroup, SWT.CHECK);
-        hillaCheckbox.setText("Full-stack React with Vaadin Hilla");
-        hillaCheckbox.setSelection(false);
-        gd = new GridData();
-        gd.horizontalSpan = 2;
-        hillaCheckbox.setLayoutData(gd);
-
         // Hello World Projects Section
         helloWorldGroup = new Group(parent, SWT.NONE);
         helloWorldGroup.setText("Hello World Project Options");
@@ -275,14 +265,6 @@ public class VaadinProjectWizardPage extends WizardPage {
         gd.horizontalSpan = 3;
         helloWorldGroup.setLayoutData(gd);
         helloWorldGroup.setLayout(new GridLayout(2, false));
-
-        label = new Label(helloWorldGroup, SWT.NONE);
-        label.setText("Framework:");
-
-        frameworkCombo = new Combo(helloWorldGroup, SWT.READ_ONLY);
-        frameworkCombo.setItems("Flow / Java", "Hilla / React");
-        frameworkCombo.select(0);
-        frameworkCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
         label = new Label(helloWorldGroup, SWT.NONE);
         label.setText("Language:");
@@ -345,12 +327,10 @@ public class VaadinProjectWizardPage extends WizardPage {
             }
         };
 
-        frameworkCombo.addSelectionListener(validationListener);
         languageCombo.addSelectionListener(validationListener);
         buildToolCombo.addSelectionListener(validationListener);
         architectureCombo.addSelectionListener(validationListener);
         flowCheckbox.addSelectionListener(validationListener);
-        hillaCheckbox.addSelectionListener(validationListener);
 
         // Initial enablement
         updateProjectTypeEnablement();
@@ -380,8 +360,6 @@ public class VaadinProjectWizardPage extends WizardPage {
 
     private void validateAndUpdateOptions() {
         if (helloWorldRadio.getSelection()) {
-            // Apply validation rules based on IntelliJ plugin's StarterSupport
-            boolean isHilla = frameworkCombo.getSelectionIndex() == 1;
             boolean isKotlin = languageCombo.getSelectionIndex() == 1;
             boolean isGradle = buildToolCombo.getSelectionIndex() == 1;
             String architecture = architectureCombo.getText();
@@ -389,11 +367,6 @@ public class VaadinProjectWizardPage extends WizardPage {
             // Show/hide Kotlin note
             if (kotlinNote != null) {
                 kotlinNote.setVisible(isKotlin);
-            }
-
-            // Hilla only supports Spring Boot
-            if (isHilla && !architecture.equals("Spring Boot")) {
-                architectureCombo.select(0); // Spring Boot
             }
 
             // Kotlin only supports Maven + Spring Boot
@@ -412,14 +385,12 @@ public class VaadinProjectWizardPage extends WizardPage {
             }
 
             // Disable invalid combinations
-            architectureCombo.setEnabled(!isHilla); // Only Spring Boot for Hilla
-
             if (isKotlin) {
                 buildToolCombo.setEnabled(false); // Only Maven for Kotlin
                 architectureCombo.setEnabled(false); // Only Spring Boot for Kotlin
             } else {
                 buildToolCombo.setEnabled(true);
-                architectureCombo.setEnabled(!isHilla);
+                architectureCombo.setEnabled(true);
             }
         }
     }
@@ -504,12 +475,11 @@ public class VaadinProjectWizardPage extends WizardPage {
             starterModel.setLocation(locationText.getText());
             starterModel.setPrerelease(vaadinVersionCombo.getSelectionIndex() == 1);
             starterModel.setIncludeFlow(flowCheckbox.getSelection());
-            starterModel.setIncludeHilla(hillaCheckbox.getSelection());
             return starterModel;
         } else {
             helloWorldModel.setProjectName(projectNameText.getText());
             helloWorldModel.setLocation(locationText.getText());
-            helloWorldModel.setFramework(frameworkCombo.getSelectionIndex() == 0 ? "flow" : "hilla");
+            helloWorldModel.setFramework("flow");
             helloWorldModel.setLanguage(languageCombo.getSelectionIndex() == 0 ? "java" : "kotlin");
             helloWorldModel.setBuildTool(buildToolCombo.getSelectionIndex() == 0 ? "maven" : "gradle");
 
