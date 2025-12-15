@@ -315,6 +315,100 @@ public class CopilotClientIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
+	public void testGetModulePathsWithWindowsStylePath() throws Exception {
+		// This test verifies the fix for the Windows path comparison issue
+		// The bug: On Windows, Copilot sends paths with backslashes (C:\dev\project)
+		// but Eclipse's toPortableString() returns forward slashes (C:/dev/project)
+		// causing project lookup to fail and resulting in NullPointerException
+
+		String actualProjectPath = testProject.getLocation().toOSString();
+
+		// Simulate Windows-style path with backslashes
+		String windowsStylePath;
+		if (System.getProperty("os.name").toLowerCase().contains("win")) {
+			// On Windows, use actual path with backslashes
+			windowsStylePath = actualProjectPath;
+		} else {
+			// On Unix, simulate Windows path by converting slashes to backslashes
+			// This tests that the service can handle Windows paths even on Unix
+			windowsStylePath = actualProjectPath.replace('/', '\\');
+		}
+
+		// Send request with Windows-style path
+		String jsonRequest = String.format("{\"command\":\"getModulePaths\",\"projectBasePath\":\"%s\",\"data\":{}}",
+				windowsStylePath.replace("\\", "\\\\") // Escape for JSON
+		);
+
+		java.net.http.HttpClient httpClient = java.net.http.HttpClient.newHttpClient();
+		java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+				.uri(java.net.URI.create(restService.getEndpoint())).header("Content-Type", "application/json")
+				.POST(java.net.http.HttpRequest.BodyPublishers.ofString(jsonRequest)).build();
+
+		java.net.http.HttpResponse<String> response = httpClient.send(request,
+				java.net.http.HttpResponse.BodyHandlers.ofString());
+
+		assertEquals("HTTP status should be 200", 200, response.statusCode());
+
+		com.google.gson.JsonObject responseObj = new com.google.gson.Gson().fromJson(response.body(),
+				com.google.gson.JsonObject.class);
+
+		// The fix ensures that Windows paths are properly matched
+		assertFalse("Should not have error when using Windows-style path", responseObj.has("error"));
+		assertTrue("Must have project field", responseObj.has("project"));
+
+		JsonObject project = responseObj.getAsJsonObject("project");
+		assertNotNull("Project must not be null (was causing NPE before fix)", project);
+
+		// Verify the project was found and populated correctly
+		com.google.gson.JsonArray modules = project.getAsJsonArray("modules");
+		assertTrue("Should find modules when project is matched", modules.size() > 0);
+
+		// Verify the module name to ensure we found the right project
+		String moduleName = modules.get(0).getAsJsonObject().get("name").getAsString();
+		assertEquals("Should find the correct project", "vaadin-test-project", moduleName);
+	}
+
+	@Test
+	public void testGetModulePathsWithNonExistentProject() throws Exception {
+		// This test verifies that getModulePaths returns a valid empty structure
+		// instead of an error when the project is not found
+		// This is important for Copilot compatibility
+
+		String nonExistentPath = "/non/existent/project/path";
+
+		String jsonRequest = String.format("{\"command\":\"getModulePaths\",\"projectBasePath\":\"%s\",\"data\":{}}",
+				nonExistentPath);
+
+		java.net.http.HttpClient httpClient = java.net.http.HttpClient.newHttpClient();
+		java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+				.uri(java.net.URI.create(restService.getEndpoint())).header("Content-Type", "application/json")
+				.POST(java.net.http.HttpRequest.BodyPublishers.ofString(jsonRequest)).build();
+
+		java.net.http.HttpResponse<String> response = httpClient.send(request,
+				java.net.http.HttpResponse.BodyHandlers.ofString());
+
+		assertEquals("HTTP status should be 200", 200, response.statusCode());
+
+		com.google.gson.JsonObject responseObj = new com.google.gson.Gson().fromJson(response.body(),
+				com.google.gson.JsonObject.class);
+
+		// Critical: Must return empty project structure, not an error
+		assertFalse("Should NOT return error for non-existent project", responseObj.has("error"));
+		assertTrue("Must have project field even when project not found", responseObj.has("project"));
+
+		JsonObject project = responseObj.getAsJsonObject("project");
+		assertNotNull("Project field must not be null", project);
+
+		// Should have the requested path and empty modules
+		assertTrue("Should have basePath field", project.has("basePath"));
+		assertEquals("basePath should match requested path", nonExistentPath, project.get("basePath").getAsString());
+
+		assertTrue("Should have modules field", project.has("modules"));
+		com.google.gson.JsonArray modules = project.getAsJsonArray("modules");
+		assertEquals("Modules should be empty for non-existent project", 0, modules.size());
+	}
+
+	@Test
 	public void testClientErrorHandling() throws Exception {
 		// Test with invalid project path
 		CopilotClient invalidClient = new CopilotClient(restService.getEndpoint(), "/invalid/project/path");
