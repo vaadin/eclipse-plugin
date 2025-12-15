@@ -33,6 +33,24 @@
                     </includes>
                     <!-- Don't specify product/application, let Eclipse use defaults -->
                     <!-- argLine is set by profiles based on OS -->
+                    <!-- Add SLF4J implementation to see log messages during tests -->
+                    <dependencies>
+                        <dependency>
+                            <type>eclipse-plugin</type>
+                            <artifactId>org.slf4j.api</artifactId>
+                            <version>0.0.0</version>
+                        </dependency>
+                        <dependency>
+                            <type>eclipse-plugin</type>
+                            <artifactId>ch.qos.logback.classic</artifactId>
+                            <version>0.0.0</version>
+                        </dependency>
+                        <dependency>
+                            <type>eclipse-plugin</type>
+                            <artifactId>ch.qos.logback.core</artifactId>
+                            <version>0.0.0</version>
+                        </dependency>
+                    </dependencies>
                 </configuration>
             </plugin>
         </plugins>
@@ -56,6 +74,23 @@
                         <configuration>
                             <argLine>-XstartOnFirstThread -Declipse.e4.inject.javax.warning=false</argLine>
                             <rerunFailingTestsCount>0</rerunFailingTestsCount>
+                            <dependencies>
+                                <dependency>
+                                    <type>eclipse-plugin</type>
+                                    <artifactId>org.slf4j.api</artifactId>
+                                    <version>0.0.0</version>
+                                </dependency>
+                                <dependency>
+                                    <type>eclipse-plugin</type>
+                                    <artifactId>ch.qos.logback.classic</artifactId>
+                                    <version>0.0.0</version>
+                                </dependency>
+                                <dependency>
+                                    <type>eclipse-plugin</type>
+                                    <artifactId>ch.qos.logback.core</artifactId>
+                                    <version>0.0.0</version>
+                                </dependency>
+                            </dependencies>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -82,6 +117,23 @@
                             <environmentVariables>
                                 <DISPLAY>:99</DISPLAY>
                             </environmentVariables>
+                            <dependencies>
+                                <dependency>
+                                    <type>eclipse-plugin</type>
+                                    <artifactId>org.slf4j.api</artifactId>
+                                    <version>0.0.0</version>
+                                </dependency>
+                                <dependency>
+                                    <type>eclipse-plugin</type>
+                                    <artifactId>ch.qos.logback.classic</artifactId>
+                                    <version>0.0.0</version>
+                                </dependency>
+                                <dependency>
+                                    <type>eclipse-plugin</type>
+                                    <artifactId>ch.qos.logback.core</artifactId>
+                                    <version>0.0.0</version>
+                                </dependency>
+                            </dependencies>
                         </configuration>
                     </plugin>
                 </plugins>
