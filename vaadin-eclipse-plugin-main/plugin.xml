@@ -107,4 +107,15 @@
      </initializer>
   </extension>
 
+  <extension
+        point="org.eclipse.ui.workbench.texteditor.hyperlinkDetectors">
+     <hyperlinkDetector
+           id="com.vaadin.plugin.navigation.StyleSheetHyperlinkDetector"
+           name="StyleSheet Hyperlink Detector"
+           description="Detects hyperlinks in @StyleSheet annotations"
+           class="com.vaadin.plugin.navigation.StyleSheetHyperlinkDetector"
+           targetId="org.eclipse.jdt.ui.javaCode">
+     </hyperlinkDetector>
+  </extension>
+
 </plugin>
