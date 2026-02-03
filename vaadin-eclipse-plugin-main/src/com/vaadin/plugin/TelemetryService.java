@@ -120,6 +120,7 @@ public class TelemetryService {
             eventData.put("os_version", System.getProperty("os.version"));
             eventData.put("eclipse_version", Platform.getProduct().getDefiningBundle().getVersion().toString());
             eventData.put("app_version", Platform.getBundle("vaadin-eclipse-plugin").getVersion().toString());
+            eventData.put("device_family", "eclipse");
             Map<String, Object> eventProperties = new HashMap<>();
             eventProperties.put("java_version", System.getProperty("java.version"));
             eventProperties.put("Vaadiner", isVaadiner());
