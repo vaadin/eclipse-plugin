@@ -42,6 +42,7 @@ public class HotswapAgentManager {
 
     private HotswapAgentManager() {
         initializePaths();
+        installHotswapAgent();
     }
 
     private void initializePaths() {
@@ -58,16 +59,11 @@ public class HotswapAgentManager {
     }
 
     /**
-     * Get the Hotswap Agent JAR file, installing it if necessary.
+     * Get the Hotswap Agent JAR file
      *
      * @return The Hotswap Agent JAR file
-     * @throws IOException
-     *             if installation fails
      */
-    public File getHotswapAgentJar() throws IOException {
-        if (!Files.exists(hotswapAgentPath)) {
-            installHotswapAgent();
-        }
+    public File getHotswapAgentJar() {
         return hotswapAgentPath.toFile();
     }
 
