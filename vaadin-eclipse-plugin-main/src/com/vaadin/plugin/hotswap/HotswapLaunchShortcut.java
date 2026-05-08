@@ -1,12 +1,10 @@
 package com.vaadin.plugin.hotswap;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
@@ -97,17 +95,14 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
      *            The launch mode (should be "debug")
      */
     private void launchJavaElement(IJavaElement element, String mode) {
-        // Only support debug mode
         if (!"debug".equals(mode)) {
             MessageDialog.openError(getShell(), "Hotswap Agent", "Hotswap Agent can only be used in debug mode.");
             return;
         }
 
         try {
-            // Find the main type
             IType mainType = findMainType(element);
             if (mainType == null) {
-                // If no main type found, show more helpful error message
                 if (element instanceof IType) {
                     IType selectedType = (IType) element;
                     MessageDialog.openError(getShell(), "No Main Method",
@@ -120,39 +115,7 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
                 }
                 return;
             }
-
-            // Check for Hotswap Agent
-            HotswapAgentManager agentManager = HotswapAgentManager.getInstance();
-            if (!agentManager.isInstalled()) {
-                String version = agentManager.installHotswapAgent();
-                if (version == null) {
-                    MessageDialog.openError(getShell(), "Hotswap Agent Error", "Failed to install Hotswap Agent.");
-                    return;
-                }
-            }
-
-            // Check for JBR
-            JetBrainsRuntimeManager jbrManager = JetBrainsRuntimeManager.getInstance();
-            IVMInstall jbr = jbrManager.findInstalledJBR();
-
-            if (jbr == null) {
-                boolean install = MessageDialog.openQuestion(getShell(), "JetBrains Runtime Required",
-                        "Hotswap Agent requires JetBrains Runtime (JBR) for enhanced class redefinition.\n\n"
-                                + "JBR is not currently installed. Would you like to continue anyway?\n\n"
-                                + "Note: Hotswap Agent may not work properly without JBR.");
-
-                if (!install) {
-                    return;
-                }
-            }
-
-            // Create or find launch configuration
-            ILaunchConfiguration config = findOrCreateLaunchConfiguration(mainType, jbr);
-            if (config != null) {
-                trackDebugLaunch(mainType, jbr != null);
-                DebugUITools.launch(config, mode);
-            }
-
+            launchMainType(mainType, mode);
         } catch (Exception e) {
             MessageDialog.openError(getShell(), "Launch Error",
                     "Failed to launch with Hotswap Agent: " + e.getMessage());
@@ -169,53 +132,19 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
      *            The launch mode (should be "debug")
      */
     private void launchJavaProject(IJavaProject javaProject, String mode) {
-        // Only support debug mode
         if (!"debug".equals(mode)) {
             MessageDialog.openError(getShell(), "Hotswap Agent", "Hotswap Agent can only be used in debug mode.");
             return;
         }
 
         try {
-            // Find main class in the project
             IType mainType = findMainTypeInProject(javaProject);
             if (mainType == null) {
                 MessageDialog.openError(getShell(), "No Main Class",
                         "Could not find a main class in the project. Please select a specific class with a main method.");
                 return;
             }
-
-            // Check for Hotswap Agent
-            HotswapAgentManager agentManager = HotswapAgentManager.getInstance();
-            if (!agentManager.isInstalled()) {
-                String version = agentManager.installHotswapAgent();
-                if (version == null) {
-                    MessageDialog.openError(getShell(), "Hotswap Agent Error", "Failed to install Hotswap Agent.");
-                    return;
-                }
-            }
-
-            // Check for JBR
-            JetBrainsRuntimeManager jbrManager = JetBrainsRuntimeManager.getInstance();
-            IVMInstall jbr = jbrManager.findInstalledJBR();
-
-            if (jbr == null) {
-                boolean install = MessageDialog.openQuestion(getShell(), "JetBrains Runtime Required",
-                        "Hotswap Agent requires JetBrains Runtime (JBR) for enhanced class redefinition.\n\n"
-                                + "JBR is not currently installed. Would you like to continue anyway?\n\n"
-                                + "Note: Hotswap Agent may not work properly without JBR.");
-
-                if (!install) {
-                    return;
-                }
-            }
-
-            // Create or find launch configuration
-            ILaunchConfiguration config = findOrCreateLaunchConfiguration(mainType, jbr);
-            if (config != null) {
-                trackDebugLaunch(mainType, jbr != null);
-                DebugUITools.launch(config, mode);
-            }
-
+            launchMainType(mainType, mode);
         } catch (Exception e) {
             MessageDialog.openError(getShell(), "Launch Error",
                     "Failed to launch with Hotswap Agent: " + e.getMessage());
@@ -223,12 +152,75 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
         }
     }
 
-    private void trackDebugLaunch(IType mainType, boolean hasJBR) {
+    /**
+     * Shared post-mainType launch flow: install agent, find compatible JBR for the project's required Java version,
+     * prompt if missing, create the launch config, and launch it.
+     */
+    private void launchMainType(IType mainType, String mode) throws Exception {
+        HotswapAgentManager agentManager = HotswapAgentManager.getInstance();
+        if (!agentManager.isInstalled()) {
+            String version = agentManager.installHotswapAgent();
+            if (version == null) {
+                MessageDialog.openError(getShell(), "Hotswap Agent Error", "Failed to install Hotswap Agent.");
+                return;
+            }
+        }
+
+        IJavaProject javaProject = mainType.getJavaProject();
+        int requiredMajor = getRequiredJavaMajorVersion(javaProject);
+
+        JetBrainsRuntimeManager jbrManager = JetBrainsRuntimeManager.getInstance();
+        IVMInstall jbr = jbrManager.findCompatibleJBR(requiredMajor);
+
+        if (jbr == null) {
+            boolean install = MessageDialog.openQuestion(getShell(), "JetBrains Runtime Required",
+                    "Hotswap Agent requires JetBrains Runtime (JBR) for enhanced class redefinition.\n\n"
+                            + "JBR is not currently installed. Would you like to continue anyway?\n\n"
+                            + "Note: Hotswap Agent may not work properly without JBR.");
+
+            if (!install) {
+                return;
+            }
+        }
+
+        ILaunchConfiguration config = findOrCreateLaunchConfiguration(mainType, jbr);
+        if (config != null) {
+            trackDebugLaunch(mainType, jbr, requiredMajor);
+            DebugUITools.launch(config, mode);
+        }
+    }
+
+    /**
+     * Read the project's required Java major version from JDT's compiler compliance setting. JDT's compliance is the
+     * source of truth — m2e and Buildship propagate Maven/Gradle compiler settings into it, so this single read covers
+     * Maven, Gradle, and manual JDT projects. {@code true} enables inheritance from workspace defaults so projects
+     * without an explicit setting still resolve.
+     */
+    private int getRequiredJavaMajorVersion(IJavaProject javaProject) {
+        if (javaProject == null) {
+            return 0;
+        }
+        String compliance = javaProject.getOption(JavaCore.COMPILER_COMPLIANCE, true);
+        return JbrSelector.parseMajor(compliance);
+    }
+
+    private void trackDebugLaunch(IType mainType, IVMInstall jbr, int requiredMajor) {
         try {
             java.util.Map<String, Object> properties = new java.util.HashMap<>();
             properties.put("main_class", mainType.getFullyQualifiedName());
             properties.put("project_name", mainType.getJavaProject().getElementName());
-            properties.put("has_jbr", hasJBR);
+            properties.put("has_jbr", jbr != null);
+            properties.put("project_required_version", requiredMajor);
+            if (jbr != null) {
+                JetBrainsRuntimeManager jbrManager = JetBrainsRuntimeManager.getInstance();
+                IVMInstall resolved = jbr;
+                int jbrMajor = 0;
+                if (resolved instanceof org.eclipse.jdt.launching.IVMInstall2 vm2) {
+                    jbrMajor = JbrSelector.parseMajor(vm2.getJavaVersion());
+                }
+                properties.put("jbr_major_version", jbrMajor);
+                properties.put("jbr_is_jetbrains", jbrManager.isJetBrainsRuntime(resolved));
+            }
             TelemetryService.getInstance().trackEvent("DebugWithHotswap", properties);
         } catch (Exception e) {
             // Ignore telemetry errors
@@ -337,11 +329,11 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
      * @param type
      *            The main type
      * @param jbr
-     *            The JBR installation (optional)
+     *            The JBR installation (optional). When null, JBR-only JVM flags are omitted so the launch can run on
+     *            stock OpenJDK without "Unrecognized VM option" errors.
      * @return The launch configuration
      */
-    private ILaunchConfiguration findOrCreateLaunchConfiguration(IType type, IVMInstall jbr)
-            throws CoreException, IOException {
+    private ILaunchConfiguration findOrCreateLaunchConfiguration(IType type, IVMInstall jbr) throws Exception {
 
         ILaunchManager launchManager = DebugPlugin.getDefault().getLaunchManager();
         ILaunchConfigurationType javaAppType = launchManager
@@ -377,9 +369,10 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
                     JavaRuntime.newJREContainerPath(jbr).toString());
         }
 
-        // Add Hotswap Agent JVM arguments
+        // Add Hotswap Agent JVM arguments. JBR-only -XX:* flags are emitted only when launching on JBR — stock
+        // OpenJDK rejects them at startup with "Unrecognized VM option".
         HotswapAgentManager agentManager = HotswapAgentManager.getInstance();
-        String vmArgs = agentManager.getHotswapJvmArgsString();
+        String vmArgs = agentManager.getHotswapJvmArgsString(jbr != null);
         wc.setAttribute(IJavaLaunchConfigurationConstants.ATTR_VM_ARGUMENTS, vmArgs);
 
         // Set source locator
