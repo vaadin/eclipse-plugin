@@ -13,6 +13,17 @@ mvn install
 
 This will compile the plug-in and create the P2 metadata in the `target` folder.
 
+## Debug the project
+
+- Install Eclipse JavaEE (better than RCP to run vaadin application in the same environment)
+- Create empty workspace
+- Install current Vaadin plugin
+- Import this repo as maven project
+- Debug the vaadin-eclipse-plugin module as Eclipse Application
+- In the opened IDE create a new project (Vaadin project should appear in the list)
+- Debug the application (Hotswap or regular debug from Debug as... menu) 
+
+
 ## License
 
 This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
