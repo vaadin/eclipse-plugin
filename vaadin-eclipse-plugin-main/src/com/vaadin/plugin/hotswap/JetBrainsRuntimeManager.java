@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -142,16 +143,29 @@ public class JetBrainsRuntimeManager {
     }
 
     /**
-     * Find the best compatible JBR (or fall-back JDK) for a given required Java major version. See
-     * {@link JbrSelector} for the selection rules.
+     * Find the best compatible JBR (or fall-back JDK) for a given required Java major version. See {@link JbrSelector}
+     * for the selection rules.
      *
      * @param requiredMajor
      *            the project's required Java major version (e.g. 21, 25). Pass 0 to disable version filtering.
      * @return The selected installation, or null if none is compatible
      */
     public IVMInstall findCompatibleJBR(int requiredMajor) {
-        List<JbrCandidate> candidates = collectCandidates();
-        return JbrSelector.select(candidates, requiredMajor).map(JbrCandidate::vm).orElse(null);
+        return findCompatibleCandidate(requiredMajor).map(JbrCandidate::vm).orElse(null);
+    }
+
+    /**
+     * Same selection as {@link #findCompatibleJBR(int)}, but returns the full candidate so callers can tell a real JBR
+     * from a non-JBR fall-back JDK. {@link JbrSelector} falls back to plain JDKs when no compatible JBR exists, so a
+     * non-empty result does <em>not</em> imply JBR — callers that emit JBR-only JVM flags must check
+     * {@link JbrCandidate#isJbr()}.
+     *
+     * @param requiredMajor
+     *            the project's required Java major version (e.g. 21, 25). Pass 0 to disable version filtering.
+     * @return the selected candidate, or empty if none is compatible
+     */
+    public Optional<JbrCandidate> findCompatibleCandidate(int requiredMajor) {
+        return JbrSelector.select(collectCandidates(), requiredMajor);
     }
 
     private List<JbrCandidate> collectCandidates() {
