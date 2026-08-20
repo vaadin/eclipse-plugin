@@ -1,6 +1,7 @@
 package com.vaadin.plugin.hotswap;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,6 +9,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
+import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationType;
@@ -27,7 +29,9 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.JavaRuntime;
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.window.Window;
@@ -37,6 +41,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 
 import com.vaadin.plugin.TelemetryService;
+import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
  * Launch shortcut for debugging Java applications with Hotswap Agent. This adds "Java Application using Hotswap Agent"
@@ -44,6 +49,10 @@ import com.vaadin.plugin.TelemetryService;
  */
 @SuppressWarnings("restriction")
 public class HotswapLaunchShortcut implements ILaunchShortcut2 {
+
+    private static final String DOWNLOAD_JBR_LABEL = "Download JetBrains Runtime";
+
+    private static final String CONTINUE_WITHOUT_JBR_LABEL = "Continue Without JBR";
 
     @Override
     public void launch(ISelection selection, String mode) {
@@ -131,19 +140,12 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
                 }
             }
 
-            // Check for JBR
-            JetBrainsRuntimeManager jbrManager = JetBrainsRuntimeManager.getInstance();
-            IVMInstall jbr = jbrManager.findInstalledJBR();
-
-            if (jbr == null) {
-                boolean install = MessageDialog.openQuestion(getShell(), "JetBrains Runtime Required",
-                        "Hotswap Agent requires JetBrains Runtime (JBR) for enhanced class redefinition.\n\n"
-                                + "JBR is not currently installed. Would you like to continue anyway?\n\n"
-                                + "Note: Hotswap Agent may not work properly without JBR.");
-
-                if (!install) {
-                    return;
-                }
+            // Check for JBR, offering to download one when it is missing
+            IVMInstall jbr;
+            try {
+                jbr = resolveJetBrainsRuntime();
+            } catch (OperationCanceledException e) {
+                return;
             }
 
             // Create or find launch configuration
@@ -194,19 +196,12 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
                 }
             }
 
-            // Check for JBR
-            JetBrainsRuntimeManager jbrManager = JetBrainsRuntimeManager.getInstance();
-            IVMInstall jbr = jbrManager.findInstalledJBR();
-
-            if (jbr == null) {
-                boolean install = MessageDialog.openQuestion(getShell(), "JetBrains Runtime Required",
-                        "Hotswap Agent requires JetBrains Runtime (JBR) for enhanced class redefinition.\n\n"
-                                + "JBR is not currently installed. Would you like to continue anyway?\n\n"
-                                + "Note: Hotswap Agent may not work properly without JBR.");
-
-                if (!install) {
-                    return;
-                }
+            // Check for JBR, offering to download one when it is missing
+            IVMInstall jbr;
+            try {
+                jbr = resolveJetBrainsRuntime();
+            } catch (OperationCanceledException e) {
+                return;
             }
 
             // Create or find launch configuration
@@ -221,6 +216,81 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
                     "Failed to launch with Hotswap Agent: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Find a JetBrains Runtime to launch with, offering to download the latest one when none is installed.
+     *
+     * @return The JBR to launch with, or null when the user decided to launch without one
+     * @throws OperationCanceledException
+     *             if the user cancelled the launch
+     */
+    private IVMInstall resolveJetBrainsRuntime() {
+        JetBrainsRuntimeManager jbrManager = JetBrainsRuntimeManager.getInstance();
+        IVMInstall jbr = jbrManager.findInstalledJBR();
+        if (jbr != null) {
+            return jbr;
+        }
+
+        MessageDialog dialog = new MessageDialog(getShell(), "JetBrains Runtime Required", null,
+                "Hotswap Agent requires JetBrains Runtime (JBR) for enhanced class redefinition.\n\n"
+                        + "JBR is not currently installed. It can be downloaded from "
+                        + "https://github.com/JetBrains/JetBrainsRuntime and installed into "
+                        + jbrManager.getJdkInstallPath() + ".\n\n"
+                        + "Note: Hotswap Agent may not work properly without JBR.",
+                MessageDialog.QUESTION,
+                new String[] { DOWNLOAD_JBR_LABEL, CONTINUE_WITHOUT_JBR_LABEL, IDialogConstants.CANCEL_LABEL }, 0);
+
+        switch (dialog.open()) {
+        case 0:
+            return downloadJetBrainsRuntime(jbrManager);
+        case 1:
+            return null;
+        default:
+            throw new OperationCanceledException();
+        }
+    }
+
+    /**
+     * Download and register the latest JetBrains Runtime while showing a progress dialog.
+     *
+     * @param jbrManager
+     *            The runtime manager
+     * @return The downloaded JBR, or null when the user decided to launch without one
+     * @throws OperationCanceledException
+     *             if the user cancelled the download or the launch
+     */
+    private IVMInstall downloadJetBrainsRuntime(JetBrainsRuntimeManager jbrManager) {
+        IVMInstall[] downloaded = new IVMInstall[1];
+
+        try {
+            new ProgressMonitorDialog(getShell()).run(true, true, monitor -> {
+                try {
+                    downloaded[0] = jbrManager.downloadAndInstallJBR(monitor);
+                } catch (IOException | InterruptedException e) {
+                    throw new InvocationTargetException(e);
+                }
+            });
+        } catch (InterruptedException | OperationCanceledException e) {
+            throw new OperationCanceledException();
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            if (cause instanceof OperationCanceledException || cause instanceof InterruptedException) {
+                throw new OperationCanceledException();
+            }
+            VaadinPluginLog.error("Failed to download JetBrains Runtime: " + cause.getMessage(), cause);
+
+            boolean launchAnyway = MessageDialog.openQuestion(getShell(), "JetBrains Runtime Download Failed",
+                    "Could not download JetBrains Runtime: " + cause.getMessage() + "\n\n"
+                            + "Would you like to launch without JBR?\n\n"
+                            + "Note: Hotswap Agent may not work properly without JBR.");
+            if (!launchAnyway) {
+                throw new OperationCanceledException();
+            }
+            return null;
+        }
+
+        return downloaded[0];
     }
 
     private void trackDebugLaunch(IType mainType, boolean hasJBR) {
