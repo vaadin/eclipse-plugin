@@ -1,7 +1,9 @@
 package com.vaadin.plugin.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -63,6 +65,36 @@ public class JetBrainsRuntimeManagerTest {
 	public void returnsNullWithoutJavaExecutable() throws IOException {
 		Files.createDirectories(directory.resolve("jbrsdk-25.0.4-linux-aarch64-b508.27").resolve("lib"));
 		assertNull(findJavaHome(directory));
+	}
+
+	@Test
+	public void identifiesJetBrainsRuntimeFromReleaseFile() throws IOException {
+		Path javaHome = createJavaHome(directory);
+		Files.writeString(javaHome.resolve("release"),
+				"IMPLEMENTOR=\"JetBrains s.r.o.\"\nJAVA_VERSION=\"25.0.4\"\n");
+
+		assertTrue(manager().isJetBrainsRuntimeHome(javaHome.toFile()));
+	}
+
+	@Test
+	public void doesNotTreatPlainJdkAsJetBrainsRuntime() throws IOException {
+		// ~/.vaadin/jdk is shared with the other Vaadin IDE plugins and may hold a
+		// stock JDK, which must not end up receiving the JBR-only -XX flags
+		Path javaHome = createJavaHome(directory);
+		Files.writeString(javaHome.resolve("release"), "IMPLEMENTOR=\"Eclipse Adoptium\"\nJAVA_VERSION=\"25.0.4\"\n");
+
+		assertFalse(manager().isJetBrainsRuntimeHome(javaHome.toFile()));
+	}
+
+	@Test
+	public void doesNotGuessVendorWithoutReleaseFile() throws IOException {
+		Path javaHome = createJavaHome(directory);
+
+		assertFalse(manager().isJetBrainsRuntimeHome(javaHome.toFile()));
+	}
+
+	private static JetBrainsRuntimeManager manager() {
+		return JetBrainsRuntimeManager.getInstance();
 	}
 
 	private static File findJavaHome(Path directory) {

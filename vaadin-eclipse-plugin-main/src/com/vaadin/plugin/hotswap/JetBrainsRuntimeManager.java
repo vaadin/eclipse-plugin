@@ -104,15 +104,18 @@ public class JetBrainsRuntimeManager {
             return false;
         }
 
-        String name = vmInstall.getName();
-        if (name != null && name.contains("JetBrains")) {
-            return true;
+        // The release file records the vendor, identifies the runtime without starting a process and
+        // cannot be influenced by whoever registered the JVM with Eclipse. It is therefore consulted
+        // before the display name, which registerJBR below chooses itself.
+        File installLocation = vmInstall.getInstallLocation();
+        if (getReleaseProperty(installLocation, "IMPLEMENTOR") != null) {
+            return isJetBrainsRuntimeHome(installLocation);
         }
 
-        // The release file identifies the vendor without starting a process
-        String implementor = getReleaseProperty(vmInstall.getInstallLocation(), "IMPLEMENTOR");
-        if (implementor != null) {
-            return implementor.contains(JBR_VENDOR);
+        // No release file, fall back to the name
+        String name = vmInstall.getName();
+        if (name != null && name.contains(JBR_VENDOR)) {
+            return true;
         }
 
         // Fall back to running java -version
@@ -139,6 +142,19 @@ public class JetBrainsRuntimeManager {
         }
 
         return false;
+    }
+
+    /**
+     * Check whether a Java home belongs to a JetBrains Runtime, going by the vendor recorded in its release file only.
+     * This is the authoritative check, a display name can say anything.
+     *
+     * @param javaHome
+     *            The Java home directory
+     * @return true if the runtime is implemented by JetBrains
+     */
+    public boolean isJetBrainsRuntimeHome(File javaHome) {
+        String implementor = getReleaseProperty(javaHome, "IMPLEMENTOR");
+        return implementor != null && implementor.contains(JBR_VENDOR);
     }
 
     /**
@@ -218,6 +234,14 @@ public class JetBrainsRuntimeManager {
             for (File jbrDir : jbrDirs) {
                 File javaHome = findJavaHome(jbrDir);
                 if (javaHome == null || !isValidJavaHome(javaHome)) {
+                    continue;
+                }
+                // ~/.vaadin/jdk is shared with the Vaadin plugins for other IDEs and may hold plain
+                // JDKs. Registering one of those would put a stock JVM into the JRE list under a
+                // JetBrains Runtime name, and it would then be trusted to accept the JBR-only -XX
+                // flags, which it rejects at startup.
+                if (!isJetBrainsRuntimeHome(javaHome)) {
+                    VaadinPluginLog.debug("Skipping " + javaHome + ", not a JetBrains Runtime");
                     continue;
                 }
                 boolean alreadyKnown = candidates.stream()
@@ -322,7 +346,7 @@ public class JetBrainsRuntimeManager {
 
             // Create VM standin
             VMStandin standin = new VMStandin(vmType, id);
-            standin.setName(JBR_NAME_PREFIX + " " + getJavaVersion(javaHome));
+            standin.setName(jbrDisplayName(javaHome));
             standin.setInstallLocation(javaHome);
 
             // Convert standin to real VM
@@ -338,6 +362,19 @@ public class JetBrainsRuntimeManager {
             VaadinPluginLog.error("Failed to register JBR: " + e.getMessage(), e);
             return null;
         }
+    }
+
+    /**
+     * Build the name a runtime is registered under. The version is unavailable for a runtime without a release file
+     * that also fails to run, and "JetBrains Runtime null" helps nobody.
+     *
+     * @param javaHome
+     *            The Java home directory
+     * @return The display name
+     */
+    private String jbrDisplayName(File javaHome) {
+        String version = getJavaVersion(javaHome);
+        return version == null || version.isEmpty() ? JBR_NAME_PREFIX : JBR_NAME_PREFIX + " " + version;
     }
 
     /**

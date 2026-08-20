@@ -54,6 +54,13 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
 
     private static final String CONTINUE_WITHOUT_JBR_LABEL = "Continue Without JBR";
 
+    private static final int DOWNLOAD_BUTTON = 0;
+
+    private static final int CONTINUE_WITHOUT_JBR_BUTTON = 1;
+
+    /** No button was pressed, the dialog was dismissed. */
+    private static final int NO_BUTTON = -1;
+
     @Override
     public void launch(ISelection selection, String mode) {
         if (selection instanceof IStructuredSelection) {
@@ -243,22 +250,55 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
      *             if the user cancelled the launch
      */
     private IVMInstall downloadJetBrainsRuntime(JetBrainsRuntimeManager jbrManager) {
-        MessageDialog dialog = new MessageDialog(getShell(), "JetBrains Runtime Required", null,
+        JbrPromptDialog dialog = new JbrPromptDialog(getShell(),
                 "Hotswap Agent requires JetBrains Runtime (JBR) for enhanced class redefinition.\n\n"
                         + "JBR is not currently installed. It can be downloaded from "
                         + "https://github.com/JetBrains/JetBrainsRuntime and installed into "
                         + jbrManager.getJdkInstallPath() + ".\n\n"
-                        + "Note: Hotswap Agent may not work properly without JBR.",
-                MessageDialog.QUESTION,
-                new String[] { DOWNLOAD_JBR_LABEL, CONTINUE_WITHOUT_JBR_LABEL, IDialogConstants.CANCEL_LABEL }, 0);
+                        + "Note: Hotswap Agent may not work properly without JBR.");
+        dialog.open();
 
-        switch (dialog.open()) {
-        case 0:
+        switch (dialog.getPressedButton()) {
+        case DOWNLOAD_BUTTON:
             return runDownload(jbrManager);
-        case 1:
+        case CONTINUE_WITHOUT_JBR_BUTTON:
             return null;
         default:
+            // Cancel, or dismissed with Escape or the window decoration
             throw new OperationCanceledException();
+        }
+    }
+
+    /**
+     * The JBR prompt, remembering which button was actually pressed.
+     *
+     * The return code of {@link MessageDialog#open()} cannot tell a button press from a dismissal: pressing a button
+     * sets the return code to the button index, while closing the dialog with Escape or the window decoration sets it
+     * to {@link org.eclipse.jface.window.Window#CANCEL}, which is 1 and therefore indistinguishable from the second
+     * button. Dismissing the dialog would silently launch without JBR and rewrite the configuration's JRE and VM
+     * arguments, so the pressed button is recorded instead.
+     */
+    private static final class JbrPromptDialog extends MessageDialog {
+
+        private int pressedButton = NO_BUTTON;
+
+        private JbrPromptDialog(Shell parentShell, String message) {
+            super(parentShell, "JetBrains Runtime Required", null, message, MessageDialog.QUESTION,
+                    new String[] { DOWNLOAD_JBR_LABEL, CONTINUE_WITHOUT_JBR_LABEL, IDialogConstants.CANCEL_LABEL },
+                    DOWNLOAD_BUTTON);
+        }
+
+        @Override
+        protected void buttonPressed(int buttonId) {
+            pressedButton = buttonId;
+            super.buttonPressed(buttonId);
+        }
+
+        /**
+         * @return the index of the pressed button, or {@link #NO_BUTTON} if the dialog was dismissed
+         */
+        private int getPressedButton() {
+            return pressedButton;
         }
     }
 
