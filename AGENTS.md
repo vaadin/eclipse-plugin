@@ -61,7 +61,7 @@ mvn clean install -DskipTests
 - Eclipse IDE integration
 - Comprehensive integration tests
 - New Vaadin Project wizard
-- Hotswap Agent support with JetBrains Runtime
+- Hotswap Agent support with JetBrains Runtime, downloaded automatically when missing
 - Build-time flow-build-info.json generation
 
 ### ⚠️ Limitations vs IntelliJ Plugin
@@ -110,4 +110,4 @@ Tests run in headless Eclipse environment with temporary workspace creation and 
 - **Eclipse Target**: 2024-03 release
 - **Key Dependencies**: Eclipse JDT, Debug Core, Gson
 - **Builder**: VaadinBuildParticipant automatically generates flow-build-info.json for projects with Vaadin dependencies
-- **Hotswap**: Requires JetBrains Runtime for hot code replacement support
+- **Hotswap**: Requires JetBrains Runtime for hot code replacement support. When no JBR is registered with Eclipse, the latest one is offered for download from the JetBrains Runtime GitHub releases and installed into `~/.vaadin/jdk`, the same location the IntelliJ IDEA and VS Code plugins use
