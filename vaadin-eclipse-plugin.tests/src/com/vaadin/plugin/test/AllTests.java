@@ -10,6 +10,6 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(Suite.class)
 @SuiteClasses({CopilotRestServiceIntegrationTest.class, CopilotClientIntegrationTest.class, CopilotUtilTest.class,
 		VaadinProjectAnalyzerTest.class, CopilotUndoManagerTest.class, AdvancedEndpointsTest.class,
-		BinaryFileUndoRedoTest.class})
+		BinaryFileUndoRedoTest.class, JbrSelectorTest.class, HotswapJvmArgsTest.class})
 public class AllTests {
 }

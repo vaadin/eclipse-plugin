@@ -28,6 +28,17 @@ public class HotswapAgentManager {
     private static final String VAADIN_HOME = ".vaadin";
     private static final String ECLIPSE_PLUGIN_DIR = "eclipse-plugin";
 
+    // Single source of truth for module/package opens. Used to render --add-opens=<value>
+    // tokens. Must stay single-token (equals form) so Eclipse's whitespace-based argument
+    // tokenizer cannot re-glue them with adjacent text.
+    private static final String[] ADD_OPENS = { "java.base/java.lang", "java.base/java.lang.reflect",
+            "java.base/java.util", "java.base/java.util.concurrent", "java.base/java.util.concurrent.atomic",
+            "java.base/java.io", "java.base/java.nio", "java.base/java.nio.file", "java.base/sun.nio.ch",
+            "java.base/sun.nio.fs", "java.base/sun.net.www.protocol.http", "java.base/sun.net.www.protocol.https",
+            "java.base/sun.reflect.generics.reflectiveObjects", "java.base/java.time",
+            "java.management/com.sun.jmx.mbeanserver", "java.management/sun.management",
+            "jdk.management/com.sun.management.internal" };
+
     private static HotswapAgentManager instance;
 
     private Path vaadinHomePath;
@@ -172,40 +183,32 @@ public class HotswapAgentManager {
     /**
      * Get the JVM arguments needed for Hotswap Agent. Returns a formatted string ready for Eclipse VM arguments.
      *
+     * @param withJbrFlags
+     *            include JBR-only flags (-XX:+AllowEnhancedClassRedefinition, -XX:+ClassUnloading,
+     *            -XX:HotswapAgent=external). Stock OpenJDK rejects these at startup, so pass false when launching
+     *            without JBR.
      * @return VM arguments as a single formatted string
      */
-    public String getHotswapJvmArgsString() throws IOException {
+    public String getHotswapJvmArgsString(boolean withJbrFlags) throws IOException {
         File agentJar = getHotswapAgentJar();
 
         StringBuilder args = new StringBuilder();
 
-        // Add javaagent
-        args.append("-javaagent:").append(agentJar.getAbsolutePath()).append(" ");
+        // Quote the agent path so paths containing spaces (e.g. "C:\Program Files\...") survive
+        // Eclipse's whitespace-based argument tokenization.
+        args.append("-javaagent:\"").append(agentJar.getAbsolutePath()).append("\" ");
 
-        // Add JBR-specific flags
-        args.append("-XX:+AllowEnhancedClassRedefinition ");
-        args.append("-XX:+ClassUnloading ");
-        args.append("-XX:HotswapAgent=external ");
+        if (withJbrFlags) {
+            args.append("-XX:+AllowEnhancedClassRedefinition ");
+            args.append("-XX:+ClassUnloading ");
+            args.append("-XX:HotswapAgent=external ");
+        }
 
-        // Add module opens for Java 9+ using space-separated format
-        // Eclipse handles this format better than the equals syntax
-        args.append("--add-opens").append("java.base/java.lang=ALL-UNNAMED ");
-        args.append("--add-opens").append("java.base/java.lang.reflect=ALL-UNNAMED ");
-        args.append("--add-opens").append("java.base/java.util=ALL-UNNAMED ");
-        args.append("--add-opens").append("java.base/java.util.concurrent=ALL-UNNAMED ");
-        args.append("--add-opens").append("java.base/java.util.concurrent.atomic=ALL-UNNAMED ");
-        args.append("--add-opens").append("java.base/java.io=ALL-UNNAMED ");
-        args.append("--add-opens").append("java.base/java.nio=ALL-UNNAMED ");
-        args.append("--add-opens").append("java.base/java.nio.file=ALL-UNNAMED ");
-        args.append("--add-opens").append("java.base/sun.nio.ch=ALL-UNNAMED ");
-        args.append("--add-opens").append("java.base/sun.nio.fs=ALL-UNNAMED ");
-        args.append("--add-opens").append("java.base/sun.net.www.protocol.http=ALL-UNNAMED ");
-        args.append("--add-opens").append("java.base/sun.net.www.protocol.https=ALL-UNNAMED ");
-        args.append("--add-opens").append("java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED ");
-        args.append("--add-opens").append("java.base/java.time=ALL-UNNAMED ");
-        args.append("--add-opens").append("java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED ");
-        args.append("--add-opens").append("java.management/sun.management=ALL-UNNAMED ");
-        args.append("--add-opens").append("jdk.management/com.sun.management.internal=ALL-UNNAMED ");
+        // Single-token equals form: --add-opens=<module>/<package>=ALL-UNNAMED. The
+        // space-separated form would be re-glued with the next token by Eclipse's tokenizer.
+        for (String open : ADD_OPENS) {
+            args.append("--add-opens=").append(open).append("=ALL-UNNAMED ");
+        }
 
         // Spring Boot specific
         args.append("-Dspring.devtools.restart.enabled=false ");
@@ -213,36 +216,5 @@ public class HotswapAgentManager {
         args.append("-Dspring.context.lazy-init.enabled=false");
 
         return args.toString().trim();
-    }
-
-    /**
-     * Get the JVM arguments needed for Hotswap Agent.
-     *
-     * @return Array of JVM arguments
-     * @deprecated Use getHotswapJvmArgsString() instead for better Eclipse compatibility
-     */
-    @Deprecated
-    public String[] getHotswapJvmArgs() throws IOException {
-        File agentJar = getHotswapAgentJar();
-
-        return new String[] { "-javaagent:" + agentJar.getAbsolutePath(), "-XX:+AllowEnhancedClassRedefinition",
-                "-XX:+ClassUnloading", "-XX:HotswapAgent=external",
-                // Add module opens for Java 9+ - use = syntax to keep as single arguments
-                "--add-opens=java.base/java.lang=ALL-UNNAMED", "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
-                "--add-opens=java.base/java.util=ALL-UNNAMED", "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
-                "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
-                "--add-opens=java.base/java.io=ALL-UNNAMED", "--add-opens=java.base/java.nio=ALL-UNNAMED",
-                "--add-opens=java.base/java.nio.file=ALL-UNNAMED", "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
-                "--add-opens=java.base/sun.nio.fs=ALL-UNNAMED",
-                "--add-opens=java.base/sun.net.www.protocol.http=ALL-UNNAMED",
-                "--add-opens=java.base/sun.net.www.protocol.https=ALL-UNNAMED",
-                "--add-opens=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED",
-                "--add-opens=java.base/java.time=ALL-UNNAMED",
-                "--add-opens=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED",
-                "--add-opens=java.management/sun.management=ALL-UNNAMED",
-                "--add-opens=jdk.management/com.sun.management.internal=ALL-UNNAMED",
-                // Spring Boot specific
-                "-Dspring.devtools.restart.enabled=false", "-Dspring.devtools.restart.quiet-period=0",
-                "-Dspring.context.lazy-init.enabled=false" };
     }
 }
