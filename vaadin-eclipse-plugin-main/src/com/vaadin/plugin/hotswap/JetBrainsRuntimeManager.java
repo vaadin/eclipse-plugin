@@ -9,14 +9,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-<<<<<<< HEAD
-import java.util.List;
-=======
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
->>>>>>> origin/main
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,28 +32,26 @@ import com.vaadin.plugin.util.VaadinPluginLog;
  */
 public class JetBrainsRuntimeManager {
 
+    private static final String JBR_VENDOR = "JetBrains";
     private static final String JBR_NAME_PREFIX = "JetBrains Runtime";
     private static final String VAADIN_HOME = ".vaadin";
     private static final String ECLIPSE_PLUGIN_DIR = "eclipse-plugin";
+    private static final String JBR_DIR = "jbr";
 
     /** Shared with the Vaadin plugins for other IDEs so a runtime is downloaded only once. */
     private static final String JDK_DIR = "jdk";
-
-    /** Location used by earlier versions of this plugin. */
-    private static final String LEGACY_JBR_DIR = "jbr";
 
     /** Maximum directory depth searched for a Java home inside a downloaded runtime. */
     private static final int MAX_JAVA_HOME_DEPTH = 3;
 
     // Known broken JBR version, enhanced class redefinition crashes the VM
-    private static final String BROKEN_JBR_VERSION = "21.0.4+13";
-    private static final String BROKEN_JBR_BUILD = "b509.17";
+    private static final String BROKEN_JBR_VERSION = "21.0.4+13-b509.17";
 
     private static JetBrainsRuntimeManager instance;
 
     private Path vaadinHomePath;
     private Path jdkInstallPath;
-    private Path legacyJbrInstallPath;
+    private Path jbrInstallPath;
 
     // Cache to avoid forking `java -version` once per registered VM per launch click. Keyed by
     // install location since that uniquely identifies a JVM on disk.
@@ -78,7 +72,15 @@ public class JetBrainsRuntimeManager {
         String userHome = System.getProperty("user.home");
         vaadinHomePath = Paths.get(userHome, VAADIN_HOME);
         jdkInstallPath = vaadinHomePath.resolve(JDK_DIR);
-        legacyJbrInstallPath = vaadinHomePath.resolve(ECLIPSE_PLUGIN_DIR).resolve(LEGACY_JBR_DIR);
+        jbrInstallPath = vaadinHomePath.resolve(ECLIPSE_PLUGIN_DIR).resolve(JBR_DIR);
+
+        // Create directories if they don't exist
+        try {
+            Files.createDirectories(jdkInstallPath);
+            Files.createDirectories(jbrInstallPath);
+        } catch (IOException e) {
+            VaadinPluginLog.error("Failed to create JBR directory: " + e.getMessage());
+        }
     }
 
     /**
@@ -110,7 +112,7 @@ public class JetBrainsRuntimeManager {
         // The release file identifies the vendor without starting a process
         String implementor = getReleaseProperty(vmInstall.getInstallLocation(), "IMPLEMENTOR");
         if (implementor != null) {
-            return implementor.contains("JetBrains");
+            return implementor.contains(JBR_VENDOR);
         }
 
         // Fall back to running java -version
@@ -131,8 +133,6 @@ public class JetBrainsRuntimeManager {
                 }
 
                 process.waitFor();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
             } catch (Exception e) {
                 // Ignore
             }
@@ -153,40 +153,12 @@ public class JetBrainsRuntimeManager {
             return false;
         }
 
+        if (!isJetBrainsRuntime(vmInstall)) {
+            return false;
+        }
+
         String runtimeVersion = getReleaseProperty(vmInstall.getInstallLocation(), "JAVA_RUNTIME_VERSION");
-        return runtimeVersion != null && runtimeVersion.contains(BROKEN_JBR_VERSION)
-                && runtimeVersion.contains(BROKEN_JBR_BUILD);
-    }
-
-    /**
-     * Read a property from the release file of a Java home.
-     *
-     * @param javaHome
-     *            The Java home directory
-     * @param key
-     *            The property name
-     * @return The property value without surrounding quotes, or null if unavailable
-     */
-    private String getReleaseProperty(File javaHome, String key) {
-        if (javaHome == null) {
-            return null;
-        }
-
-        Path release = javaHome.toPath().resolve("release");
-        if (!Files.isRegularFile(release)) {
-            return null;
-        }
-
-        try {
-            for (String line : Files.readAllLines(release, StandardCharsets.UTF_8)) {
-                if (line.startsWith(key + "=")) {
-                    return line.substring(key.length() + 1).replace("\"", "").trim();
-                }
-            }
-        } catch (IOException e) {
-            VaadinPluginLog.debug("Could not read " + release + ": " + e.getMessage());
-        }
-        return null;
+        return runtimeVersion != null && runtimeVersion.contains(BROKEN_JBR_VERSION);
     }
 
     /**
@@ -236,17 +208,13 @@ public class JetBrainsRuntimeManager {
             }
         }
 
-<<<<<<< HEAD
-        // Check if a JBR has been downloaded into one of our directories
-        for (File javaHome : findDownloadedJavaHomes()) {
-            IVMInstall jbr = registerJBR(javaHome);
-            if (jbr != null && !isBrokenJBR(jbr)) {
-                return jbr;
-=======
-        // Scan ~/.vaadin/eclipse-plugin/jbr/ for installations not yet registered with Eclipse,
-        // register them, and add them as candidates.
-        File[] jbrDirs = jbrInstallPath.toFile().listFiles(File::isDirectory);
-        if (jbrDirs != null) {
+        // Scan ~/.vaadin/eclipse-plugin/jbr/ (legacy) and ~/.vaadin/jdk/ (shared with VS Code) for
+        // installations not yet registered with Eclipse, register them, and add them as candidates.
+        for (Path scanDir : List.of(jbrInstallPath, jdkInstallPath)) {
+            File[] jbrDirs = scanDir.toFile().listFiles(File::isDirectory);
+            if (jbrDirs == null) {
+                continue;
+            }
             for (File jbrDir : jbrDirs) {
                 File javaHome = findJavaHome(jbrDir);
                 if (javaHome == null || !isValidJavaHome(javaHome)) {
@@ -264,7 +232,6 @@ public class JetBrainsRuntimeManager {
                         candidates.add(c);
                     }
                 }
->>>>>>> origin/main
             }
         }
 
@@ -283,44 +250,14 @@ public class JetBrainsRuntimeManager {
         String fullVersion = getFullVersion(vm);
         int major = JbrSelector.parseMajor(fullVersion);
         boolean isJbr = isJetBrainsRuntime(vm);
-        boolean broken = isJbr && BROKEN_JBR_VERSION.equals(fullVersion);
+        boolean broken = isBrokenJBR(vm);
         JbrCandidate candidate = new JbrCandidate(vm, major, isJbr, broken, fullVersion);
         candidateCache.put(location, candidate);
         return candidate;
     }
 
     /**
-<<<<<<< HEAD
-     * Find the Java homes of all runtimes downloaded by a Vaadin IDE plugin.
-     *
-     * @return The Java home directories, never null
-     */
-    private List<File> findDownloadedJavaHomes() {
-        List<File> javaHomes = new ArrayList<>();
-        for (Path directory : List.of(jdkInstallPath, legacyJbrInstallPath)) {
-            File[] candidates = directory.toFile().listFiles(File::isDirectory);
-            if (candidates == null) {
-                continue;
-            }
-            for (File candidate : candidates) {
-                File javaHome = findJavaHome(candidate);
-                if (javaHome != null) {
-                    javaHomes.add(javaHome);
-                }
-            }
-        }
-        return javaHomes;
-    }
-
-    /**
-     * Get a compatible JetBrains Runtime for the given Java version.
-     *
-     * @param requiredJavaVersion
-     *            The required Java version (e.g., "17", "21")
-     * @return The compatible JBR, or null if none found
-=======
      * Resolve the Java version of a VM, preferring Eclipse's cached value over a fresh fork of {@code java -version}.
->>>>>>> origin/main
      */
     private String getFullVersion(IVMInstall vm) {
         if (vm instanceof IVMInstall2 vm2) {
@@ -513,39 +450,39 @@ public class JetBrainsRuntimeManager {
     }
 
     /**
-<<<<<<< HEAD
-     * Get the major Java version (e.g., "17" from "17.0.1").
+     * Read a property from the release file of a Java home.
      *
-     * @param vmInstall
-     *            The VM installation
-     * @return The major version string
+     * @param javaHome
+     *            The Java home directory
+     * @param key
+     *            The property name
+     * @return The property value without surrounding quotes, or null if unavailable
      */
-    private String getJavaMajorVersion(IVMInstall vmInstall) {
-        String fullVersion = getJavaVersion(vmInstall);
-        if (fullVersion == null) {
+    private String getReleaseProperty(File javaHome, String key) {
+        if (javaHome == null) {
             return null;
         }
 
-        // Extract major version
-        String[] parts = fullVersion.split("\\.");
-        if (parts.length > 0) {
-            // Handle both "1.8.0" and "17.0.1" formats
-            if (parts[0].equals("1") && parts.length > 1) {
-                return parts[1]; // Java 8 or earlier
-            } else {
-                return parts[0]; // Java 9+
-            }
+        Path release = javaHome.toPath().resolve("release");
+        if (!Files.isRegularFile(release)) {
+            return null;
         }
 
+        try {
+            for (String line : Files.readAllLines(release, StandardCharsets.UTF_8)) {
+                if (line.startsWith(key + "=")) {
+                    return line.substring(key.length() + 1).replace("\"", "").trim();
+                }
+            }
+        } catch (IOException e) {
+            VaadinPluginLog.debug("Could not read " + release + ": " + e.getMessage());
+        }
         return null;
     }
 
     /**
      * Find the Java home directory within a JBR installation. The runtime archives unpack into a directory of their own
      * and put the Java home below Contents/Home on macOS, so the layout differs per platform and release.
-=======
-     * Find the Java home directory within a JBR installation.
->>>>>>> origin/main
      *
      * @param jbrDir
      *            The JBR installation directory
@@ -606,4 +543,5 @@ public class JetBrainsRuntimeManager {
 
         return javaExe.exists();
     }
+
 }
