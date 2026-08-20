@@ -9,16 +9,25 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+<<<<<<< HEAD
 import java.util.List;
+=======
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+>>>>>>> origin/main
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.launching.IVMInstall;
+import org.eclipse.jdt.launching.IVMInstall2;
 import org.eclipse.jdt.launching.IVMInstallType;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.launching.VMStandin;
 
+import com.vaadin.plugin.hotswap.JbrSelector.JbrCandidate;
 import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
@@ -49,6 +58,10 @@ public class JetBrainsRuntimeManager {
     private Path vaadinHomePath;
     private Path jdkInstallPath;
     private Path legacyJbrInstallPath;
+
+    // Cache to avoid forking `java -version` once per registered VM per launch click. Keyed by
+    // install location since that uniquely identifies a JVM on disk.
+    private final Map<File, JbrCandidate> candidateCache = new HashMap<>();
 
     public static JetBrainsRuntimeManager getInstance() {
         if (instance == null) {
@@ -177,34 +190,107 @@ public class JetBrainsRuntimeManager {
     }
 
     /**
-     * Find an installed JetBrains Runtime.
+     * Find any compatible JBR (or fall-back JDK) without a version constraint. Equivalent to
+     * {@link #findCompatibleJBR(int)} with required major == 0.
      *
-     * @return The JBR installation, or null if not found
+     * @return The selected installation, or null if none is compatible
      */
     public IVMInstall findInstalledJBR() {
-        IVMInstallType[] vmTypes = JavaRuntime.getVMInstallTypes();
+        return findCompatibleJBR(0);
+    }
 
-        for (IVMInstallType vmType : vmTypes) {
-            IVMInstall[] vms = vmType.getVMInstalls();
-            for (IVMInstall vm : vms) {
-                if (isJetBrainsRuntime(vm) && !isBrokenJBR(vm)) {
-                    return vm;
+    /**
+     * Find the best compatible JBR (or fall-back JDK) for a given required Java major version. See {@link JbrSelector}
+     * for the selection rules.
+     *
+     * @param requiredMajor
+     *            the project's required Java major version (e.g. 21, 25). Pass 0 to disable version filtering.
+     * @return The selected installation, or null if none is compatible
+     */
+    public IVMInstall findCompatibleJBR(int requiredMajor) {
+        return findCompatibleCandidate(requiredMajor).map(JbrCandidate::vm).orElse(null);
+    }
+
+    /**
+     * Same selection as {@link #findCompatibleJBR(int)}, but returns the full candidate so callers can tell a real JBR
+     * from a non-JBR fall-back JDK. {@link JbrSelector} falls back to plain JDKs when no compatible JBR exists, so a
+     * non-empty result does <em>not</em> imply JBR — callers that emit JBR-only JVM flags must check
+     * {@link JbrCandidate#isJbr()}.
+     *
+     * @param requiredMajor
+     *            the project's required Java major version (e.g. 21, 25). Pass 0 to disable version filtering.
+     * @return the selected candidate, or empty if none is compatible
+     */
+    public Optional<JbrCandidate> findCompatibleCandidate(int requiredMajor) {
+        return JbrSelector.select(collectCandidates(), requiredMajor);
+    }
+
+    private List<JbrCandidate> collectCandidates() {
+        List<JbrCandidate> candidates = new ArrayList<>();
+        for (IVMInstallType type : JavaRuntime.getVMInstallTypes()) {
+            for (IVMInstall vm : type.getVMInstalls()) {
+                JbrCandidate c = toCandidate(vm);
+                if (c != null) {
+                    candidates.add(c);
                 }
             }
         }
 
+<<<<<<< HEAD
         // Check if a JBR has been downloaded into one of our directories
         for (File javaHome : findDownloadedJavaHomes()) {
             IVMInstall jbr = registerJBR(javaHome);
             if (jbr != null && !isBrokenJBR(jbr)) {
                 return jbr;
+=======
+        // Scan ~/.vaadin/eclipse-plugin/jbr/ for installations not yet registered with Eclipse,
+        // register them, and add them as candidates.
+        File[] jbrDirs = jbrInstallPath.toFile().listFiles(File::isDirectory);
+        if (jbrDirs != null) {
+            for (File jbrDir : jbrDirs) {
+                File javaHome = findJavaHome(jbrDir);
+                if (javaHome == null || !isValidJavaHome(javaHome)) {
+                    continue;
+                }
+                boolean alreadyKnown = candidates.stream()
+                        .anyMatch(c -> c.vm() != null && javaHome.equals(c.vm().getInstallLocation()));
+                if (alreadyKnown) {
+                    continue;
+                }
+                IVMInstall jbr = registerJBR(javaHome);
+                if (jbr != null) {
+                    JbrCandidate c = toCandidate(jbr);
+                    if (c != null) {
+                        candidates.add(c);
+                    }
+                }
+>>>>>>> origin/main
             }
         }
 
-        return null;
+        return candidates;
+    }
+
+    private JbrCandidate toCandidate(IVMInstall vm) {
+        File location = vm.getInstallLocation();
+        if (location == null) {
+            return null;
+        }
+        JbrCandidate cached = candidateCache.get(location);
+        if (cached != null && cached.vm() == vm) {
+            return cached;
+        }
+        String fullVersion = getFullVersion(vm);
+        int major = JbrSelector.parseMajor(fullVersion);
+        boolean isJbr = isJetBrainsRuntime(vm);
+        boolean broken = isJbr && BROKEN_JBR_VERSION.equals(fullVersion);
+        JbrCandidate candidate = new JbrCandidate(vm, major, isJbr, broken, fullVersion);
+        candidateCache.put(location, candidate);
+        return candidate;
     }
 
     /**
+<<<<<<< HEAD
      * Find the Java homes of all runtimes downloaded by a Vaadin IDE plugin.
      *
      * @return The Java home directories, never null
@@ -232,18 +318,18 @@ public class JetBrainsRuntimeManager {
      * @param requiredJavaVersion
      *            The required Java version (e.g., "17", "21")
      * @return The compatible JBR, or null if none found
+=======
+     * Resolve the Java version of a VM, preferring Eclipse's cached value over a fresh fork of {@code java -version}.
+>>>>>>> origin/main
      */
-    public IVMInstall getCompatibleJBR(String requiredJavaVersion) {
-        IVMInstall jbr = findInstalledJBR();
-
-        if (jbr != null) {
-            String jbrVersion = getJavaMajorVersion(jbr);
-            if (jbrVersion != null && jbrVersion.equals(requiredJavaVersion)) {
-                return jbr;
+    private String getFullVersion(IVMInstall vm) {
+        if (vm instanceof IVMInstall2 vm2) {
+            String v = vm2.getJavaVersion();
+            if (v != null && !v.isEmpty()) {
+                return v;
             }
         }
-
-        return null;
+        return getJavaVersion(vm);
     }
 
     /**
@@ -427,6 +513,7 @@ public class JetBrainsRuntimeManager {
     }
 
     /**
+<<<<<<< HEAD
      * Get the major Java version (e.g., "17" from "17.0.1").
      *
      * @param vmInstall
@@ -456,6 +543,9 @@ public class JetBrainsRuntimeManager {
     /**
      * Find the Java home directory within a JBR installation. The runtime archives unpack into a directory of their own
      * and put the Java home below Contents/Home on macOS, so the layout differs per platform and release.
+=======
+     * Find the Java home directory within a JBR installation.
+>>>>>>> origin/main
      *
      * @param jbrDir
      *            The JBR installation directory
