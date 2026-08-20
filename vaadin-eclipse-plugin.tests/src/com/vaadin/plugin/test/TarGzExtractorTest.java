@@ -1,6 +1,7 @@
 package com.vaadin.plugin.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -107,6 +108,25 @@ public class TarGzExtractorTest {
 				!Files.exists(targetDirectory.getParent().resolve("escaped.txt")));
 	}
 
+	@Test
+	public void rejectsSymbolicLinksPointingOutsideOfTargetDirectory() throws IOException {
+		// A link out of the root would otherwise let the following entry be written
+		// through it, landing outside the extraction directory
+		Path escaped = Files.createTempDirectory("jbr-extract-escape");
+		byte[] archive = tarGz(symlinkHeader("escape", escaped.toString()),
+				header("escape/pwned.txt", (byte) '0', 0), new byte[512], new byte[512]);
+
+		try {
+			TarGzExtractor.extract(new ByteArrayInputStream(archive), targetDirectory, null);
+			fail("Extracting a symbolic link outside of the target directory should fail");
+		} catch (IOException e) {
+			assertTrue("Should report the offending link, was: " + e.getMessage(), e.getMessage().contains("escape"));
+		}
+
+		assertFalse("Nothing should be written through the link", Files.exists(escaped.resolve("pwned.txt")));
+		Files.deleteIfExists(escaped);
+	}
+
 	private void extractSampleArchive() throws IOException {
 		try (InputStream in = getClass().getResourceAsStream(SAMPLE_ARCHIVE)) {
 			assertNotNull("Test archive " + SAMPLE_ARCHIVE + " should be available", in);
@@ -137,8 +157,13 @@ public class TarGzExtractorTest {
 		write(block, 257, "ustar");
 		block[263] = '0';
 		block[264] = '0';
+		return recalculateChecksum(block);
+	}
 
-		// The checksum is calculated with the checksum field filled with spaces
+	/**
+	 * The checksum is calculated over the block with the checksum field filled with spaces.
+	 */
+	private static byte[] recalculateChecksum(byte[] block) {
 		for (int i = 148; i < 156; i++) {
 			block[i] = ' ';
 		}
@@ -148,6 +173,15 @@ public class TarGzExtractorTest {
 		}
 		write(block, 148, String.format("%06o", checksum));
 		return block;
+	}
+
+	/**
+	 * Build a ustar header block for a symbolic link entry.
+	 */
+	private static byte[] symlinkHeader(String name, String linkName) {
+		byte[] block = header(name, (byte) '2', 0);
+		write(block, 157, linkName);
+		return recalculateChecksum(block);
 	}
 
 	private static void write(byte[] block, int offset, String value) {

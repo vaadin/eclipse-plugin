@@ -93,6 +93,26 @@ public class JetBrainsRuntimeManagerTest {
 		assertFalse(manager().isJetBrainsRuntimeHome(javaHome.toFile()));
 	}
 
+	@Test
+	public void detectsTheBrokenJetBrainsRuntimeBuild() throws IOException {
+		// 21.0.4+13-b509.17 crashes the VM on enhanced class redefinition and must
+		// never be selected for a launch
+		Path javaHome = createJavaHome(directory);
+		Files.writeString(javaHome.resolve("release"), "IMPLEMENTOR=\"JetBrains s.r.o.\"\nJAVA_VERSION=\"21.0.4\"\n"
+				+ "JAVA_RUNTIME_VERSION=\"21.0.4+13-b509.17\"\n");
+
+		assertTrue(manager().isBrokenJBRHome(javaHome.toFile()));
+	}
+
+	@Test
+	public void acceptsOtherJetBrainsRuntimeBuilds() throws IOException {
+		Path javaHome = createJavaHome(directory);
+		Files.writeString(javaHome.resolve("release"), "IMPLEMENTOR=\"JetBrains s.r.o.\"\nJAVA_VERSION=\"25.0.4\"\n"
+				+ "JAVA_RUNTIME_VERSION=\"25.0.4+1-b508.27\"\n");
+
+		assertFalse(manager().isBrokenJBRHome(javaHome.toFile()));
+	}
+
 	private static JetBrainsRuntimeManager manager() {
 		return JetBrainsRuntimeManager.getInstance();
 	}

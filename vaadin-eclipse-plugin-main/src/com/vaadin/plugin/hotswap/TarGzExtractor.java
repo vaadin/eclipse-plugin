@@ -100,6 +100,11 @@ public class TarGzExtractor {
     }
 
     private static void extractTar(InputStream tar, Path root, IProgressMonitor monitor) throws IOException {
+        // Entry names are checked lexically, but a symbolic link created earlier in the archive can
+        // still divert a later entry out of the root. realRoot is used to re-check the directory an
+        // entry actually lands in, with symbolic links resolved.
+        Path realRoot = root.toRealPath();
+
         byte[] header = new byte[BLOCK_SIZE];
         String longName = null;
         String longLinkName = null;
@@ -154,17 +159,18 @@ public class TarGzExtractor {
             switch (type) {
             case TYPE_DIRECTORY:
                 Files.createDirectories(target);
+                verifyInsideRoot(realRoot, target);
                 applyMode(target, mode);
                 break;
             case TYPE_SYMLINK:
-                createSymbolicLink(target, linkName);
+                createSymbolicLink(root, target, linkName);
                 break;
             case TYPE_HARD_LINK:
-                createHardLink(root, target, linkName);
+                createHardLink(root, realRoot, target, linkName);
                 break;
             case TYPE_FILE:
             case TYPE_FILE_OLD:
-                writeFile(tar, target, size);
+                writeFile(tar, realRoot, target, size);
                 applyMode(target, mode);
                 break;
             default:
@@ -203,8 +209,22 @@ public class TarGzExtractor {
         return target;
     }
 
-    private static void writeFile(InputStream in, Path target, long size) throws IOException {
+    /**
+     * Check where a path really lands once symbolic links are resolved. A lexical check on the entry name is not
+     * enough: an earlier symbolic link entry can point out of the root and later entries would be written through it.
+     */
+    private static void verifyInsideRoot(Path realRoot, Path target) throws IOException {
+        Path real = Files.exists(target, LinkOption.NOFOLLOW_LINKS)
+                ? target.toRealPath()
+                : target.getParent().toRealPath();
+        if (!real.startsWith(realRoot)) {
+            throw new IOException("Tar entry resolves outside of the target directory: " + target);
+        }
+    }
+
+    private static void writeFile(InputStream in, Path realRoot, Path target, long size) throws IOException {
         Files.createDirectories(target.getParent());
+        verifyInsideRoot(realRoot, target.getParent());
         Files.deleteIfExists(target);
 
         byte[] buffer = new byte[8192];
@@ -222,14 +242,22 @@ public class TarGzExtractor {
         skipPadding(in, size);
     }
 
-    private static void createSymbolicLink(Path target, String linkName) throws IOException {
+    private static void createSymbolicLink(Path root, Path target, String linkName) throws IOException {
         if (linkName.isEmpty()) {
             return;
         }
+
+        // A link pointing out of the root would let a later entry be written outside it
+        Path linkTarget = Paths.get(linkName);
+        Path pointsAt = (linkTarget.isAbsolute() ? linkTarget : target.getParent().resolve(linkTarget)).normalize();
+        if (!pointsAt.startsWith(root)) {
+            throw new IOException("Tar entry links outside of the target directory: " + target + " -> " + linkName);
+        }
+
         Files.createDirectories(target.getParent());
         Files.deleteIfExists(target);
         try {
-            Files.createSymbolicLink(target, Paths.get(linkName));
+            Files.createSymbolicLink(target, linkTarget);
         } catch (IOException | UnsupportedOperationException e) {
             // Creating symbolic links requires elevated privileges on Windows.
             // The JDK archives do not rely on them there, so keep going.
@@ -237,7 +265,7 @@ public class TarGzExtractor {
         }
     }
 
-    private static void createHardLink(Path root, Path target, String linkName) throws IOException {
+    private static void createHardLink(Path root, Path realRoot, Path target, String linkName) throws IOException {
         if (linkName.isEmpty()) {
             return;
         }
@@ -246,7 +274,9 @@ public class TarGzExtractor {
             VaadinPluginLog.debug("Skipping hard link " + target + ", target " + linkName + " does not exist");
             return;
         }
+        verifyInsideRoot(realRoot, source);
         Files.createDirectories(target.getParent());
+        verifyInsideRoot(realRoot, target.getParent());
         Files.deleteIfExists(target);
         try {
             Files.createLink(target, source);

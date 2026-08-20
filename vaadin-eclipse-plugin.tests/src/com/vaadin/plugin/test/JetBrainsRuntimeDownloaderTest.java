@@ -92,6 +92,17 @@ public class JetBrainsRuntimeDownloaderTest {
 	}
 
 	@Test
+	public void ordersPatchLevelsNumerically() {
+		// Compared as strings, "21.0.9" sorts above "21.0.10" and the newest
+		// release would be skipped once the patch level reaches double digits
+		String releases = "[" //
+				+ "{\"id\": 100, \"tag_name\": \"jbr-release-21.0.9b1234.1\", \"prerelease\": false}," //
+				+ "{\"id\": 200, \"tag_name\": \"jbr-release-21.0.10b1234.1\", \"prerelease\": false}" //
+				+ "]";
+		assertEquals("200", JetBrainsRuntimeDownloader.findLatestStableReleaseId(releases));
+	}
+
+	@Test
 	public void skipsPreReleases() {
 		String releases = "[" //
 				+ "{\"id\": 100, \"tag_name\": \"jbr-release-21.0.5b631.7\", \"prerelease\": false}," //

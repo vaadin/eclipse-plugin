@@ -7,8 +7,12 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.Locale;
@@ -79,21 +83,41 @@ public class JetBrainsRuntimeDownloader {
         Files.createDirectories(jdkDirectory);
         Path archive = jdkDirectory.resolve(fileName + ".part");
 
+        // Unpack next to the final location and move it into place once complete. Extracting in
+        // place would leave a half-populated directory behind if the IDE is killed mid-extract, and
+        // the next run would take that for a finished installation. ~/.vaadin/jdk is also shared
+        // with the Vaadin plugins for other IDEs, so two of them can be unpacking at the same time.
+        Path staging = Files.createTempDirectory(jdkDirectory, fileName + "-");
+
         try {
             download(downloadUrl, archive, progress.split(85));
 
             progress.setWorkRemaining(10);
             progress.subTask("Extracting JetBrains Runtime");
-            TarGzExtractor.extract(archive, extractPath, progress.split(10));
-        } catch (IOException | RuntimeException e) {
+            TarGzExtractor.extract(archive, staging, progress.split(10));
+
+            install(staging, extractPath);
+        } finally {
             deleteQuietly(archive);
-            deleteRecursivelyQuietly(extractPath);
-            throw e;
+            deleteRecursivelyQuietly(staging);
         }
 
-        deleteQuietly(archive);
         VaadinPluginLog.info("JetBrains Runtime downloaded to " + extractPath);
         return extractPath;
+    }
+
+    /**
+     * Move a fully extracted runtime into its final location. Whoever gets there first wins, a runtime installed by
+     * another process in the meantime is left alone.
+     */
+    private static void install(Path staging, Path extractPath) throws IOException {
+        try {
+            Files.move(staging, extractPath, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(staging, extractPath);
+        } catch (FileAlreadyExistsException | DirectoryNotEmptyException e) {
+            VaadinPluginLog.info("JetBrains Runtime was installed to " + extractPath + " by another process");
+        }
     }
 
     /**
@@ -149,7 +173,9 @@ public class JetBrainsRuntimeDownloader {
                 continue;
             }
             String tag = release.get("tag_name").getAsString();
-            if (latestTag == null || tag.compareTo(latestTag) > 0) {
+            // Compared numerically per segment, a plain string compare would sort
+            // jbr-release-21.0.9b1234.1 above jbr-release-21.0.10b1234.1
+            if (latestTag == null || JbrSelector.compareVersions(tag, latestTag) > 0) {
                 latestTag = tag;
                 latestId = release.get("id").getAsString();
             }

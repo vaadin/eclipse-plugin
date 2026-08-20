@@ -27,6 +27,7 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.launching.IVMInstall;
+import org.eclipse.jdt.launching.IVMInstall2;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -200,7 +201,16 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
                 return;
             }
             if (downloadedVm != null) {
-                selected = jbrManager.findCompatibleCandidate(requiredMajor).orElse(null);
+                JbrCandidate afterDownload = jbrManager.findCompatibleCandidate(requiredMajor).orElse(null);
+                if (afterDownload == null || !afterDownload.isJbr()) {
+                    // The newest JBR can still be older than the project needs, and JbrSelector drops
+                    // anything below the required major. Say so instead of quietly launching without it.
+                    if (!confirmLaunchWithoutDownloadedJbr(downloadedVm, requiredMajor)) {
+                        return;
+                    }
+                } else {
+                    selected = afterDownload;
+                }
             }
         }
 
@@ -240,6 +250,30 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
         } catch (Exception e) {
             // Ignore telemetry errors
         }
+    }
+
+    /**
+     * Tell the user that the runtime that was just downloaded cannot be used for this project, and ask whether to
+     * launch without it.
+     *
+     * @param downloadedVm
+     *            The runtime that was downloaded
+     * @param requiredMajor
+     *            The Java major version the project requires
+     * @return true if the launch should continue without JBR
+     */
+    private boolean confirmLaunchWithoutDownloadedJbr(IVMInstall downloadedVm, int requiredMajor) {
+        String downloadedVersion = downloadedVm instanceof IVMInstall2 vm2 ? vm2.getJavaVersion() : null;
+        int downloadedMajor = JbrSelector.parseMajor(downloadedVersion);
+
+        String reason = downloadedMajor > 0 && requiredMajor > 0
+                ? "The downloaded JetBrains Runtime is Java " + downloadedMajor + ", but this project requires Java "
+                        + requiredMajor + "."
+                : "The downloaded JetBrains Runtime cannot be used for this project.";
+
+        return MessageDialog.openQuestion(getShell(), "JetBrains Runtime Not Usable",
+                reason + "\n\n" + "Would you like to launch without JBR?\n\n"
+                        + "Note: Hotswap Agent may not work properly without JBR.");
     }
 
     /**

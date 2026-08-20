@@ -173,7 +173,19 @@ public class JetBrainsRuntimeManager {
             return false;
         }
 
-        String runtimeVersion = getReleaseProperty(vmInstall.getInstallLocation(), "JAVA_RUNTIME_VERSION");
+        return isBrokenJBRHome(vmInstall.getInstallLocation());
+    }
+
+    /**
+     * Check whether a Java home is the JetBrains Runtime build that crashes the VM on enhanced class redefinition,
+     * going by the build recorded in its release file.
+     *
+     * @param javaHome
+     *            The Java home directory
+     * @return true if it is the known broken build
+     */
+    public boolean isBrokenJBRHome(File javaHome) {
+        String runtimeVersion = getReleaseProperty(javaHome, "JAVA_RUNTIME_VERSION");
         return runtimeVersion != null && runtimeVersion.contains(BROKEN_JBR_VERSION);
     }
 
