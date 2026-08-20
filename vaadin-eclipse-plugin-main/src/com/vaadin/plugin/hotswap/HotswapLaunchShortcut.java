@@ -1,11 +1,14 @@
 package com.vaadin.plugin.hotswap;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IAdaptable;
+import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationType;
@@ -23,8 +26,12 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
+import org.eclipse.jdt.launching.IVMInstall;
+import org.eclipse.jdt.launching.IVMInstall2;
 import org.eclipse.jdt.launching.JavaRuntime;
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.window.Window;
@@ -35,6 +42,7 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 
 import com.vaadin.plugin.TelemetryService;
 import com.vaadin.plugin.hotswap.JbrSelector.JbrCandidate;
+import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
  * Launch shortcut for debugging Java applications with Hotswap Agent. This adds "Java Application using Hotswap Agent"
@@ -42,6 +50,17 @@ import com.vaadin.plugin.hotswap.JbrSelector.JbrCandidate;
  */
 @SuppressWarnings("restriction")
 public class HotswapLaunchShortcut implements ILaunchShortcut2 {
+
+    private static final String DOWNLOAD_JBR_LABEL = "Download JetBrains Runtime";
+
+    private static final String CONTINUE_WITHOUT_JBR_LABEL = "Continue Without JBR";
+
+    private static final int DOWNLOAD_BUTTON = 0;
+
+    private static final int CONTINUE_WITHOUT_JBR_BUTTON = 1;
+
+    /** No button was pressed, the dialog was dismissed. */
+    private static final int NO_BUTTON = -1;
 
     @Override
     public void launch(ISelection selection, String mode) {
@@ -175,13 +194,23 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
         JbrCandidate selected = jbrManager.findCompatibleCandidate(requiredMajor).orElse(null);
 
         if (selected == null || !selected.isJbr()) {
-            boolean install = MessageDialog.openQuestion(getShell(), "JetBrains Runtime Required",
-                    "Hotswap Agent requires JetBrains Runtime (JBR) for enhanced class redefinition.\n\n"
-                            + "JBR is not currently installed. Would you like to continue anyway?\n\n"
-                            + "Note: Hotswap Agent may not work properly without JBR.");
-
-            if (!install) {
+            IVMInstall downloadedVm;
+            try {
+                downloadedVm = downloadJetBrainsRuntime(jbrManager);
+            } catch (OperationCanceledException e) {
                 return;
+            }
+            if (downloadedVm != null) {
+                JbrCandidate afterDownload = jbrManager.findCompatibleCandidate(requiredMajor).orElse(null);
+                if (afterDownload == null || !afterDownload.isJbr()) {
+                    // The newest JBR can still be older than the project needs, and JbrSelector drops
+                    // anything below the required major. Say so instead of quietly launching without it.
+                    if (!confirmLaunchWithoutDownloadedJbr(downloadedVm, requiredMajor)) {
+                        return;
+                    }
+                } else {
+                    selected = afterDownload;
+                }
             }
         }
 
@@ -221,6 +250,130 @@ public class HotswapLaunchShortcut implements ILaunchShortcut2 {
         } catch (Exception e) {
             // Ignore telemetry errors
         }
+    }
+
+    /**
+     * Tell the user that the runtime that was just downloaded cannot be used for this project, and ask whether to
+     * launch without it.
+     *
+     * @param downloadedVm
+     *            The runtime that was downloaded
+     * @param requiredMajor
+     *            The Java major version the project requires
+     * @return true if the launch should continue without JBR
+     */
+    private boolean confirmLaunchWithoutDownloadedJbr(IVMInstall downloadedVm, int requiredMajor) {
+        String downloadedVersion = downloadedVm instanceof IVMInstall2 vm2 ? vm2.getJavaVersion() : null;
+        int downloadedMajor = JbrSelector.parseMajor(downloadedVersion);
+
+        String reason = downloadedMajor > 0 && requiredMajor > 0
+                ? "The downloaded JetBrains Runtime is Java " + downloadedMajor + ", but this project requires Java "
+                        + requiredMajor + "."
+                : "The downloaded JetBrains Runtime cannot be used for this project.";
+
+        return MessageDialog.openQuestion(getShell(), "JetBrains Runtime Not Usable",
+                reason + "\n\n" + "Would you like to launch without JBR?\n\n"
+                        + "Note: Hotswap Agent may not work properly without JBR.");
+    }
+
+    /**
+     * Show the "Download JBR / Continue Without JBR / Cancel" dialog and download if the user chooses so.
+     *
+     * @return The downloaded JBR installation, null when the user chose to continue without JBR
+     * @throws OperationCanceledException
+     *             if the user cancelled the launch
+     */
+    private IVMInstall downloadJetBrainsRuntime(JetBrainsRuntimeManager jbrManager) {
+        JbrPromptDialog dialog = new JbrPromptDialog(getShell(),
+                "Hotswap Agent requires JetBrains Runtime (JBR) for enhanced class redefinition.\n\n"
+                        + "JBR is not currently installed. It can be downloaded from "
+                        + "https://github.com/JetBrains/JetBrainsRuntime and installed into "
+                        + jbrManager.getJdkInstallPath() + ".\n\n"
+                        + "Note: Hotswap Agent may not work properly without JBR.");
+        dialog.open();
+
+        switch (dialog.getPressedButton()) {
+        case DOWNLOAD_BUTTON:
+            return runDownload(jbrManager);
+        case CONTINUE_WITHOUT_JBR_BUTTON:
+            return null;
+        default:
+            // Cancel, or dismissed with Escape or the window decoration
+            throw new OperationCanceledException();
+        }
+    }
+
+    /**
+     * The JBR prompt, remembering which button was actually pressed.
+     *
+     * The return code of {@link MessageDialog#open()} cannot tell a button press from a dismissal: pressing a button
+     * sets the return code to the button index, while closing the dialog with Escape or the window decoration sets it
+     * to {@link org.eclipse.jface.window.Window#CANCEL}, which is 1 and therefore indistinguishable from the second
+     * button. Dismissing the dialog would silently launch without JBR and rewrite the configuration's JRE and VM
+     * arguments, so the pressed button is recorded instead.
+     */
+    private static final class JbrPromptDialog extends MessageDialog {
+
+        private int pressedButton = NO_BUTTON;
+
+        private JbrPromptDialog(Shell parentShell, String message) {
+            super(parentShell, "JetBrains Runtime Required", null, message, MessageDialog.QUESTION,
+                    new String[] { DOWNLOAD_JBR_LABEL, CONTINUE_WITHOUT_JBR_LABEL, IDialogConstants.CANCEL_LABEL },
+                    DOWNLOAD_BUTTON);
+        }
+
+        @Override
+        protected void buttonPressed(int buttonId) {
+            pressedButton = buttonId;
+            super.buttonPressed(buttonId);
+        }
+
+        /**
+         * @return the index of the pressed button, or {@link #NO_BUTTON} if the dialog was dismissed
+         */
+        private int getPressedButton() {
+            return pressedButton;
+        }
+    }
+
+    /**
+     * Run the JBR download in a progress dialog, handling errors and offering to continue without JBR on failure.
+     *
+     * @return The downloaded JBR installation, or null when the user chose to continue without JBR after a failure
+     * @throws OperationCanceledException
+     *             if the user cancelled the download
+     */
+    private IVMInstall runDownload(JetBrainsRuntimeManager jbrManager) {
+        IVMInstall[] downloaded = new IVMInstall[1];
+
+        try {
+            new ProgressMonitorDialog(getShell()).run(true, true, monitor -> {
+                try {
+                    downloaded[0] = jbrManager.downloadAndInstallJBR(monitor);
+                } catch (IOException | InterruptedException e) {
+                    throw new InvocationTargetException(e);
+                }
+            });
+        } catch (InterruptedException | OperationCanceledException e) {
+            throw new OperationCanceledException();
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            if (cause instanceof OperationCanceledException || cause instanceof InterruptedException) {
+                throw new OperationCanceledException();
+            }
+            VaadinPluginLog.error("Failed to download JetBrains Runtime: " + cause.getMessage(), cause);
+
+            boolean launchAnyway = MessageDialog.openQuestion(getShell(), "JetBrains Runtime Download Failed",
+                    "Could not download JetBrains Runtime: " + cause.getMessage() + "\n\n"
+                            + "Would you like to launch without JBR?\n\n"
+                            + "Note: Hotswap Agent may not work properly without JBR.");
+            if (!launchAnyway) {
+                throw new OperationCanceledException();
+            }
+            return null;
+        }
+
+        return downloaded[0];
     }
 
     /**
