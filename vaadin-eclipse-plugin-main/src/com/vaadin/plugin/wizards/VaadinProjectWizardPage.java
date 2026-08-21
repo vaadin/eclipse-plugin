@@ -33,7 +33,6 @@ public class VaadinProjectWizardPage extends WizardPage {
     // Starter project options
     private Button starterProjectRadio;
     private Group starterGroup;
-    private Button flowCheckbox;
     private Combo vaadinVersionCombo;
 
     // Hello World options
@@ -141,15 +140,6 @@ public class VaadinProjectWizardPage extends WizardPage {
         // Project type selection
         createProjectTypeSection(container);
 
-        // Add separator
-        Label separator = new Label(container, SWT.SEPARATOR | SWT.HORIZONTAL);
-        gd = new GridData(GridData.FILL_HORIZONTAL);
-        gd.horizontalSpan = 3;
-        separator.setLayoutData(gd);
-
-        // Add help sections
-        createHelpSections(container);
-
         // Initialize default location
         updateDefaultLocation();
 
@@ -158,44 +148,6 @@ public class VaadinProjectWizardPage extends WizardPage {
 
         dialogChanged();
         setControl(container);
-    }
-
-    private void createHelpSections(Composite parent) {
-        // Getting Started section
-        Label gettingStartedLabel = new Label(parent, SWT.NONE);
-        gettingStartedLabel.setText("Getting Started");
-        gettingStartedLabel.setFont(JFaceResources.getFontRegistry().getBold(JFaceResources.DEFAULT_FONT));
-        GridData gd = new GridData();
-        gd.horizontalSpan = 3;
-        gettingStartedLabel.setLayoutData(gd);
-
-        Label gettingStartedText = new Label(parent, SWT.WRAP);
-        gettingStartedText
-                .setText("The Getting Started guide will quickly familiarize you with your new Walking Skeleton "
-                        + "implementation. You'll learn how to set up your development environment, understand the project "
-                        + "structure, and find resources to help you add muscles to your skeleton—transforming it into a "
-                        + "fully-featured application.");
-        gd = new GridData(GridData.FILL_HORIZONTAL);
-        gd.horizontalSpan = 3;
-        gd.widthHint = 500;
-        gettingStartedText.setLayoutData(gd);
-
-        // Flow section
-        Label flowLabel = new Label(parent, SWT.NONE);
-        flowLabel.setText("Flow");
-        flowLabel.setFont(JFaceResources.getFontRegistry().getBold(JFaceResources.DEFAULT_FONT));
-        gd = new GridData();
-        gd.horizontalSpan = 3;
-        gd.verticalIndent = 10;
-        flowLabel.setLayoutData(gd);
-
-        Label flowText = new Label(parent, SWT.WRAP);
-        flowText.setText("Flow framework is the most productive choice, allowing 100% of the user interface to be "
-                + "coded in server-side Java.");
-        gd = new GridData(GridData.FILL_HORIZONTAL);
-        gd.horizontalSpan = 3;
-        gd.widthHint = 500;
-        flowText.setLayoutData(gd);
     }
 
     private void createProjectTypeSection(Composite parent) {
@@ -233,30 +185,6 @@ public class VaadinProjectWizardPage extends WizardPage {
         vaadinVersionCombo.setItems("Stable", "Prerelease");
         vaadinVersionCombo.select(0);
         vaadinVersionCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-        // Include Walking Skeleton section
-        Label skeletonLabel = new Label(starterGroup, SWT.NONE);
-        skeletonLabel.setText("Include Walking Skeleton");
-        skeletonLabel.setFont(JFaceResources.getFontRegistry().getBold(JFaceResources.DEFAULT_FONT));
-        gd = new GridData();
-        gd.horizontalSpan = 2;
-        skeletonLabel.setLayoutData(gd);
-
-        Label descLabel = new Label(starterGroup, SWT.WRAP);
-        descLabel.setText("A walking skeleton is a minimal application that includes a fully-functional "
-                + "end-to-end workflow. All major building blocks are included, but it does not yet "
-                + "perform any meaningful tasks.");
-        gd = new GridData(GridData.FILL_HORIZONTAL);
-        gd.horizontalSpan = 2;
-        gd.widthHint = 400;
-        descLabel.setLayoutData(gd);
-
-        flowCheckbox = new Button(starterGroup, SWT.CHECK);
-        flowCheckbox.setText("Pure Java with Vaadin Flow");
-        flowCheckbox.setSelection(true);
-        gd = new GridData();
-        gd.horizontalSpan = 2;
-        flowCheckbox.setLayoutData(gd);
 
         // Hello World Projects Section
         helloWorldGroup = new Group(parent, SWT.NONE);
@@ -330,7 +258,6 @@ public class VaadinProjectWizardPage extends WizardPage {
         languageCombo.addSelectionListener(validationListener);
         buildToolCombo.addSelectionListener(validationListener);
         architectureCombo.addSelectionListener(validationListener);
-        flowCheckbox.addSelectionListener(validationListener);
 
         // Initial enablement
         updateProjectTypeEnablement();
@@ -474,7 +401,6 @@ public class VaadinProjectWizardPage extends WizardPage {
             starterModel.setProjectName(projectNameText.getText());
             starterModel.setLocation(locationText.getText());
             starterModel.setPrerelease(vaadinVersionCombo.getSelectionIndex() == 1);
-            starterModel.setIncludeFlow(flowCheckbox.getSelection());
             return starterModel;
         } else {
             helloWorldModel.setProjectName(projectNameText.getText());
