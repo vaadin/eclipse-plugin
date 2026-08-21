@@ -6,7 +6,6 @@ package com.vaadin.plugin.wizards;
 public class StarterProjectModel extends AbstractProjectModel {
 
     private boolean prerelease = false;
-    private boolean includeFlow = true;
 
     @Override
     public String getDownloadUrl() {
@@ -19,9 +18,7 @@ public class StarterProjectModel extends AbstractProjectModel {
         url.append("&groupId=").append(encode(groupId));
 
         // Add framework selection using the 'frameworks' parameter
-        if (includeFlow) {
-            url.append("&frameworks=flow");
-        }
+        url.append("&frameworks=flow");
 
         // Add platform version selection (always include, defaults to "latest")
         String platformVersion = prerelease ? "pre" : "latest";
@@ -44,13 +41,5 @@ public class StarterProjectModel extends AbstractProjectModel {
 
     public void setPrerelease(boolean prerelease) {
         this.prerelease = prerelease;
-    }
-
-    public boolean isIncludeFlow() {
-        return includeFlow;
-    }
-
-    public void setIncludeFlow(boolean includeFlow) {
-        this.includeFlow = includeFlow;
     }
 }
