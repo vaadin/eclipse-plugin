@@ -17,7 +17,7 @@ This will compile the plug-in and create the P2 metadata in the `target` folder.
 
 - Install Eclipse JavaEE (better than RCP to run vaadin application in the same environment)
 - Create empty workspace
-- Install current Vaadin plugin
+- Optional - Install current Vaadin plugin from market place to get familiar with it and check that everything works. This plugin is part of the "Vaadin IDE integration" package, you can select only this one. 
 - Import this repo as maven project
 - Debug the vaadin-eclipse-plugin module as Eclipse Application
 - In the opened IDE create a new project (Vaadin project should appear in the list)
