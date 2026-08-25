@@ -26,7 +26,6 @@ public class StarterProjectModelTest {
 	@Test
 	public void testDefaultValues() {
 		assertNotNull("Model should be created", model);
-		assertTrue("Should include Flow by default", model.isIncludeFlow());
 		assertFalse("Should not be prerelease by default", model.isPrerelease());
 	}
 
@@ -62,15 +61,8 @@ public class StarterProjectModelTest {
 	public void testFrameworkSelection() {
 		model.setProjectName("framework-test");
 
-		// Test Flow only
-		model.setIncludeFlow(true);
 		String url = model.getDownloadUrl();
-		assertTrue("Should have frameworks=flow", url.contains("frameworks=flow"));
-
-		// Test no frameworks selected
-		model.setIncludeFlow(false);
-		url = model.getDownloadUrl();
-		assertFalse("Shouldn't contain frameworks parameter", url.matches(".*frameworks=.*"));
+		assertTrue("Should always have frameworks=flow", url.contains("frameworks=flow"));
 	}
 
 	@Test
@@ -97,7 +89,6 @@ public class StarterProjectModelTest {
 	public void testAllStarterParameters() {
 		model.setProjectName("full-test");
 		model.setPrerelease(true);
-		model.setIncludeFlow(true);
 
 		String url = model.getDownloadUrl();
 
