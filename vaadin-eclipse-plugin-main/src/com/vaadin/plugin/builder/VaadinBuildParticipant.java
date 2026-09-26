@@ -76,7 +76,9 @@ public class VaadinBuildParticipant extends IncrementalProjectBuilder {
                 for (IClasspathEntry entry : classpath) {
                     String fullPath = entry.getPath().toString();
                     // Extract just the filename from the path
-                    String filename = fullPath.substring(fullPath.lastIndexOf('/') + 1).toLowerCase();
+                    // Use File.separator for platform independence, but IPath always uses '/'
+                    int lastSeparator = Math.max(fullPath.lastIndexOf('/'), fullPath.lastIndexOf('\\'));
+                    String filename = fullPath.substring(lastSeparator + 1).toLowerCase();
 
                     // Check for Vaadin in the filename only (not the full path)
                     // This avoids false positives from temp directories containing "vaadin"
