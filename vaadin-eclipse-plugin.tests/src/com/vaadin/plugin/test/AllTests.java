@@ -11,6 +11,6 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({CopilotRestServiceIntegrationTest.class, CopilotClientIntegrationTest.class, CopilotUtilTest.class,
 		VaadinProjectAnalyzerTest.class, CopilotUndoManagerTest.class, AdvancedEndpointsTest.class,
 		BinaryFileUndoRedoTest.class, JbrSelectorTest.class, HotswapJvmArgsTest.class, TarGzExtractorTest.class,
-		JetBrainsRuntimeDownloaderTest.class, JetBrainsRuntimeManagerTest.class})
+		JetBrainsRuntimeDownloaderTest.class, JetBrainsRuntimeManagerTest.class, CopilotDotfileManagerTest.class})
 public class AllTests {
 }
