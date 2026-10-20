@@ -57,17 +57,6 @@ public class ManualTestRunner {
 		assert actions.contains("write") : "Should support write action";
 		assert actions.contains("delete") : "Should support delete action";
 
-		// Test dotfile creation
-		String tempDir = System.getProperty("java.io.tmpdir");
-		String testProjectPath = tempDir + File.separator + "test-project";
-		new File(testProjectPath).mkdirs();
-
-		CopilotUtil.saveDotFile(testProjectPath, 9090);
-
-		File dotFile = new File(testProjectPath, ".vaadin/copilot/vaadin-copilot.properties");
-		assert dotFile.exists() : "Dotfile should be created";
-		System.out.println("Dotfile created at: " + dotFile.getAbsolutePath());
-
 		System.out.println("✓ CopilotUtil tests passed");
 	}
 

@@ -31,6 +31,9 @@ public class CopilotDotfileManager implements IResourceChangeListener {
     private static final String DOTFILE_NAME = ".copilot-plugin";
     private static final String ECLIPSE_FOLDER = ".eclipse";
     private static final String PLUGIN_VERSION = "1.0.0"; // TODO: Get from bundle version
+    private static final String VAADIN_SERVICE_CLASS = "com.vaadin.flow.server.VaadinService";
+    private static final String VAADIN_GROUP_ID = "com.vaadin";
+    private static final String[] BUILD_FILES = { "pom.xml", "build.gradle", "build.gradle.kts" };
 
     private static CopilotDotfileManager instance;
 
@@ -120,7 +123,9 @@ public class CopilotDotfileManager implements IResourceChangeListener {
     }
 
     /**
-     * Check if a project is a Vaadin project
+     * Check if a project is a Vaadin project, i.e. it has flow-server on its classpath or declares a com.vaadin
+     * dependency in its build file. The build file is checked because the classpath of a newly imported project might
+     * not be resolved yet.
      */
     private boolean isVaadinProject(IProject project) {
         if (!project.isOpen()) {
@@ -128,45 +133,20 @@ public class CopilotDotfileManager implements IResourceChangeListener {
         }
 
         try {
-            // Check for pom.xml with Vaadin dependency
-            IResource pomFile = project.findMember("pom.xml");
-            if (pomFile != null && pomFile.exists()) {
-                Path pomPath = Paths.get(pomFile.getLocationURI());
-                String content = Files.readString(pomPath);
-                if (content.contains("com.vaadin") || content.contains("vaadin-")) {
-                    return true;
-                }
-            }
-
-            // Check for build.gradle with Vaadin dependency
-            IResource gradleFile = project.findMember("build.gradle");
-            if (gradleFile != null && gradleFile.exists()) {
-                Path gradlePath = Paths.get(gradleFile.getLocationURI());
-                String content = Files.readString(gradlePath);
-                if (content.contains("com.vaadin") || content.contains("vaadin-")) {
-                    return true;
-                }
-            }
-
-            // Check for build.gradle.kts with Vaadin dependency
-            IResource gradleKtsFile = project.findMember("build.gradle.kts");
-            if (gradleKtsFile != null && gradleKtsFile.exists()) {
-                Path gradleKtsPath = Paths.get(gradleKtsFile.getLocationURI());
-                String content = Files.readString(gradleKtsPath);
-                if (content.contains("com.vaadin") || content.contains("vaadin-")) {
-                    return true;
-                }
-            }
-
-            // Check if it's a Java project with Vaadin classes
             if (project.hasNature(JavaCore.NATURE_ID)) {
                 IJavaProject javaProject = JavaCore.create(project);
-                VaadinProjectAnalyzer analyzer = new VaadinProjectAnalyzer(javaProject);
-                // Check if there are any Vaadin routes (indicates a Vaadin project)
-                try {
-                    return !analyzer.findVaadinRoutes().isEmpty();
-                } catch (CoreException e) {
-                    // Ignore and continue checking
+                if (javaProject.findType(VAADIN_SERVICE_CLASS) != null) {
+                    return true;
+                }
+            }
+
+            for (String buildFileName : BUILD_FILES) {
+                IResource buildFile = project.findMember(buildFileName);
+                if (buildFile != null && buildFile.exists()) {
+                    String content = Files.readString(Paths.get(buildFile.getLocationURI()));
+                    if (content.contains(VAADIN_GROUP_ID)) {
+                        return true;
+                    }
                 }
             }
         } catch (Exception e) {

@@ -80,9 +80,6 @@ public class CopilotRestService {
             VaadinPluginLog.info("  Main endpoint: " + endpoint);
             VaadinPluginLog.info("  Health check: http://localhost:" + actualPort + "/health");
             VaadinPluginLog.info("  Server is listening on port " + actualPort);
-
-            // Create dotfiles for all open projects
-            createDotFilesForOpenProjects();
         } catch (IOException e) {
             VaadinPluginLog.error("Failed to start Copilot REST service: " + e.getMessage(), e);
             throw e;
@@ -100,21 +97,6 @@ public class CopilotRestService {
     /** Returns the full endpoint URL. */
     public String getEndpoint() {
         return endpoint;
-    }
-
-    /** Create dotfiles for all open Eclipse projects */
-    private void createDotFilesForOpenProjects() {
-        try {
-            IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
-            for (IProject project : projects) {
-                if (project.isOpen() && project.getLocation() != null) {
-                    String projectPath = project.getLocation().toPortableString();
-                    CopilotUtil.saveDotFile(projectPath, server.getAddress().getPort());
-                }
-            }
-        } catch (Exception e) {
-            VaadinPluginLog.error("Failed to create dotfiles: " + e.getMessage(), e);
-        }
     }
 
     private static class Handler implements HttpHandler {

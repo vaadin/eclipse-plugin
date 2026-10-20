@@ -35,7 +35,7 @@
 ## Critical Issues
 
 ### 1. Components with Zero Test Coverage
-- **CopilotDotfileManager**: Manages `.vaadin/copilot/vaadin-copilot.properties`
+- **CopilotDotfileManager**: Manages `.eclipse/.copilot-plugin` for Vaadin projects
 
 ### 2. Major Functionality Not Tested
 - Project download from start.vaadin.com
