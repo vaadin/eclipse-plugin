@@ -123,9 +123,9 @@ public class CopilotDotfileManager implements IResourceChangeListener {
     }
 
     /**
-     * Check if a project is a Vaadin project, i.e. it has flow-server on its classpath or declares a com.vaadin
-     * dependency in its build file. The build file is checked because the classpath of a newly imported project might
-     * not be resolved yet.
+     * Check if a project is a Vaadin project, i.e. it has flow-server on its classpath, declares a com.vaadin
+     * dependency in its build file or contains Vaadin routes. The build file and routes are checked because the
+     * classpath of a newly imported project might not be resolved yet.
      */
     private boolean isVaadinProject(IProject project) {
         if (!project.isOpen()) {
@@ -148,6 +148,12 @@ public class CopilotDotfileManager implements IResourceChangeListener {
                         return true;
                     }
                 }
+            }
+
+            // Check if it's a Java project with Vaadin routes, e.g. when the build file uses a version catalog
+            if (project.hasNature(JavaCore.NATURE_ID)) {
+                VaadinProjectAnalyzer analyzer = new VaadinProjectAnalyzer(JavaCore.create(project));
+                return !analyzer.findVaadinRoutes().isEmpty();
             }
         } catch (Exception e) {
             // Ignore errors and assume not a Vaadin project

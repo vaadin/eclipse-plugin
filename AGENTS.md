@@ -105,7 +105,7 @@ Tests run in headless Eclipse environment with temporary workspace creation and 
 
 ## Technical Notes
 
-- **Port**: Dynamically assigned, communicated via dotfiles in `.vaadin/copilot/`
+- **Port**: Dynamically assigned, communicated via the `.eclipse/.copilot-plugin` dotfile in Vaadin projects
 - **Java Version**: JavaSE-17
 - **Eclipse Target**: 2024-03 release
 - **Key Dependencies**: Eclipse JDT, Debug Core, Gson
