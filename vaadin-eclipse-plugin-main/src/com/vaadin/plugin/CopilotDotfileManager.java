@@ -1,5 +1,7 @@
 package com.vaadin.plugin;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +33,9 @@ public class CopilotDotfileManager implements IResourceChangeListener {
     private static final String DOTFILE_NAME = ".copilot-plugin";
     private static final String ECLIPSE_FOLDER = ".eclipse";
     private static final String PLUGIN_VERSION = "1.0.0"; // TODO: Get from bundle version
+    private static final String VAADIN_SERVICE_CLASS = "com.vaadin.flow.server.VaadinService";
+    private static final String VAADIN_GROUP_ID = "com.vaadin";
+    private static final String[] BUILD_FILES = { "pom.xml", "build.gradle", "build.gradle.kts" };
 
     private static CopilotDotfileManager instance;
 
@@ -120,60 +125,45 @@ public class CopilotDotfileManager implements IResourceChangeListener {
     }
 
     /**
-     * Check if a project is a Vaadin project
+     * Check if a project is a Vaadin project, i.e. it declares a com.vaadin dependency in its build file, has
+     * flow-server on its classpath or contains Vaadin routes. The build file is checked first because the classpath of
+     * a project might not be resolved yet, e.g. during workbench startup or right after import.
      */
     private boolean isVaadinProject(IProject project) {
         if (!project.isOpen()) {
             return false;
         }
 
-        try {
-            // Check for pom.xml with Vaadin dependency
-            IResource pomFile = project.findMember("pom.xml");
-            if (pomFile != null && pomFile.exists()) {
-                Path pomPath = Paths.get(pomFile.getLocationURI());
-                String content = Files.readString(pomPath);
-                if (content.contains("com.vaadin") || content.contains("vaadin-")) {
-                    return true;
-                }
-            }
-
-            // Check for build.gradle with Vaadin dependency
-            IResource gradleFile = project.findMember("build.gradle");
-            if (gradleFile != null && gradleFile.exists()) {
-                Path gradlePath = Paths.get(gradleFile.getLocationURI());
-                String content = Files.readString(gradlePath);
-                if (content.contains("com.vaadin") || content.contains("vaadin-")) {
-                    return true;
-                }
-            }
-
-            // Check for build.gradle.kts with Vaadin dependency
-            IResource gradleKtsFile = project.findMember("build.gradle.kts");
-            if (gradleKtsFile != null && gradleKtsFile.exists()) {
-                Path gradleKtsPath = Paths.get(gradleKtsFile.getLocationURI());
-                String content = Files.readString(gradleKtsPath);
-                if (content.contains("com.vaadin") || content.contains("vaadin-")) {
-                    return true;
-                }
-            }
-
-            // Check if it's a Java project with Vaadin classes
-            if (project.hasNature(JavaCore.NATURE_ID)) {
-                IJavaProject javaProject = JavaCore.create(project);
-                VaadinProjectAnalyzer analyzer = new VaadinProjectAnalyzer(javaProject);
-                // Check if there are any Vaadin routes (indicates a Vaadin project)
+        for (String buildFileName : BUILD_FILES) {
+            IResource buildFile = project.findMember(buildFileName);
+            if (buildFile != null && buildFile.exists()) {
                 try {
-                    return !analyzer.findVaadinRoutes().isEmpty();
-                } catch (CoreException e) {
-                    // Ignore and continue checking
+                    String content = Files.readString(Paths.get(buildFile.getLocationURI()));
+                    if (content.contains(VAADIN_GROUP_ID)) {
+                        return true;
+                    }
+                } catch (Exception e) {
+                    VaadinPluginLog.debug("Could not read " + buildFileName + " of project " + project.getName() + ": "
+                            + e.getMessage());
                 }
             }
-        } catch (Exception e) {
-            // Ignore errors and assume not a Vaadin project
         }
 
-        return false;
+        try {
+            if (!project.hasNature(JavaCore.NATURE_ID)) {
+                return false;
+            }
+            IJavaProject javaProject = JavaCore.create(project);
+            if (javaProject.findType(VAADIN_SERVICE_CLASS) != null) {
+                return true;
+            }
+            // Check for Vaadin routes, e.g. when the build file uses a version catalog
+            return !new VaadinProjectAnalyzer(javaProject).findVaadinRoutes().isEmpty();
+        } catch (Exception e) {
+            VaadinPluginLog
+                    .debug("Could not check the classpath of project " + project.getName() + ": " + e.getMessage());
+            return false;
+        }
     }
 
     /**
@@ -194,7 +184,7 @@ public class CopilotDotfileManager implements IResourceChangeListener {
             Path dotfilePath = eclipseFolder.resolve(DOTFILE_NAME);
 
             // Get the REST service endpoint
-            String endpoint = System.getProperty("vaadin.copilot.endpoint", "http://localhost:0/copilot");
+            String endpoint = getEndpoint();
 
             // Get supported actions from CopilotRestService
             String[] supportedActions = { "write", "writeBase64", "delete", "refresh", "showInIde", "undo", "redo",
@@ -239,6 +229,10 @@ public class CopilotDotfileManager implements IResourceChangeListener {
         }
     }
 
+    private static String getEndpoint() {
+        return System.getProperty("vaadin.copilot.endpoint", "http://localhost:0/copilot");
+    }
+
     /**
      * Remove the .copilot-plugin dotfile for a project
      */
@@ -267,6 +261,30 @@ public class CopilotDotfileManager implements IResourceChangeListener {
         if (project.isOpen() && isVaadinProject(project)) {
             createDotfile(project);
         }
+    }
+
+    /**
+     * Create the dotfile for a project that is known to use Vaadin, e.g. because its resolved classpath contains
+     * Vaadin, unless an up-to-date dotfile already exists.
+     */
+    public void ensureDotfile(IProject project) {
+        IPath projectLocation = project.getLocation();
+        if (projectLocation == null) {
+            return;
+        }
+        Path dotfilePath = Paths.get(projectLocation.toString(), ECLIPSE_FOLDER, DOTFILE_NAME);
+        if (Files.exists(dotfilePath)) {
+            Properties props = new Properties();
+            try (Reader reader = Files.newBufferedReader(dotfilePath)) {
+                props.load(reader);
+                if (getEndpoint().equals(props.getProperty("endpoint"))) {
+                    return;
+                }
+            } catch (IOException e) {
+                // Recreate an unreadable dotfile
+            }
+        }
+        createDotfile(project);
     }
 
     /**

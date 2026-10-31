@@ -20,6 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.vaadin.plugin.CopilotDotfileManager;
 import com.vaadin.plugin.util.VaadinPluginLog;
 
 /**
@@ -57,6 +58,11 @@ public class VaadinBuildParticipant extends IncrementalProjectBuilder {
         if (!hasVaadin) {
             return null;
         }
+
+        // The resolved classpath is the most reliable sign of a Vaadin project.
+        // Make sure Copilot finds the plugin even if the project was not
+        // detected as a Vaadin project when it was opened.
+        CopilotDotfileManager.getInstance().ensureDotfile(project);
 
         // Update or create the flow-build-info.json file in the output folder
         updateFlowBuildInfo(project, monitor);
