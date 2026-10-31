@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -93,16 +94,37 @@ public class CopilotDotfileManagerTest extends BaseIntegrationTest {
 		createFile("lib/vaadin-core-25.0.0.jar", "");
 		makeJavaProject(
 				JavaCore.newLibraryEntry(testProject.getFile("lib/vaadin-core-25.0.0.jar").getFullPath(), null, null));
-		ICommand command = testProject.getDescription().newCommand();
-		command.setBuilderName(VaadinBuildParticipant.BUILDER_ID);
-		IProjectDescription description = testProject.getDescription();
-		description.setBuildSpec(new ICommand[]{command});
-		testProject.setDescription(description, null);
 
-		testProject.build(IncrementalProjectBuilder.FULL_BUILD, VaadinBuildParticipant.BUILDER_ID, null, null);
+		runVaadinBuilder();
 
 		assertTrue("Dotfile should be created when the builder finds Vaadin on the classpath",
 				Files.exists(getDotfilePath()));
+	}
+
+	@Test
+	public void testBuilderDoesNotCreateDotfileWithoutVaadinOnClasspath() throws CoreException {
+		makeJavaProject();
+
+		runVaadinBuilder();
+
+		assertFalse("Dotfile should not be created for a project without Vaadin", Files.exists(getDotfilePath()));
+	}
+
+	@Test
+	public void testEnsureDotfileKeepsUpToDateDotfile() throws CoreException, IOException {
+		Properties existing = new Properties();
+		existing.setProperty("endpoint", System.getProperty("vaadin.copilot.endpoint", "http://localhost:0/copilot"));
+		existing.setProperty("marker", "keep");
+		Files.createDirectories(getDotfilePath().getParent());
+		try (Writer writer = Files.newBufferedWriter(getDotfilePath())) {
+			existing.store(writer, null);
+		}
+
+		CopilotDotfileManager.getInstance().ensureDotfile(testProject);
+
+		Properties props = loadDotfile();
+		assertEquals("keep", props.getProperty("marker"));
+		assertNull("An up-to-date dotfile should not be rewritten", props.getProperty("ide"));
 	}
 
 	@Test
@@ -112,13 +134,28 @@ public class CopilotDotfileManagerTest extends BaseIntegrationTest {
 
 		CopilotDotfileManager.getInstance().ensureDotfile(testProject);
 
+		Properties props = loadDotfile();
+		assertEquals(System.getProperty("vaadin.copilot.endpoint", "http://localhost:0/copilot"),
+				props.getProperty("endpoint"));
+		assertEquals("eclipse", props.getProperty("ide"));
+	}
+
+	private void runVaadinBuilder() throws CoreException {
+		IProjectDescription description = testProject.getDescription();
+		ICommand command = description.newCommand();
+		command.setBuilderName(VaadinBuildParticipant.BUILDER_ID);
+		description.setBuildSpec(new ICommand[]{command});
+		testProject.setDescription(description, null);
+
+		testProject.build(IncrementalProjectBuilder.FULL_BUILD, VaadinBuildParticipant.BUILDER_ID, null, null);
+	}
+
+	private Properties loadDotfile() throws IOException {
 		Properties props = new Properties();
 		try (Reader reader = Files.newBufferedReader(getDotfilePath())) {
 			props.load(reader);
 		}
-		assertEquals(System.getProperty("vaadin.copilot.endpoint", "http://localhost:0/copilot"),
-				props.getProperty("endpoint"));
-		assertEquals("eclipse", props.getProperty("ide"));
+		return props;
 	}
 
 	private void makeJavaProject(IClasspathEntry... extraEntries) throws CoreException {
